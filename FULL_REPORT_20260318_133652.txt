@@ -1,4 +1,4 @@
-TQGA FULL REPORT
+abd TQGA FULL REPORT
 ===============
 Folder: D:\D DATA BACKUP\Data\Reports
 Files:  28
@@ -25390,12 +25390,12 @@ D:.
 ===== SOLUTION & PROJECT FILES =====
 
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . s l n  
- T Y P E :   . s l n  
- S I Z E :   2 . 8 3   K B  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- Microsoft Visual Studio Solution File, Format Version 12.00
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . s l n  
+ T Y P E :   . s l n  
+ S I Z E :   2 . 8 3   K B  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -25444,12 +25444,12 @@ Global
 	EndGlobalSection
 EndGlobal
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T Q G A . A p p l i c a t i o n . c s p r o j  
- T Y P E :   . c s p r o j  
- S I Z E :   0 . 7   K B  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- <Project Sdk="Microsoft.NET.Sdk">
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T Q G A . A p p l i c a t i o n . c s p r o j  
+ T Y P E :   . c s p r o j  
+ S I Z E :   0 . 7   K B  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -25474,12 +25474,12 @@ EndGlobal
 
 </Project>
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T Q G A . D o m a i n . c s p r o j  
- T Y P E :   . c s p r o j  
- S I Z E :   0 . 3 7   K B  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- <Project Sdk="Microsoft.NET.Sdk">
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T Q G A . D o m a i n . c s p r o j  
+ T Y P E :   . c s p r o j  
+ S I Z E :   0 . 3 7   K B  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -25494,12 +25494,12 @@ EndGlobal
 
 </Project>
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T Q G A . I n f r a s t r u c t u r e . c s p r o j  
- T Y P E :   . c s p r o j  
- S I Z E :   0 . 7 4   K B  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- <Project Sdk="Microsoft.NET.Sdk">
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T Q G A . I n f r a s t r u c t u r e . c s p r o j  
+ T Y P E :   . c s p r o j  
+ S I Z E :   0 . 7 4   K B  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -25521,12 +25521,12 @@ EndGlobal
 
 </Project>
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ T Q G A . W i n F o r m s . c s p r o j  
- T Y P E :   . c s p r o j  
- S I Z E :   1 . 1 3   K B  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- <Project Sdk="Microsoft.NET.Sdk">
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ T Q G A . W i n F o r m s . c s p r o j  
+ T Y P E :   . c s p r o j  
+ S I Z E :   1 . 1 3   K B  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ <Project Sdk="Microsoft.NET.Sdk">
 
  <PropertyGroup>
   <OutputType>WinExe</OutputType>
@@ -25558,26 +25558,26 @@ EndGlobal
 ===== SOURCE FILES (.cs) =====
 
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ G l o b a l U s i n g s . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 8   K B  
- L I N E S :   6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- global using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ G l o b a l U s i n g s . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 8   K B  
+ L I N E S :   6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using System.IO;
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ A c c o u n t i n g \ E q u i t y C u r v e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7   K B  
- L I N E S :   2 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Accounting;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ A c c o u n t i n g \ E q u i t y C u r v e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7   K B  
+ L I N E S :   2 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Accounting;
 
 public sealed class EquityCurve
 {
@@ -25607,13 +25607,13 @@ public sealed class EquityCurve
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ A c c o u n t i n g \ T r a d e L e d g e r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 8 7   K B  
- L I N E S :   2 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ A c c o u n t i n g \ T r a d e L e d g e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 8 7   K B  
+ L I N E S :   2 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Accounting;
 
@@ -25649,13 +25649,13 @@ public sealed class TradeLedger
                 g => g.Sum(t => t.RealizedPnL));
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ B a c k t e s t i n g \ B a c k t e s t R u n n e r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7 9   K B  
- L I N E S :   2 7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Threading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ B a c k t e s t i n g \ B a c k t e s t R u n n e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7 9   K B  
+ L I N E S :   2 7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Threading;
 using System.Threading.Tasks;
 using TQGA.Application.Interfaces;
 using TQGA.Application.Trading;
@@ -25687,13 +25687,13 @@ public sealed class BacktestRunner
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ B a c k t e s t i n g \ P o r t f o l i o B a c k t e s t R e s u l t . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 6   K B  
- L I N E S :   2 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Portfolio;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ B a c k t e s t i n g \ P o r t f o l i o B a c k t e s t R e s u l t . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 6   K B  
+ L I N E S :   2 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Portfolio;
 using TQGA.Application.Trading;
 
 namespace TQGA.Application.Backtesting;
@@ -25737,13 +25737,13 @@ public sealed class PortfolioBacktestResult
         MarketAllocationWeights is { Count: > 0 };
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ B a c k t e s t i n g \ P o r t f o l i o B a c k t e s t R u n n e r . c s  
- T Y P E :   . c s  
- S I Z E :   3 8 . 3   K B  
- L I N E S :   8 4 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using Microsoft.Extensions.DependencyInjection;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ B a c k t e s t i n g \ P o r t f o l i o B a c k t e s t R u n n e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   3 8 . 3   K B  
+ L I N E S :   8 4 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
 using TQGA.Application.Interfaces;
 using TQGA.Application.Portfolio;
@@ -26804,13 +26804,13 @@ public sealed class PortfolioBacktestRunner
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I C a n d l e D a t a F e e d . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 1   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Collections.Generic;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I C a n d l e D a t a F e e d . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 1   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Collections.Generic;
 using TQGA.Domain.Market;
 
 namespace TQGA.Application.Interfaces;
@@ -26820,13 +26820,13 @@ public interface ICandleDataFeed
     IEnumerable<Candle> GetCandles(string symbol, string timeframe);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I C l o c k . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 3   K B  
- L I N E S :   6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I C l o c k . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 3   K B  
+ L I N E S :   6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Interfaces;
 
 public interface IClock
 {
@@ -26835,39 +26835,39 @@ public interface IClock
     void Advance(TimeSpan delta);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I M a r k e t D a t a F e e d . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 2   K B  
- L I N E S :   5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I M a r k e t D a t a F e e d . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 2   K B  
+ L I N E S :   5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Interfaces;
 
 public interface IMarketDataFeed
 {
     decimal GetLastPrice(string symbol);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I M a r k e t P r i c e d . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 2   K B  
- L I N E S :   5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ I n t e r f a c e s \ I M a r k e t P r i c e d . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 2   K B  
+ L I N E S :   5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Interfaces;
 
 public interface IMarketPriced
 {
     void UpdateMarketPrice(decimal price);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P a t h s \ D a t a P a t h s . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 5 6   K B  
- L I N E S :   1 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Paths;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P a t h s \ D a t a P a t h s . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 5 6   K B  
+ L I N E S :   1 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Paths;
 
 public static class DataPaths
 {
@@ -26888,13 +26888,13 @@ public static class DataPaths
             StringComparison.OrdinalIgnoreCase);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ B i n a n c e U n i v e r s e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 6 5   K B  
- L I N E S :   7 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Portfolio;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ B i n a n c e U n i v e r s e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 6 5   K B  
+ L I N E S :   7 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Portfolio;
 
 public static class BinanceUniverse
 {
@@ -26979,13 +26979,13 @@ public static class BinanceUniverse
     public static int MarketCount => ActiveSymbols.Count * Timeframes.Length;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ C i o D y n a m i c R e a l l o c a t i o n E n g i n e . c s  
- T Y P E :   . c s  
- S I Z E :   6 . 5 3   K B  
- L I N E S :   1 7 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Portfolio;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ C i o D y n a m i c R e a l l o c a t i o n E n g i n e . c s  
+ T Y P E :   . c s  
+ S I Z E :   6 . 5 3   K B  
+ L I N E S :   1 7 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Portfolio;
 
 public sealed class CioDynamicReallocationEngine
 {
@@ -27196,13 +27196,13 @@ public sealed class CioDynamicReallocationEngine
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ F r i c t i o n P r o f i l e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 6 2   K B  
- L I N E S :   1 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Portfolio;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ F r i c t i o n P r o f i l e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 6 2   K B  
+ L I N E S :   1 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Portfolio;
 
 public sealed record FrictionProfile(
     decimal MakerFeeBps,
@@ -27223,13 +27223,13 @@ public sealed record FrictionProfile(
     public decimal EffectiveFeeBps => PreferMaker ? MakerFeeBps : TakerFeeBps;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ L e a d e r s h i p R a n k i n g S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   3   K B  
- L I N E S :   8 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ L e a d e r s h i p R a n k i n g S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   3   K B  
+ L I N E S :   8 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Interfaces;
 
 namespace TQGA.Application.Portfolio;
 
@@ -27338,26 +27338,26 @@ public sealed class LeadershipRankingService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ M a r k e t K e y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 8   K B  
- L I N E S :   5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Portfolio;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ M a r k e t K e y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 8   K B  
+ L I N E S :   5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Portfolio;
 
 public readonly record struct MarketKey(string Symbol, string Timeframe)
 {
     public override string ToString() => $"{Symbol}_{Timeframe}";
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P o r t f o l i o B a c k t e s t O r c h e s t r a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   4 . 2 4   K B  
- L I N E S :   1 0 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Backtesting;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P o r t f o l i o B a c k t e s t O r c h e s t r a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   4 . 2 4   K B  
+ L I N E S :   1 0 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Backtesting;
 using TQGA.Application.Services;
 using TQGA.Application.Strategy;
 
@@ -27479,13 +27479,13 @@ public sealed class PortfolioBacktestOrchestrator
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P o r t f o l i o E q u i t y A g g r e g a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 4 5   K B  
- L I N E S :   1 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Portfolio;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P o r t f o l i o E q u i t y A g g r e g a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 4 5   K B  
+ L I N E S :   1 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Portfolio;
 
 public sealed class PortfolioEquityAggregator
 {
@@ -27502,13 +27502,13 @@ public sealed class PortfolioEquityAggregator
     public IReadOnlyDictionary<DateTime, decimal> Timeline => _timeline;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P o r t f o l i o R i s k B u d g e t E n g i n e . c s  
- T Y P E :   . c s  
- S I Z E :   9 . 5 2   K B  
- L I N E S :   2 2 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Market;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P o r t f o l i o R i s k B u d g e t E n g i n e . c s  
+ T Y P E :   . c s  
+ S I Z E :   9 . 5 2   K B  
+ L I N E S :   2 2 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Market;
 
 namespace TQGA.Application.Portfolio;
 
@@ -27781,13 +27781,13 @@ public sealed class PortfolioRiskBudgetEngine
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P r e T r a d e M a r k e t S e l e c t i o n S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   6 . 3 3   K B  
- L I N E S :   1 5 7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ P r e T r a d e M a r k e t S e l e c t i o n S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   6 . 3 3   K B  
+ L I N E S :   1 5 7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Interfaces;
 using TQGA.Domain.Market;
 
 namespace TQGA.Application.Portfolio;
@@ -27984,13 +27984,13 @@ public sealed class PreTradeMarketSelectionService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ S t r a t e g y B a c k t e s t N o d e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7   K B  
- L I N E S :   2 4  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using Microsoft.Extensions.DependencyInjection;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ S t r a t e g y B a c k t e s t N o d e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7   K B  
+ L I N E S :   2 4  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Strategy;
@@ -28020,13 +28020,13 @@ public sealed class StrategyBacktestNode
     public decimal FinalPnL => Ledger.TotalPnL;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ S t r a t e g y C a p i t a l A l l o c a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 1 2   K B  
- L I N E S :   3 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Risk;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ S t r a t e g y C a p i t a l A l l o c a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 1 2   K B  
+ L I N E S :   3 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Risk;
 
 namespace TQGA.Application.Portfolio;
 
@@ -28070,13 +28070,13 @@ public sealed class StrategyCapitalAllocator : ICapitalAllocator
         => _strategyWeight;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ A l l o c a t i o n \ R a n k B a s e d A l l o c a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   3 . 3 2   K B  
- L I N E S :   9 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ P o r t f o l i o \ A l l o c a t i o n \ R a n k B a s e d A l l o c a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   3 . 3 2   K B  
+ L I N E S :   9 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28189,13 +28189,13 @@ namespace TQGA.Application.Portfolio.Allocation
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ B a c k t e s t R e p o r t . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 5 9   K B  
- L I N E S :   5 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Accounting;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ B a c k t e s t R e p o r t . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 5 9   K B  
+ L I N E S :   5 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Accounting;
 
 namespace TQGA.Application.Reporting;
 
@@ -28259,13 +28259,13 @@ public sealed class BacktestReport
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ C o i n P e r f o r m a n c e A n a l y z e r . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 6   K B  
- L I N E S :   5 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ C o i n P e r f o r m a n c e A n a l y z e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 6   K B  
+ L I N E S :   5 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Reporting;
 
@@ -28344,13 +28344,13 @@ public sealed class CoinPerformanceAnalyzer
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ P o r t f o l i o R e s e a r c h R e p o r t . c s  
- T Y P E :   . c s  
- S I Z E :   2   K B  
- L I N E S :   5 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ P o r t f o l i o R e s e a r c h R e p o r t . c s  
+ T Y P E :   . c s  
+ S I Z E :   2   K B  
+ L I N E S :   5 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Accounting;
 using TQGA.Application.Paths;
 using TQGA.Domain.Trading;
@@ -28420,13 +28420,13 @@ public sealed class PortfolioResearchReport
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ S t r a t e g y E x p l a i n a b i l i t y W r i t e r . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 4 1   K B  
- L I N E S :   5 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ S t r a t e g y E x p l a i n a b i l i t y W r i t e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 4 1   K B  
+ L I N E S :   5 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.IO;
 using System.Text;
 using TQGA.Application.Paths;
@@ -28493,13 +28493,13 @@ public static class StrategyExplainabilityWriter
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ T r a d e C s v E x p o r t e r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7 5   K B  
- L I N E S :   2 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ T r a d e C s v E x p o r t e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7 5   K B  
+ L I N E S :   2 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 using TQGA.Application.Paths;
 namespace TQGA.Application.Reporting;
 
@@ -28527,13 +28527,13 @@ public static class TradeCsvExporter
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ T r a d e E x p e c t a n c y A n a l y z e r . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 6 6   K B  
- L I N E S :   4 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R e p o r t i n g \ T r a d e E x p e c t a n c y A n a l y z e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 6 6   K B  
+ L I N E S :   4 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Reporting;
 
@@ -28587,13 +28587,13 @@ public sealed class TradeExpectancyAnalyzer
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R i s k \ I C a p i t a l A l l o c a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 3 4   K B  
- L I N E S :   9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Risk;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R i s k \ I C a p i t a l A l l o c a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 3 4   K B  
+ L I N E S :   9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Risk;
 
 public interface ICapitalAllocator
 {
@@ -28607,13 +28607,13 @@ public interface ICapitalAllocator
     decimal CurrentEquity { get; }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R i s k \ I R i s k M a n a g e r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 9   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Risk;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ R i s k \ I R i s k M a n a g e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 9   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Risk;
 
 public interface IRiskManager
 {
@@ -28622,13 +28622,13 @@ public interface IRiskManager
     void OnTradeClosed(decimal pnl);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 A l p h a D e c a y M o n i t o r i n g R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   6 . 0 5   K B  
- L I N E S :   1 3 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 A l p h a D e c a y M o n i t o r i n g R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   6 . 0 5   K B  
+ L I N E S :   1 3 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28794,13 +28794,13 @@ public sealed class A84AlphaDecayMonitoringReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 C h a t G p t U p l o a d R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   7 . 5 1   K B  
- L I N E S :   1 4 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 C h a t G p t U p l o a d R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   7 . 5 1   K B  
+ L I N E S :   1 4 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
 
@@ -28965,13 +28965,13 @@ public sealed class A84ChatGptUploadReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 E x e c u t i v e S u m m a r y R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   5 . 5 9   K B  
- L I N E S :   1 1 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 E x e c u t i v e S u m m a r y R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   5 . 5 9   K B  
+ L I N E S :   1 1 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
 
@@ -29105,13 +29105,13 @@ public sealed class A84ExecutiveSummaryReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 M a r k e t R e g i m e D e t e c t i o n R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   8 . 1 7   K B  
- L I N E S :   1 9 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 M a r k e t R e g i m e D e t e c t i o n R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   8 . 1 7   K B  
+ L I N E S :   1 9 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29360,13 +29360,13 @@ public sealed class A84MarketRegimeDetectionReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 S t r a t e g y F i t n e s s G a t i n g R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   9 . 1 1   K B  
- L I N E S :   2 0 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 S t r a t e g y F i t n e s s G a t i n g R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   9 . 1 1   K B  
+ L I N E S :   2 0 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
 using TQGA.Application.Portfolio;
@@ -29614,13 +29614,13 @@ public sealed class A84StrategyFitnessGatingReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 S t r a t e g y F i t n e s s R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   6 . 9 7   K B  
- L I N E S :   1 6 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 S t r a t e g y F i t n e s s R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   6 . 9 7   K B  
+ L I N E S :   1 6 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29817,13 +29817,13 @@ public sealed class A84StrategyFitnessReportService
         decimal Fitness);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 _ R e g i m e R e s e a r c h S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   3 . 5 8   K B  
- L I N E S :   9 7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A 8 4 _ R e g i m e R e s e a r c h S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   3 . 5 8   K B  
+ L I N E S :   9 7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 using TQGA.Application.Portfolio;
 
@@ -29952,13 +29952,13 @@ public sealed class A84_RegimeResearchService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A l p h a R a n k i n g R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   4 . 0 3   K B  
- L I N E S :   9 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ A l p h a R a n k i n g R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   4 . 0 3   K B  
+ L I N E S :   9 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -30071,13 +30071,13 @@ public sealed class AlphaRankingReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ C i o C a p i t a l R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 9 1   K B  
- L I N E S :   6 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ C i o C a p i t a l R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 9 1   K B  
+ L I N E S :   6 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
@@ -30156,13 +30156,13 @@ public sealed class CioCapitalReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ C i o W e i g h t s S y m b o l T i m e f r a m e R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 5 7   K B  
- L I N E S :   3 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ C i o W e i g h t s S y m b o l T i m e f r a m e R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 5 7   K B  
+ L I N E S :   3 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
@@ -30207,13 +30207,13 @@ public sealed class CioWeightsSymbolTimeframeReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ F u l l R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 5 4   K B  
- L I N E S :   6 4  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ F u l l R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 5 4   K B  
+ L I N E S :   6 4  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
@@ -30296,13 +30296,13 @@ public sealed class FullReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ G o o g l e D r i v e C o m b i n e d P u b l i s h S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 0 . 8 1   K B  
- L I N E S :   2 5 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Diagnostics;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ G o o g l e D r i v e C o m b i n e d P u b l i s h S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 0 . 8 1   K B  
+ L I N E S :   2 5 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Diagnostics;
 using System.Text;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
@@ -30613,13 +30613,13 @@ public sealed class GoogleDriveCombinedPublishResult
     public string PublicDirectLink { get; init; } = string.Empty;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ G o o g l e D r i v e C o m b i n e d S t a b l e P u b l i s h S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   8 . 9 7   K B  
- L I N E S :   2 0 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Diagnostics;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ G o o g l e D r i v e C o m b i n e d S t a b l e P u b l i s h S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   8 . 9 7   K B  
+ L I N E S :   2 0 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Diagnostics;
 using System.Text;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
@@ -30875,13 +30875,13 @@ public sealed class GoogleDriveCombinedStablePublishResult
     public string PublicDirectLink { get; init; } = string.Empty;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ G o o g l e D r i v e R e p o r t P u b l i s h S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 2 . 5 6   K B  
- L I N E S :   2 9 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Diagnostics;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ G o o g l e D r i v e R e p o r t P u b l i s h S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 2 . 5 6   K B  
+ L I N E S :   2 9 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
@@ -31236,13 +31236,13 @@ public sealed class GoogleDrivePublishSettings
     public bool DeleteExistingFilesInFolderBeforeUpload { get; init; } = false;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ L o c a l S t a t i c S i t e H o s t . c s  
- T Y P E :   . c s  
- S I Z E :   6 . 9 6   K B  
- L I N E S :   2 0 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Net;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ L o c a l S t a t i c S i t e H o s t . c s  
+ T Y P E :   . c s  
+ S I Z E :   6 . 9 6   K B  
+ L I N E S :   2 0 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Net;
 using System.Text;
 
 namespace TQGA.Application.Services;
@@ -31480,13 +31480,13 @@ public sealed class LocalStaticSiteHost : IDisposable
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ M i n i R e p o r t S a m p l i n g S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 6 8   K B  
- L I N E S :   2 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Globalization;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ M i n i R e p o r t S a m p l i n g S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 6 8   K B  
+ L I N E S :   2 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Globalization;
 
 namespace TQGA.Application.Services;
 
@@ -31515,13 +31515,13 @@ public sealed class MiniReportSamplingService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ P o r t f o l i o D r a w d o w n R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   3 . 3 5   K B  
- L I N E S :   7 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Globalization;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ P o r t f o l i o D r a w d o w n R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   3 . 3 5   K B  
+ L I N E S :   7 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Globalization;
 using System.Text;
 using TQGA.Application.Paths;
 
@@ -31635,13 +31635,13 @@ public sealed class PortfolioDrawdownReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ P o r t f o l i o E q u i t y R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 7 7   K B  
- L I N E S :   4 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Globalization;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ P o r t f o l i o E q u i t y R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 7 7   K B  
+ L I N E S :   4 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Globalization;
 using System.Text;
 using TQGA.Application.Paths;
 
@@ -31701,13 +31701,13 @@ public sealed class PortfolioEquityReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ Q u i c k A u d i t R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 7 3   K B  
- L I N E S :   6 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ Q u i c k A u d i t R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 7 3   K B  
+ L I N E S :   6 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Accounting;
 
 namespace TQGA.Application.Services;
@@ -31798,13 +31798,13 @@ public sealed class QuickAuditReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ R e p o r t P o r t a l P u b l i s h S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 6 . 0 4   K B  
- L I N E S :   3 4 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Diagnostics;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ R e p o r t P o r t a l P u b l i s h S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 6 . 0 4   K B  
+ L I N E S :   3 4 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Diagnostics;
 using System.Text;
 using TQGA.Application.Paths;
 
@@ -32202,13 +32202,13 @@ public sealed class PublishPortalResult
     public string LocalWebUrl { get; init; } = string.Empty;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S t r a t e g y C o n t r i b u t i o n R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 8 1   K B  
- L I N E S :   2 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S t r a t e g y C o n t r i b u t i o n R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 8 1   K B  
+ L I N E S :   2 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32237,13 +32237,13 @@ public sealed class StrategyContributionReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S t r a t e g y S y m b o l T i m e f r a m e P n l R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 5 8   K B  
- L I N E S :   3 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S t r a t e g y S y m b o l T i m e f r a m e P n l R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 5 8   K B  
+ L I N E S :   3 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
@@ -32288,13 +32288,13 @@ public sealed class StrategySymbolTimeframePnlReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S t r u c t u r e R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 1 3   K B  
- L I N E S :   3 4  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S t r u c t u r e R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 1 3   K B  
+ L I N E S :   3 4  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 using TQGA.Application.Strategy;
 
@@ -32337,13 +32337,13 @@ public sealed class StructureReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S y m b o l H e a t m a p R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 9 9   K B  
- L I N E S :   3 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S y m b o l H e a t m a p R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 9 9   K B  
+ L I N E S :   3 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32382,13 +32382,13 @@ public sealed class SymbolHeatmapReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S y m b o l T i m e f r a m e P n l R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 4 9   K B  
- L I N E S :   3 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ S y m b o l T i m e f r a m e P n l R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 4 9   K B  
+ L I N E S :   3 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
@@ -32433,13 +32433,13 @@ public sealed class SymbolTimeframePnlReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ U n i v e r s a l R e s e a r c h R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 6 1   K B  
- L I N E S :   6 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ U n i v e r s a l R e s e a r c h R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 6 1   K B  
+ L I N E S :   6 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TQGA.Application.Backtesting;
@@ -32513,13 +32513,13 @@ public sealed class UniversalResearchReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ W a l k F o r w a r d V a l i d a t i o n R e p o r t S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   6 . 6 5   K B  
- L I N E S :   1 3 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S e r v i c e s \ W a l k F o r w a r d V a l i d a t i o n R e p o r t S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   6 . 6 5   K B  
+ L I N E S :   1 3 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
 
@@ -32682,13 +32682,13 @@ public sealed class WalkForwardValidationReportService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ D i a g n o s t i c Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 4   K B  
- L I N E S :   7 4  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ D i a g n o s t i c Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 4   K B  
+ L I N E S :   7 4  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Strategy;
 
@@ -32781,13 +32781,13 @@ public sealed class DiagnosticQuantStrategy : QuantStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ I I n d i c a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 7   K B  
- L I N E S :   8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ I I n d i c a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 7   K B  
+ L I N E S :   8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Strategy;
 
 public interface IIndicator<T>
 {
@@ -32798,13 +32798,13 @@ public interface IIndicator<T>
     void Reset();
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ I S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 9   K B  
- L I N E S :   1 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ I S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 9   K B  
+ L I N E S :   1 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Strategy;
 
 public enum TradeSignal
 {
@@ -32819,13 +32819,13 @@ public interface ISignal
     TradeSignal Evaluate(StrategyContext context);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ I S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 7   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ I S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 7   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Strategy;
 
 public interface IStrategy
 {
@@ -32835,13 +32835,13 @@ public interface IStrategy
     TradeSignal OnTick(StrategyContext context);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7 7   K B  
- L I N E S :   2 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7 7   K B  
+ L I N E S :   2 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Strategy;
 
@@ -32876,13 +32876,13 @@ public abstract class QuantStrategy : IStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ S t r a t e g y C o n t e x t . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 4 9   K B  
- L I N E S :   1 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ S t r a t e g y C o n t e x t . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 4 9   K B  
+ L I N E S :   1 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Strategy;
 
 public sealed class StrategyContext
 {
@@ -32904,13 +32904,13 @@ public sealed class StrategyContext
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ S t r a t e g y F a c t o r y . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 4 4   K B  
- L I N E S :   5 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ S t r a t e g y \ S t r a t e g y F a c t o r y . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 4 4   K B  
+ L I N E S :   5 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -32981,13 +32981,13 @@ public sealed class StrategyFactory
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ I O r d e r E x e c u t o r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 4 2   K B  
- L I N E S :   1 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ I O r d e r E x e c u t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 4 2   K B  
+ L I N E S :   1 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Trading;
 
@@ -33009,13 +33009,13 @@ public interface IOrderExecutor
     decimal GetFillPrice();
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ I P o s i t i o n R e p o s i t o r y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 5   K B  
- L I N E S :   9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ I P o s i t i o n R e p o s i t o r y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 5   K B  
+ L I N E S :   9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Trading;
 
@@ -33028,13 +33028,13 @@ public interface IPositionRepository
     void Close(decimal price);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ I T r a d i n g E n g i n e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 1   K B  
- L I N E S :   9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ I T r a d i n g E n g i n e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 1   K B  
+ L I N E S :   9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Trading;
 
 public interface ITradingEngine
 {
@@ -33045,13 +33045,13 @@ public interface ITradingEngine
         CancellationToken ct = default);
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ T r a d e D e c i s i o n D i a g n o s t i c s . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 4 6   K B  
- L I N E S :   5 7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Text;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ T r a d e D e c i s i o n D i a g n o s t i c s . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 4 6   K B  
+ L I N E S :   5 7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Text;
 using System.Threading;
 
 namespace TQGA.Application.Trading;
@@ -33123,13 +33123,13 @@ public sealed class TradeDecisionDiagnostics
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ T r a d e R e s u l t . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 5   K B  
- L I N E S :   6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Application.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ T r a d e R e s u l t . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 5   K B  
+ L I N E S :   6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Application.Trading;
 
 public sealed record TradeResult(
     DateTime Time,
@@ -33137,13 +33137,13 @@ public sealed record TradeResult(
     decimal Equity,
     decimal Drawdown);
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ T r a d i n g E n g i n e . c s  
- T Y P E :   . c s  
- S I Z E :   4 . 4   K B  
- L I N E S :   1 3 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Accounting;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ T r a d i n g \ T r a d i n g E n g i n e . c s  
+ T Y P E :   . c s  
+ S I Z E :   4 . 4   K B  
+ L I N E S :   1 3 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Accounting;
 using TQGA.Application.Risk;
 using TQGA.Application.Strategy;
 using TQGA.Domain.Trading;
@@ -33309,36 +33309,36 @@ public sealed class TradingEngine : ITradingEngine
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ E n t i t y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 0 6   K B  
- L I N E S :   2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ E n t i t y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 0 6   K B  
+ L I N E S :   2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain;
 
 public abstract class Entity { }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ G l o b a l U s i n g s . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 8   K B  
- L I N E S :   6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- global using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ G l o b a l U s i n g s . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 8   K B  
+ L I N E S :   6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using System.IO;
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ I n d i c a t o r s \ E m a . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 4 5   K B  
- L I N E S :   1 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Indicators;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ I n d i c a t o r s \ E m a . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 4 5   K B  
+ L I N E S :   1 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Indicators;
 
 public sealed class Ema : IIndicator
 {
@@ -33362,13 +33362,13 @@ public sealed class Ema : IIndicator
     public bool IsReady => _ema.HasValue;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ I n d i c a t o r s \ I I n d i c a t o r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 1 5   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Indicators;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ I n d i c a t o r s \ I I n d i c a t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 1 5   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Indicators;
 
 public interface IIndicator
 {
@@ -33377,13 +33377,13 @@ public interface IIndicator
     bool IsReady { get; }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ I n d i c a t o r s \ R s i . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 7 3   K B  
- L I N E S :   6 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Indicators;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ I n d i c a t o r s \ R s i . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 7 3   K B  
+ L I N E S :   6 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Indicators;
 
 public sealed class Rsi
 {
@@ -33464,13 +33464,13 @@ public sealed class Rsi
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ M a r k e t \ C a n d l e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 5 8   K B  
- L I N E S :   2 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Market;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ M a r k e t \ C a n d l e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 5 8   K B  
+ L I N E S :   2 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Market;
 
 public sealed class Candle
 {
@@ -33498,13 +33498,13 @@ public sealed class Candle
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ P o s i t i o n . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 4 9   K B  
- L I N E S :   1 7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ P o s i t i o n . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 4 9   K B  
+ L I N E S :   1 7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Trading;
 
 public sealed class Position
 {
@@ -33525,13 +33525,13 @@ public sealed class Position
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 0 8   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 0 8   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Trading;
 
 public enum Signal
 {
@@ -33540,13 +33540,13 @@ public enum Signal
     Sell
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ T r a d e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 0 4   K B  
- L I N E S :   3 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ T r a d e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 0 4   K B  
+ L I N E S :   3 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Trading;
 
 public sealed class Trade
 {
@@ -33589,13 +33589,13 @@ public sealed class Trade
                 : (EntryPrice - ExitPrice!.Value) * Quantity;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ T r a d e S i d e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 0 8   K B  
- L I N E S :   6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Domain.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . D o m a i n \ T r a d i n g \ T r a d e S i d e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 0 8   K B  
+ L I N E S :   6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Domain.Trading;
 
 public enum TradeSide
 {
@@ -33603,13 +33603,13 @@ public enum TradeSide
     Sell
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ D e p e n d e n c y I n j e c t i o n . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 9 3   K B  
- L I N E S :   2 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using Microsoft.Extensions.DependencyInjection;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ D e p e n d e n c y I n j e c t i o n . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 9 3   K B  
+ L I N E S :   2 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Interfaces;
 using TQGA.Infrastructure.MarketData;
 
@@ -33636,13 +33636,13 @@ public static class DependencyInjection
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ G l o b a l U s i n g s . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 1   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- global using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ G l o b a l U s i n g s . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 1   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.IO;
@@ -33650,13 +33650,13 @@ global using System.Net.Http;
 global using System.Threading;
 global using System.Threading.Tasks;
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ D a t a \ C a n d l e D a t a C l e a n e r . c s  
- T Y P E :   . c s  
- S I Z E :   3 . 1   K B  
- L I N E S :   1 0 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Globalization;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ D a t a \ C a n d l e D a t a C l e a n e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   3 . 1   K B  
+ L I N E S :   1 0 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Globalization;
 
 namespace TQGA.Infrastructure.Data;
 
@@ -33787,13 +33787,13 @@ public sealed class CandleDataCleaner
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e D o w n l o a d e r . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 3 1   K B  
- L I N E S :   5 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Globalization;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e D o w n l o a d e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 3 1   K B  
+ L I N E S :   5 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
 using TQGA.Domain.Market;
@@ -33867,13 +33867,13 @@ public sealed class BinanceDownloader
         => new DateTimeOffset(dt).ToUnixTimeMilliseconds();
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e D o w n l o a d e r S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 4 7   K B  
- L I N E S :   6 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Net.Http.Json;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e D o w n l o a d e r S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 4 7   K B  
+ L I N E S :   6 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Net.Http.Json;
 using System.Text.Json;
 using TQGA.Infrastructure.MarketData;
 
@@ -33955,13 +33955,13 @@ public sealed class BinanceDownloaderService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e R a t e L i m i t e r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 8 1   K B  
- L I N E S :   2 6  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Threading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e R a t e L i m i t e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 8 1   K B  
+ L I N E S :   2 6  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Threading;
 
 namespace TQGA.Infrastructure.Data;
 
@@ -33995,13 +33995,13 @@ public sealed class BinanceRateLimiter
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e U n i v e r s e . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 6 5   K B  
- L I N E S :   7 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Infrastructure.MarketData;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ B i n a n c e U n i v e r s e . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 6 5   K B  
+ L I N E S :   7 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Infrastructure.MarketData;
 
 public static class BinanceUniverse
 {
@@ -34086,13 +34086,13 @@ public static class BinanceUniverse
     public static int MarketCount => ActiveSymbols.Count * Timeframes.Length;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ C a n d l e F i l e W r i t e r . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 5 7   K B  
- L I N E S :   7 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Globalization;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ C a n d l e F i l e W r i t e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 5 7   K B  
+ L I N E S :   7 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Globalization;
 using TQGA.Infrastructure.MarketData;
 using TQGA.Application.Paths;
 
@@ -34184,13 +34184,13 @@ public sealed class CandleDto
     public decimal Volume { get; init; }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ C s v C a n d l e D a t a F e e d . c s  
- T Y P E :   . c s  
- S I Z E :   3 . 4 5   K B  
- L I N E S :   8 9  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ C s v C a n d l e D a t a F e e d . c s  
+ T Y P E :   . c s  
+ S I Z E :   3 . 4 5   K B  
+ L I N E S :   8 9  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -34300,13 +34300,13 @@ public sealed class CsvCandleDataFeed : ICandleDataFeed
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ C s v M a r k e t D a t a F e e d . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7 2   K B  
- L I N E S :   2 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ C s v M a r k e t D a t a F e e d . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7 2   K B  
+ L I N E S :   2 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Interfaces;
 
 namespace TQGA.Infrastructure.MarketData;
 
@@ -34336,13 +34336,13 @@ public sealed class CsvMarketDataFeed : IMarketDataFeed
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ D u m m y M a r k e t D a t a F e e d . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 2   K B  
- L I N E S :   7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ D u m m y M a r k e t D a t a F e e d . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 2   K B  
+ L I N E S :   7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Interfaces;
 
 namespace TQGA.Infrastructure.MarketData;
 
@@ -34352,13 +34352,13 @@ public sealed class DummyMarketDataFeed : IMarketDataFeed
         => 123.45m; // placeholder
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ H i s t o r i c a l D a t a B o o t s t r a p p e r . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 3 4   K B  
- L I N E S :   6 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Paths;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ H i s t o r i c a l D a t a B o o t s t r a p p e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 3 4   K B  
+ L I N E S :   6 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Paths;
 
 namespace TQGA.Infrastructure.MarketData;
 
@@ -34439,13 +34439,13 @@ public sealed class HistoricalDataBootstrapper
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ R e t r y P o l i c y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 5 7   K B  
- L I N E S :   2 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Infrastructure.Data;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ R e t r y P o l i c y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 5 7   K B  
+ L I N E S :   2 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Infrastructure.Data;
 
 public static class RetryPolicy
 {
@@ -34471,13 +34471,13 @@ public static class RetryPolicy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ S c h e d u l e r S e r v i c e . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 6 6   K B  
- L I N E S :   2 4  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Infrastructure.Data;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ M a r k e t D a t a \ S c h e d u l e r S e r v i c e . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 6 6   K B  
+ L I N E S :   2 4  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Infrastructure.Data;
 
 public sealed class SchedulerService
 {
@@ -34506,13 +34506,13 @@ public sealed class SchedulerService
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ R i s k \ S i m p l e R i s k M a n a g e r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7 8   K B  
- L I N E S :   2 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Risk;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ R i s k \ S i m p l e R i s k M a n a g e r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7 8   K B  
+ L I N E S :   2 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Risk;
 
 namespace TQGA.Infrastructure.Risk;
 
@@ -34547,13 +34547,13 @@ public sealed class SimpleRiskManager : IRiskManager
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ A l t c o i n L e a d e r s h i p P u l l b a c k Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 3 8   K B  
- L I N E S :   1 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ A l t c o i n L e a d e r s h i p P u l l b a c k Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 3 8   K B  
+ L I N E S :   1 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 
 namespace TQGA.Infrastructure.Strategies;
 
@@ -34567,13 +34567,13 @@ public sealed class AltcoinLeadershipPullbackQuantStrategy : QuantStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a C r o s s S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 6 2   K B  
- L I N E S :   2 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a C r o s s S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 6 2   K B  
+ L I N E S :   2 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
 
 namespace TQGA.Infrastructure.Strategies;
@@ -34601,13 +34601,13 @@ public sealed class EmaCrossSignal : ISignal
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a R s i Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 3 5   K B  
- L I N E S :   1 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a R s i Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 3 5   K B  
+ L I N E S :   1 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
 
 namespace TQGA.Infrastructure.Strategies;
@@ -34623,13 +34623,13 @@ public sealed class EmaRsiQuantStrategy : QuantStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a T r e n d P u l l b a c k Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 3 3   K B  
- L I N E S :   1 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a T r e n d P u l l b a c k Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 3 3   K B  
+ L I N E S :   1 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 
 namespace TQGA.Infrastructure.Strategies;
 
@@ -34643,13 +34643,13 @@ public sealed class EmaTrendPullbackQuantStrategy : QuantStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a T r e n d Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 9   K B  
- L I N E S :   1 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a T r e n d Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 9   K B  
+ L I N E S :   1 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 
 namespace TQGA.Infrastructure.Strategies;
 
@@ -34663,13 +34663,13 @@ public sealed class EmaTrendQuantStrategy : QuantStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a T r e n d S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 8 5   K B  
- L I N E S :   2 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ E m a T r e n d S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 8 5   K B  
+ L I N E S :   2 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
 
 namespace TQGA.Infrastructure.Strategies;
@@ -34701,13 +34701,13 @@ public sealed class EmaTrendSignal : ISignal
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R e g i m e G a t e d A l t c o i n L e a d e r s h i p P u l l b a c k S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   5 . 1 9   K B  
- L I N E S :   1 4 2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using System.Collections.Generic;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R e g i m e G a t e d A l t c o i n L e a d e r s h i p P u l l b a c k S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   5 . 1 9   K B  
+ L I N E S :   1 4 2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using System.Collections.Generic;
 using System.Linq;
 using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
@@ -34893,13 +34893,13 @@ public sealed class RegimeGatedAltcoinLeadershipPullbackSignal : ISignal
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R s i R e v e r s i o n S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 6 9   K B  
- L I N E S :   2 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R s i R e v e r s i o n S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 6 9   K B  
+ L I N E S :   2 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
 
 namespace TQGA.Infrastructure.Strategies;
@@ -34927,13 +34927,13 @@ public sealed class RsiReversionSignal : ISignal
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R s i S w i n g Q u a n t S t r a t e g y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 9   K B  
- L I N E S :   1 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R s i S w i n g Q u a n t S t r a t e g y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 9   K B  
+ L I N E S :   1 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 
 namespace TQGA.Infrastructure.Strategies;
 
@@ -34947,13 +34947,13 @@ public sealed class RsiSwingQuantStrategy : QuantStrategy
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R s i S w i n g S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 0 4   K B  
- L I N E S :   2 8  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ R s i S w i n g S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 0 4   K B  
+ L I N E S :   2 8  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
 
 namespace TQGA.Infrastructure.Strategies;
@@ -34991,13 +34991,13 @@ public sealed class RsiSwingSignal : ISignal
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ S i g n a l F i r e S t a t s . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 4 7   K B  
- L I N E S :   3 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- namespace TQGA.Infrastructure.Strategies;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ S i g n a l F i r e S t a t s . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 4 7   K B  
+ L I N E S :   3 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ namespace TQGA.Infrastructure.Strategies;
 
 public sealed class SignalFireStats
 {
@@ -35037,13 +35037,13 @@ public sealed class SignalFireStats
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ T r e n d P u l l b a c k S i g n a l . c s  
- T Y P E :   . c s  
- S I Z E :   1 . 2 1   K B  
- L I N E S :   3 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Strategy;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ S t r a t e g i e s \ T r e n d P u l l b a c k S i g n a l . c s  
+ T Y P E :   . c s  
+ S I Z E :   1 . 2 1   K B  
+ L I N E S :   3 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
 
 namespace TQGA.Infrastructure.Strategies;
@@ -35082,13 +35082,13 @@ public sealed class TrendPullbackSignal : ISignal
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T i m e \ S i m u l a t e d C l o c k . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 7   K B  
- L I N E S :   1 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T i m e \ S i m u l a t e d C l o c k . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 7   K B  
+ L I N E S :   1 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Interfaces;
 
 namespace TQGA.Infrastructure.Time;
 
@@ -35102,13 +35102,13 @@ public sealed class SimulatedClock : IClock
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T i m e \ S y s t e m C l o c k . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 2 5   K B  
- L I N E S :   1 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Interfaces;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T i m e \ S y s t e m C l o c k . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 2 5   K B  
+ L I N E S :   1 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Interfaces;
 
 namespace TQGA.Infrastructure.Time;
 
@@ -35122,13 +35122,13 @@ public sealed class SystemClock : IClock
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T r a d i n g \ B a c k t e s t O r d e r E x e c u t o r . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 7 7   K B  
- L I N E S :   2 7  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T r a d i n g \ B a c k t e s t O r d e r E x e c u t o r . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 7 7   K B  
+ L I N E S :   2 7  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Trading;
 using TQGA.Domain.Trading;
 
 namespace TQGA.Infrastructure.Trading;
@@ -35162,13 +35162,13 @@ public sealed class BacktestOrderExecutor : IOrderExecutor
     public decimal GetFillPrice() => _lastFillPrice;
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T r a d i n g \ I n M e m o r y P o s i t i o n R e p o s i t o r y . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 8 6   K B  
- L I N E S :   3 0  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using TQGA.Application.Trading;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . I n f r a s t r u c t u r e \ T r a d i n g \ I n M e m o r y P o s i t i o n R e p o s i t o r y . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 8 6   K B  
+ L I N E S :   3 0  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using TQGA.Application.Trading;
 using TQGA.Domain.Trading;
 
 namespace TQGA.Infrastructure.Trading;
@@ -35208,22 +35208,22 @@ public sealed class InMemoryPositionRepository : IPositionRepository
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ G l o b a l U s i n g s . c s  
- T Y P E :   . c s  
- S I Z E :   0 . 0 6   K B  
- L I N E S :   2  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- global using System;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ G l o b a l U s i n g s . c s  
+ T Y P E :   . c s  
+ S I Z E :   0 . 0 6   K B  
+ L I N E S :   2  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ global using System;
 global using System.Windows.Forms;
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ M a i n F o r m . c s  
- T Y P E :   . c s  
- S I Z E :   2 0 . 3 2   K B  
- L I N E S :   4 4 1  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using Microsoft.Extensions.DependencyInjection;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ M a i n F o r m . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 0 . 3 2   K B  
+ L I N E S :   4 4 1  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35740,13 +35740,13 @@ public sealed class MainForm : Form
     }
 }
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ P r o g r a m . c s  
- T Y P E :   . c s  
- S I Z E :   2 . 4 8   K B  
- L I N E S :   5 3  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- using Microsoft.Extensions.DependencyInjection;
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . W i n F o r m s \ P r o g r a m . c s  
+ T Y P E :   . c s  
+ S I Z E :   2 . 4 8   K B  
+ L I N E S :   5 3  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TQGA.Application.Accounting;
 using TQGA.Application.Backtesting;
@@ -35816,13 +35816,13 @@ internal static class Program
 ===== ARCHITECTURE DOCUMENTS =====
 
 
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ D o c s \ T Q G A _ A R C H I T E C T U R E _ S T A T E . t x t  
- T Y P E :   . t x t  
- S I Z E :   3 . 9 6   K B  
- L I N E S :   1 1 5  
- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- TQGA â€” TRADING QUANT GLOBAL ARCHITECTURE
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ F I L E :   D : \ D   D A T A   B A C K U P \ A R I F 5 \ T Q G A \ T Q G A . A p p l i c a t i o n \ D o c s \ T Q G A _ A R C H I T E C T U R E _ S T A T E . t x t  
+ T Y P E :   . t x t  
+ S I Z E :   3 . 9 6   K B  
+ L I N E S :   1 1 5  
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ TQGA â€” TRADING QUANT GLOBAL ARCHITECTURE
 ========================================
 
 LAST UPDATED
