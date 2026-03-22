@@ -6,15 +6,108 @@
 </head>
 <body>
 <div>
-   TQGA FULL REPORT
+  TQGA REPORT ALL 31
+============================================================
+Generated (UTC): 2026-03-22 12:59:41
+Formatting: Wrapped / normalized / audit-friendly separation
+
+------------------------------------------------------------
+TQGA FULL REPORT
+------------------------------------------------------------
 ===============
 Folder: D:\D DATA BACKUP\Data\Reports
-Files:  17
-UTC:    2026-03-22 09:03:04
+Files:  28
+UTC:    2026-03-22 12:59:41
 
-FILE: A84_01_MARKET_REGIME_20260322_090203.txt
+FILE: A84_00_EXECUTIVE_SUMMARY_20260322_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_00 — EXECUTIVE SUMMARY (INSTITUTIONAL CONFIRMATION)
+------------------------------------------------------------
+======================================================
+
+Run Timestamp (UTC) : 2026-03-22 12:59:13
+
+RUN SCOPE
+---------
+Strategies Selected : 6
+  S01  AltcoinLeadershipPullbackQuantStrategy
+  S02  DiagnosticQuantStrategy
+  S03  EmaRsiQuantStrategy
+  S04  EmaTrendPullbackQuantStrategy
+  S05  EmaTrendQuantStrategy
+  S06  RsiSwingQuantStrategy
+
+PORTFOLIO PERFORMANCE SNAPSHOT
+------------------------------
+Equity Points   : 1220
+Start Time (UTC): 0001-01-01 00:00:00
+End Time (UTC)  : 2026-03-04 12:00:00
+Start Equity    : 100000.00
+End Equity      : 93732.98
+Total Return    : -6.27%
+
+TOP STRATEGIES (by PnL)
+-----------------------
+S05  EmaTrendQuantStrategy         PnL        21354.82
+S03  EmaRsiQuantStrategy           PnL         -579.90
+S04  EmaTrendPullbackQuantStrateg  PnL       -10532.57
+S06  RsiSwingQuantStrategy         PnL       -16509.37
+
+TOP MARKETS (SYMBOL × TF by PnL)
+-------------------------------
+BTCUSDT::4h             PnL        29359.74
+SOLUSDT::4h             PnL          982.52
+UNIUSDT::4h             PnL          826.11
+RNDRUSDT::4h            PnL          265.01
+NEARUSDT::4h            PnL          244.01
+LINKUSDT::4h            PnL           -0.65
+FILUSDT::4h             PnL         -129.98
+ETHUSDT::4h             PnL       -37813.78
+
+CIO ALLOCATION (TOP 20 weights) — POST GATING
+--------------------------------------------
+CIO::BTCUSDT::4h            W  100.00%
+
+OUTPUT CONFIRMATION (Recent files in Reports folder)
+---------------------------------------------------
+Reports Folder : D:\D DATA BACKUP\Data\Reports
+Recent Window  : last 10 minutes (UTC)
+Recent Files   : 22
+
+2026-03-22 12:59:13  A84_05_STRATEGY_FITNESS_20260322_20260322_125913.txt
+2026-03-22 12:59:13  A84_07_ALPHA_DECAY_PORTFOLIO_20260322_125913.txt
+2026-03-22 12:59:13  A84_08_ALPHA_DECAY_ALERTS_20260322_125913.txt
+2026-03-22 12:59:13  A84_02B_REGIME_STATS_20260322_125913.txt
+2026-03-22 12:59:13  A84_02_REGIME_TRANSITIONS_20260322_125913.txt
+2026-03-22 12:59:13  A84_02_MARKET_RANKING_20260322_125913.txt
+2026-03-22 12:59:13  A84_03_CIO_RATING_20260322_125913.txt
+2026-03-22 12:59:13  A84_04_GROWTH_PROJECTION_20260322_125913.txt
+2026-03-22 12:59:13  A84_01_MARKET_REGIME_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_11_SYMBOL_TF_PNL_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_12_CIO_WEIGHTS_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_13_STRATEGY_SYMBOL_TF_PNL_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_31_RECON_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_07_MINI_EQUITY_20260322_125913.csv
+2026-03-22 12:59:13  REPORT_07_PORTFOLIO_EQUITY_20260322_125913.csv
+2026-03-22 12:59:13  REPORT_10_DRAWDOWN_20260322_125913.csv
+2026-03-22 12:59:13  REPORT_10_MINI_DRAWDOWN_20260322_125913.csv
+2026-03-22 12:59:13  REPORT_05_ALPHA_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_06_CAPITAL_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_08_STRATEGY_PNL_20260322_125913.txt
+2026-03-22 12:59:13  REPORT_09_SYMBOL_20260322_125913.txt
+2026-03-22 12:58:51  STRUCTURE_20260322_125851.txt
+
+
+======================================================================
+
+FILE: A84_01_MARKET_REGIME_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
 A84_01 — MARKET REGIME MAP
+------------------------------------------------------------
 ===========================
 
 BTCUSDT::4h              29359.74   TREND
@@ -29,9 +122,34 @@ ETHUSDT::4h             -37813.78   HOSTILE
 
 ======================================================================
 
-FILE: A84_02_MARKET_RANKING_20260322_090203.txt
+FILE: A84_02B_REGIME_STATS_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_02B — REGIME STATS (PORTFOLIO)
+------------------------------------------------------------
+==================================
+
+Window          : 81 points
+Points analyzed : 1139
+
+RANGE             1081    94.91%
+HIGHVOL_UP          57     5.00%
+TREND_DN             1     0.09%
+
+Current Regime  : RANGE
+Slope (norm)    : -0.000445
+Vol  (norm)     : 0.002468
+
+
+======================================================================
+
+FILE: A84_02_MARKET_RANKING_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
 A84_02 — MARKET EDGE RANKING
+------------------------------------------------------------
 ============================
 
   1 | BTCUSDT::4h          |     29359.74
@@ -46,27 +164,53 @@ A84_02 — MARKET EDGE RANKING
 
 ======================================================================
 
-FILE: A84_03_CIO_RATING_20260322_090203.txt
+FILE: A84_02_REGIME_TRANSITIONS_20260322_125913.txt
 ----------------------------------------------------------------------
-A84_03 — CIO ALLOCATION SKILL
-==============================
 
-SOURCE: Stored canonical post-gating CIO dictionary (same source used by A84_05/A84_06)
+------------------------------------------------------------
+A84_02 — REGIME TRANSITIONS (PORTFOLIO)
+------------------------------------------------------------
+=======================================
 
-Markets Allocated : 1
-Max Weight        : 100.00%
-CIO Rating        : Concentrated
+Window          : 81 points
+Points analyzed : 1139
 
-CANONICAL POST-GATING CIO WEIGHTS
----------------------------------
-CIO::BTCUSDT::4h            100.00%
+2021-05-31 12:00  →  2021-08-29 04:00   HIGHVOL_UP  →  RANGE
+2021-08-29 04:00  →  2025-10-11 20:00   RANGE  →  TREND_DN
+2025-10-11 20:00  →  2025-10-14 16:00   TREND_DN  →  RANGE
 
 
 ======================================================================
 
-FILE: A84_04_GROWTH_PROJECTION_20260322_090203.txt
+FILE: A84_03_CIO_RATING_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_03 — CIO ALLOCATION SKILL
+------------------------------------------------------------
+==============================
+
+SOURCE: Stored canonical post-gating CIO dictionary (same source used by A84_05/A84_06)
+
+NO DATA: CanonicalCioPostGatingWeights is empty after strict canonical validation.
+
+REASON
+------
+All entries were removed by strict cleanup because keys were blank, values were non-positive, or total weight was non-positive.
+
+RAW INPUT SNAPSHOT
+------------------
+RAW DICTIONARY IS EMPTY.
+
+
+======================================================================
+
+FILE: A84_04_GROWTH_PROJECTION_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
 A84_04 — SYSTEM GROWTH PROJECTION
+------------------------------------------------------------
 =================================
 
 Estimated Monthly ROI : 3.00%
@@ -84,9 +228,201 @@ Year 10 →       216466 USD
 
 ======================================================================
 
-FILE: REPORT_05_ALPHA_20260322_090203.txt
+FILE: A84_05_STRATEGY_FITNESS_20260322_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_05 — STRATEGY FITNESS + CIO GATING
+------------------------------------------------------------
+====================================
+
+Run Timestamp (UTC) : 2026-03-22 12:59:13
+
+FITNESS CONFIG
+--------------
+MinTrades          : 30
+MinPnL             : 0
+TopKMarkets        : 20
+MaxWeightPerMarket : 10.00%
+MaxWeightPerSymbol : 25.00%
+
+STRATEGY FITNESS TABLE
+----------------------
+Code | PnL         | Trades | Exits | Fitness   | Allowed | GateReason
+-----+-------------+--------+-------+-----------+---------+---------------------------
+S05  |    21354.82 |    185 |   185 |    2.6325 | YES     | OK
+S03  |     -579.90 |    811 |   810 |    0.0000 | NO      | GATED: pnl<= 0
+S04  |   -10532.57 |    669 |   669 |    0.0000 | NO      | GATED: pnl<= 0
+S06  |   -16509.37 |    720 |   720 |    0.0000 | NO      | GATED: pnl<= 0
+
+Allowed strategies : 1 / 4
+Allowed list       : S05
+
+CIO WEIGHTS (POST-GATING) TOP 20
+-------------------------------
+CIO::BTCUSDT::4h       W 10.00%
+
+
+======================================================================
+
+FILE: A84_06_CHATGPT_UPLOAD_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_06 — CHATGPT UPLOAD (COMPACT)
+------------------------------------------------------------
+================================
+Run Timestamp (UTC) : 2026-03-22 12:59:13
+
+------------------------------------------------------------
+TQGA — ARCHITECTURE STATE (Institutional Mode)
+------------------------------------------------------------
+---------------------------------------------
+• Market grid: Top20 symbols × 3 TF (1h, 4h, 1d) => 60 markets.
+• Backtest: Strategy × Market grid; captures StrategyPnL, SymbolPnL, Symbol×TF PnL, Strategy×Symbol×TF PnL.
+• CIO: ranks markets by PnL score (per Symbol×TF) then allocates with caps (per-market + per-symbol).
+• Fitness gating: kills dead strategies (0 trades / low PnL / fitness<=0) before CIO recompute.
+
+RUN SCOPE
+---------
+Strategies Selected : 6
+  S01  AltcoinLeadershipPullbackQuantStrategy
+  S02  DiagnosticQuantStrategy
+  S03  EmaRsiQuantStrategy
+  S04  EmaTrendPullbackQuantStrategy
+  S05  EmaTrendQuantStrategy
+  S06  RsiSwingQuantStrategy
+
+PORTFOLIO SNAPSHOT
+------------------
+Start Equity : 100000.00
+End Equity   : 93732.98
+Total Return : -6.27%
+Equity Points: 1220
+
+TOP STRATEGIES (PnL)
+--------------------
+S05  PnL 21354.82
+S03  PnL -579.90
+S04  PnL -10532.57
+S06  PnL -16509.37
+
+FITNESS GATING (summary)
+------------------------
+S05 | PnL 21354.82 | Trades 185 | Fit 2.633 | Allowed True | OK
+S03 | PnL -579.90 | Trades 811 | Fit 0.000 | Allowed False | GATED: pnl<= 0
+S04 | PnL -10532.57 | Trades 669 | Fit 0.000 | Allowed False | GATED: pnl<= 0
+S06 | PnL -16509.37 | Trades 720 | Fit 0.000 | Allowed False | GATED: pnl<= 0
+Allowed Strategies: S05
+
+TOP MARKETS (Symbol×TF PnL)
+---------------------------
+BTCUSDT::4h  PnL 29359.74
+SOLUSDT::4h  PnL 982.52
+UNIUSDT::4h  PnL 826.11
+RNDRUSDT::4h  PnL 265.01
+NEARUSDT::4h  PnL 244.01
+LINKUSDT::4h  PnL -0.65
+FILUSDT::4h  PnL -129.98
+ETHUSDT::4h  PnL -37813.78
+
+CIO ALLOCATION (POST-GATING, Top 10)
+-----------------------------------
+CIO::BTCUSDT::4h  W 100.00%
+
+REALISM / SURVIVAL CHECKLIST (minimum)
+--------------------------------------
+• Walk-forward: split history into sequential windows; tune on train, validate on next window only.
+• Friction: add fees + slippage + spread; stress with 2× and 4× friction multipliers.
+• Regime robustness: require stable performance across multiple regime buckets (trend/range/volatile).
+• Risk limits: max exposure per symbol, max drawdown stop, and kill-switch for degraded fitness.
+• No-leakage: indicators must use only past candles; avoid using final equity to pick parameters.
+
+WHAT TO UPLOAD TO CHATGPT
+-------------------------
+1) This file (A84_06_CHATGPT_UPLOAD)
+2) A84_00 Executive Summary
+3) A84_05 Strategy Fitness + CIO Gating
+4) REPORT_11 Symbol×TF PnL and REPORT_12 CIO weights
+
+
+======================================================================
+
+FILE: A84_07_ALPHA_DECAY_PORTFOLIO_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_07 — ALPHA DECAY (PORTFOLIO)
+------------------------------------------------------------
+================================
+
+Total Points          : 1220
+Early Half Return     : 10.63%
+Late Half Return      : -15.28%
+Decay Delta           : -25.91%
+
+Assessment            : Alpha decay detected (late period weaker than early period).
+
+ROLLING WINDOW DECAY SCAN
+-------------------------
+2026-01-22 16:00:00 UTC | Window Return: -4.62% | Peak-to-Trough DD: -4.62%
+2026-01-23 12:00:00 UTC | Window Return: -4.61% | Peak-to-Trough DD: -4.62%
+2026-01-27 20:00:00 UTC | Window Return: -4.61% | Peak-to-Trough DD: -4.62%
+2026-01-28 08:00:00 UTC | Window Return: -4.61% | Peak-to-Trough DD: -4.62%
+2026-02-11 12:00:00 UTC | Window Return: -4.61% | Peak-to-Trough DD: -4.62%
+2026-02-13 20:00:00 UTC | Window Return: -4.61% | Peak-to-Trough DD: -4.61%
+2026-02-14 00:00:00 UTC | Window Return: -4.61% | Peak-to-Trough DD: -4.61%
+2026-02-14 08:00:00 UTC | Window Return: -4.57% | Peak-to-Trough DD: -4.57%
+2026-02-14 12:00:00 UTC | Window Return: -4.57% | Peak-to-Trough DD: -4.57%
+2026-02-20 20:00:00 UTC | Window Return: -4.57% | Peak-to-Trough DD: -4.57%
+2026-02-21 08:00:00 UTC | Window Return: -4.57% | Peak-to-Trough DD: -4.57%
+2026-02-21 12:00:00 UTC | Window Return: -4.50% | Peak-to-Trough DD: -4.50%
+2026-02-25 00:00:00 UTC | Window Return: -4.50% | Peak-to-Trough DD: -4.50%
+2026-02-25 08:00:00 UTC | Window Return: -4.50% | Peak-to-Trough DD: -4.50%
+2026-02-25 12:00:00 UTC | Window Return: -4.50% | Peak-to-Trough DD: -4.50%
+2026-02-28 20:00:00 UTC | Window Return: -4.50% | Peak-to-Trough DD: -4.50%
+2026-03-01 00:00:00 UTC | Window Return: -4.51% | Peak-to-Trough DD: -4.51%
+2026-03-02 12:00:00 UTC | Window Return: -4.51% | Peak-to-Trough DD: -4.51%
+2026-03-04 08:00:00 UTC | Window Return: -4.51% | Peak-to-Trough DD: -4.51%
+2026-03-04 12:00:00 UTC | Window Return: -4.23% | Peak-to-Trough DD: -4.23%
+
+
+======================================================================
+
+FILE: A84_08_ALPHA_DECAY_ALERTS_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
+A84_08 — ALPHA DECAY (ALERTS)
+------------------------------------------------------------
+=============================
+
+Decay Detected        : YES
+Severe Decay          : YES
+Rolling Weakness      : YES
+
+ALERT SUMMARY
+-------------
+- Late-half performance is weaker than early-half performance.
+- Decay magnitude is severe by half-split comparison.
+- Rolling window scan shows repeated recent weakness.
+
+OPERATIONAL GUIDANCE
+--------------------
+- Review strategy ranking and top-N execution policy.
+- Check whether edge concentration is too narrow.
+- Investigate whether recent market regime differs from training period.
+- Tighten gating for weak strategies if decay persists.
+
+
+======================================================================
+
+FILE: REPORT_05_ALPHA_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 05 — ALPHA DIAGNOSTICS (PER STRATEGY)
+------------------------------------------------------------
 ===========================================
 
 ID  | PnL        | Ticks     | Long    | Short   | Exit    | EntryAtt | EntryOK  | ExitOK
@@ -106,9 +442,12 @@ NOTES
 
 ======================================================================
 
-FILE: REPORT_06_CAPITAL_20260322_090203.txt
+FILE: REPORT_06_CAPITAL_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 06 — CAPITAL ALLOCATION
+------------------------------------------------------------
 ================================
 
 SECTION A — STRATEGY TRUST WEIGHTS
@@ -143,9 +482,12 @@ Min Market Weight: 0.00%
 
 ======================================================================
 
-FILE: REPORT_07_MINI_EQUITY_20260322_090203.csv
+FILE: REPORT_07_MINI_EQUITY_20260322_125913.csv
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 07 — MINI EQUITY CURVE
+------------------------------------------------------------
 ===================================
 Time,Equity
 0001-01-01 00:00,100000
@@ -376,9 +718,12 @@ Time,Equity
 
 ======================================================================
 
-FILE: REPORT_07_PORTFOLIO_EQUITY_20260322_090203.csv
+FILE: REPORT_07_PORTFOLIO_EQUITY_20260322_125913.csv
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 07 — PORTFOLIO EQUITY CURVE
+------------------------------------------------------------
 ===================================
 Time,Equity
 0001-01-01 00:00,100000
@@ -1605,9 +1950,12 @@ Time,Equity
 
 ======================================================================
 
-FILE: REPORT_08_STRATEGY_PNL_20260322_090203.txt
+FILE: REPORT_08_STRATEGY_PNL_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 08 — STRATEGY CONTRIBUTION
+------------------------------------------------------------
 ==================================
 
 Strategy 05 → PnL 21354.82
@@ -1618,9 +1966,12 @@ Strategy 06 → PnL -16509.37
 
 ======================================================================
 
-FILE: REPORT_09_SYMBOL_20260322_090203.txt
+FILE: REPORT_09_SYMBOL_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 09 — SYMBOL HEATMAP
+------------------------------------------------------------
 ===========================
 
 BTCUSDT                      29359.74
@@ -1635,9 +1986,12 @@ ETHUSDT                     -37813.78
 
 ======================================================================
 
-FILE: REPORT_10_DRAWDOWN_20260322_090203.csv
+FILE: REPORT_10_DRAWDOWN_20260322_125913.csv
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 10 — PORTFOLIO DRAWDOWN ENGINE
+------------------------------------------------------------
 =====================================
 
 Peak Equity        : 128631.61
@@ -2871,9 +3225,12 @@ Time,Equity,Drawdown%
 
 ======================================================================
 
-FILE: REPORT_10_MINI_DRAWDOWN_20260322_090203.csv
+FILE: REPORT_10_MINI_DRAWDOWN_20260322_125913.csv
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 10 — MINI DRAWDOWN
+------------------------------------------------------------
 ===================================
 Time,Drawdown%
 0001-01-01 00:00,0.00
@@ -3104,9 +3461,12 @@ Time,Drawdown%
 
 ======================================================================
 
-FILE: REPORT_11_SYMBOL_TF_PNL_20260322_090203.txt
+FILE: REPORT_11_SYMBOL_TF_PNL_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 11 — SYMBOL × TIMEFRAME PnL
+------------------------------------------------------------
 =================================
 
 Key format: SYMBOL::TF  (example: ATOMUSDT::1h)
@@ -3136,9 +3496,12 @@ ETHUSDT::4h                   -37813.78
 
 ======================================================================
 
-FILE: REPORT_12_CIO_WEIGHTS_20260322_090203.txt
+FILE: REPORT_12_CIO_WEIGHTS_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 12 — CIO WEIGHTS (CANONICAL)
+------------------------------------------------------------
 ====================================
 
 Key format: CIO::SYMBOL::TF  (example: CIO::ATOMUSDT::1h)
@@ -3154,9 +3517,12 @@ CIO::BTCUSDT::4h               0.100000
 
 ======================================================================
 
-FILE: REPORT_13_STRATEGY_SYMBOL_TF_PNL_20260322_090203.txt
+FILE: REPORT_13_STRATEGY_SYMBOL_TF_PNL_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 13 — STRATEGY × SYMBOL × TIMEFRAME PnL
+------------------------------------------------------------
 =============================================
 
 Key format: S##::SYMBOL::TF  (example: S02::ATOMUSDT::1h)
@@ -3234,9 +3600,12 @@ S06::ETHUSDT::4h                      -15986.70
 
 ======================================================================
 
-FILE: REPORT_31_RECON_20260322_090203.txt
+FILE: REPORT_31_RECON_20260322_125913.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 REPORT 31 — RECONCILIATION
+------------------------------------------------------------
 ===========================
 
 Start Equity     : 100000.00
@@ -3254,9 +3623,12 @@ STATUS: PASS
 
 ======================================================================
 
-FILE: STRUCTURE_20260322_090122.txt
+FILE: STRUCTURE_20260322_125851.txt
 ----------------------------------------------------------------------
+
+------------------------------------------------------------
 TQGA ARCHITECTURE REPORT
+------------------------------------------------------------
 ========================
 
 REGISTERED STRATEGIES
@@ -3270,6 +3642,97 @@ REGISTERED STRATEGIES
 
 
 ======================================================================
+
+FILE: WF_01_SPLITS_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
+WF_01 — TRUE WALK-FORWARD SPLITS
+------------------------------------------------------------
+================================
+
+Run Timestamp (UTC) : 2026-03-22 12:59:13
+Strategies Selected : 6
+
+METHOD
+------
+Rule-based walk-forward rerun.
+Each fold uses chronological train warmup followed by unseen test window evaluation.
+
+FOLDS
+-----
+Fold 01 | TRAIN 2021-09-26 20:00:00 -> 2023-02-26 04:00:00 | TEST 2023-02-26 08:00:00 -> 2024-03-01 16:00:00 | TestPoints 2217
+Fold 02 | TRAIN 2022-01-15 16:00:00 -> 2024-03-01 16:00:00 | TEST 2024-03-01 20:00:00 -> 2025-03-06 04:00:00 | TestPoints 2217
+Fold 03 | TRAIN 2022-05-06 12:00:00 -> 2025-03-06 04:00:00 | TEST 2025-03-06 08:00:00 -> 2026-03-06 16:00:00 | TestPoints 2217
+
+
+======================================================================
+
+FILE: WF_02_FOLD_SUMMARY_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
+WF_02 — TRUE FOLD SUMMARY
+------------------------------------------------------------
+=========================
+
+Run Timestamp (UTC) : 2026-03-22 12:59:13
+
+Fold | Start Equity | End Equity | Return % | Test Points
+-----+--------------+------------+----------+------------
+   1 |    100000.00 | 3103506.62 |  3003.51 |       2217
+   2 |    100000.00 |  241938.72 |   141.94 |       2217
+   3 |    100000.00 | 26777365.19 | 26677.37 |       2217
+
+SUMMARY
+-------
+Positive folds : 3
+Negative folds : 0
+Fold stability : 100.00%
+
+
+======================================================================
+
+FILE: WF_05_WALKFORWARD_EQUITY_20260322_125913.csv
+----------------------------------------------------------------------
+Fold,TrainStartUtc,TrainEndUtc,TestStartUtc,TestEndUtc,StartEquity,EndEquity,ReturnPct,TestPoints
+1,2021-09-26 20:00:00,2023-02-26 04:00:00,2023-02-26 08:00:00,2024-03-01 16:00:00,100000.00,3103506.62,3003.5066,2217
+2,2022-01-15 16:00:00,2024-03-01 16:00:00,2024-03-01 20:00:00,2025-03-06 04:00:00,100000.00,241938.72,141.9387,2217
+3,2022-05-06 12:00:00,2025-03-06 04:00:00,2025-03-06 08:00:00,2026-03-06 16:00:00,100000.00,26777365.19,26677.3652,2217
+
+
+======================================================================
+
+FILE: WF_06_CHATGPT_UPLOAD_20260322_125913.txt
+----------------------------------------------------------------------
+
+------------------------------------------------------------
+WF_06 — CHATGPT UPLOAD
+------------------------------------------------------------
+======================
+
+Run Timestamp (UTC) : 2026-03-22 12:59:13
+Strategies Selected : 6
+Equity Points       : 1220
+
+NOTE
+----
+True rule-based walk-forward rerun with chronological train warmup and unseen test windows.
+
+FOLD RETURNS
+------------
+Fold 01 | TestReturn 3003.51% | TestPoints 2217
+Fold 02 | TestReturn 141.94% | TestPoints 2217
+Fold 03 | TestReturn 26677.37% | TestPoints 2217
+
+EXTREMES
+--------
+Best Fold  : F03 26677.37%
+Worst Fold : F02 141.94%
+
+
+======================================================================
+
 
 
 
