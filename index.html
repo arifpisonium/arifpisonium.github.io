@@ -5320,9 +5320,9 @@ public sealed class A84StrategyFitnessReportService
  
  T Y P E :   . c s 
  
- S I Z E :   5 . 1 9   K B 
+ S I Z E :   1 2 . 3 9   K B 
  
- L I N E S :   1 3 3 
+ L I N E S :   2 7 2 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
@@ -5331,6 +5331,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
@@ -5338,16 +5339,16 @@ namespace TQGA.Application.Services;
 public sealed class A84_RegimeResearchService
 {
     public void Generate(
-        Dictionary<string, decimal> symbolTfPnL,
+        PortfolioBacktestResult result,
         Dictionary<string, decimal> canonicalCioPostGatingWeights)
     {
-        ArgumentNullException.ThrowIfNull(symbolTfPnL);
+        ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(canonicalCioPostGatingWeights);
 
-        GenerateMarketRegime(symbolTfPnL);
-        GenerateMarketRanking(symbolTfPnL);
+        GenerateMarketRegime(result.SymbolTimeframePnL);
+        GenerateMarketRanking(result.SymbolTimeframePnL);
         GenerateCioSkill(canonicalCioPostGatingWeights);
-        GenerateGrowthProjection(symbolTfPnL);
+        GenerateGrowthScenarioMode(result, canonicalCioPostGatingWeights);
     }
 
     private void GenerateMarketRegime(Dictionary<string, decimal> pnl)
@@ -5440,39 +5441,184 @@ public sealed class A84_RegimeResearchService
         Write("A84_03_CIO_RATING", sb);
     }
 
-    private void GenerateGrowthProjection(Dictionary<string, decimal> pnl)
+    private void GenerateGrowthScenarioMode(
+        PortfolioBacktestResult result,
+        Dictionary<string, decimal> canonicalCioPostGatingWeights)
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("A84_04 — SYSTEM GROWTH PROJECTION");
-        sb.AppendLine("=================================");
+        sb.AppendLine("A84_04 — SYSTEM GROWTH SCENARIO MODE");
+        sb.AppendLine("====================================");
+        sb.AppendLine();
+        sb.AppendLine("PUBLISH PATH SIGNATURE");
+        sb.AppendLine("----------------------");
+        sb.AppendLine("PATCH_15_A84_04_SCENARIO_MODE");
+        sb.AppendLine("RULE = fixed monthly ROI projection removed");
+        sb.AppendLine("RULE = scenario output must warn on negative return, single-market concentration, and alpha decay");
         sb.AppendLine();
 
-        if (pnl == null || pnl.Count == 0)
+        var equity = result.PortfolioEquityTimeline ?? new Dictionary<DateTime, decimal>();
+        var ordered = equity.OrderBy(x => x.Key).ToList();
+        var realPoints = ordered.Where(x => x.Key != DateTime.MinValue).ToList();
+
+        decimal startEquity = 0m;
+        decimal endEquity = 0m;
+        decimal totalReturnPct = 0m;
+
+        if (realPoints.Count > 0)
         {
-            sb.AppendLine("NO DATA: SymbolTimeframePnL is empty.");
-            Write("A84_04_GROWTH_PROJECTION", sb);
-            return;
+            startEquity = realPoints.First().Value;
+            endEquity = realPoints.Last().Value;
+            totalReturnPct = startEquity <= 0m
+                ? 0m
+                : ((endEquity / startEquity) - 1m) * 100m;
         }
 
-        var totalEdge = pnl.Values.Sum();
+        var allocationCount = canonicalCioPostGatingWeights.Count;
+        var topWeight = allocationCount == 0 ? 0m : canonicalCioPostGatingWeights.Values.Max();
 
-        decimal monthlyRoi =
-            totalEdge > 200000m ? 0.07m :
-            totalEdge > 100000m ? 0.05m :
-            0.03m;
+        decimal earlyHalfReturn = 0m;
+        decimal lateHalfReturn = 0m;
+        bool alphaDecayDetected = false;
 
-        sb.AppendLine($"Estimated Monthly ROI : {monthlyRoi:P2}");
-
-        decimal capital = 10000m;
-
-        for (int y = 1; y <= 10; y++)
+        if (realPoints.Count >= 4)
         {
-            capital *= (1m + monthlyRoi * 12m);
-            sb.AppendLine($"Year {y,2} → {capital,12:F0} USD");
+            var half = realPoints.Count / 2;
+            var early = realPoints.Take(half).ToList();
+            var late = realPoints.Skip(half).ToList();
+
+            earlyHalfReturn = SegmentReturnPct(early);
+            lateHalfReturn = SegmentReturnPct(late);
+            alphaDecayDetected = lateHalfReturn < earlyHalfReturn;
+        }
+
+        bool negativeReturn = totalReturnPct < 0m;
+        bool singleMarketConcentration = allocationCount <= 1;
+        bool extremeConcentration = topWeight >= 0.80m;
+
+        sb.AppendLine("CURRENT RUN REALITY");
+        sb.AppendLine("-------------------");
+        sb.AppendLine($"Start Equity              : {startEquity:0.00}");
+        sb.AppendLine($"End Equity                : {endEquity:0.00}");
+        sb.AppendLine($"Total Return              : {totalReturnPct:0.00}%");
+        sb.AppendLine($"Post-Gating Markets       : {allocationCount}");
+        sb.AppendLine($"Top CIO Weight            : {topWeight:P2}");
+        sb.AppendLine($"Early Half Return         : {earlyHalfReturn:0.00}%");
+        sb.AppendLine($"Late Half Return          : {lateHalfReturn:0.00}%");
+        sb.AppendLine($"Alpha Decay Detected      : {(alphaDecayDetected ? "YES" : "NO")}");
+        sb.AppendLine();
+
+        sb.AppendLine("REALISM WARNINGS");
+        sb.AppendLine("----------------");
+        if (!negativeReturn && !singleMarketConcentration && !extremeConcentration && !alphaDecayDetected)
+        {
+            sb.AppendLine("NO MAJOR WARNING: Current run does not trip the Patch 15 realism flags.");
+        }
+        else
+        {
+            if (negativeReturn)
+                sb.AppendLine("WARNING: Current run total return is negative. Fixed optimistic growth projection is forbidden.");
+
+            if (singleMarketConcentration)
+                sb.AppendLine("WARNING: Post-gating allocation breadth is one market. Portfolio is a single-edge survivor.");
+
+            if (!singleMarketConcentration && extremeConcentration)
+                sb.AppendLine("WARNING: Top CIO weight is extreme. Diversification is materially weak.");
+
+            if (alphaDecayDetected)
+                sb.AppendLine("WARNING: Alpha decay detected. Late-half performance is weaker than early-half performance.");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("SCENARIO MODE");
+        sb.AppendLine("-------------");
+        sb.AppendLine("This section is scenario planning only. It is NOT a fixed forward projection.");
+        sb.AppendLine();
+
+        decimal currentCapital = endEquity > 0m ? endEquity : 100000m;
+
+        var scenarios = BuildScenarios(
+            negativeReturn,
+            singleMarketConcentration || extremeConcentration,
+            alphaDecayDetected);
+
+        sb.AppendLine("Scenario        Monthly Assumption   12-Month Capital   Interpretation");
+        sb.AppendLine("--------------  -------------------  -----------------  ------------------------------");
+
+        foreach (var s in scenarios)
+        {
+            decimal projected = Project12Months(currentCapital, s.MonthlyRate);
+            sb.AppendLine(
+                $"{PadRightSafe(s.Name, 14)}  {s.MonthlyRate,18:P2}  {projected,17:0.00}  {s.Interpretation}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        if (negativeReturn || alphaDecayDetected || singleMarketConcentration || extremeConcentration)
+        {
+            sb.AppendLine("1) Treat this run as unstable for institutional projection purposes.");
+            sb.AppendLine("2) Prioritize Wave B signal ranking and top-N execution before trusting growth narratives.");
+            sb.AppendLine("3) Require better breadth across strategies and SYMBOL::TF edges before restoring optimistic scenario assumptions.");
+            sb.AppendLine("4) Use A84_05, A84_07, and A84_08 as the primary reality checks before any growth claim.");
+        }
+        else
+        {
+            sb.AppendLine("Current run does not trigger the Patch 15 realism alarms, but scenarios remain illustrative only.");
         }
 
         Write("A84_04_GROWTH_PROJECTION", sb);
+    }
+
+    private static List<GrowthScenario> BuildScenarios(
+        bool negativeReturn,
+        bool concentrated,
+        bool alphaDecayDetected)
+    {
+        // PATCH 15 deterministic scenario rules:
+        // - Stress scenario stays defensive when live run is weak.
+        // - Base scenario is suppressed to flat when realism flags are active.
+        // - Recovery scenario remains modest under stress; no aggressive fixed-growth path.
+        if (negativeReturn || concentrated || alphaDecayDetected)
+        {
+            return new List<GrowthScenario>
+            {
+                new("Stress",  -0.02m, "Weak run persists / further degradation"),
+                new("Base",     0.00m, "Capital preservation, no growth assumption"),
+                new("Recovery", 0.01m, "Partial stabilization after execution improvements")
+            };
+        }
+
+        return new List<GrowthScenario>
+        {
+            new("Stress",   -0.01m, "Temporary setback / mild degradation"),
+            new("Base",      0.01m, "Measured continuation under controlled conditions"),
+            new("Upside",    0.02m, "Improved breadth and stable non-decaying edge")
+        };
+    }
+
+    private static decimal Project12Months(decimal capital, decimal monthlyRate)
+    {
+        decimal output = capital;
+
+        for (int i = 0; i < 12; i++)
+            output *= (1m + monthlyRate);
+
+        return output;
+    }
+
+    private static decimal SegmentReturnPct(List<KeyValuePair<DateTime, decimal>> segment)
+    {
+        if (segment.Count < 2)
+            return 0m;
+
+        decimal start = segment.First().Value;
+        decimal end = segment.Last().Value;
+
+        if (start <= 0m)
+            return 0m;
+
+        return ((end / start) - 1m) * 100m;
     }
 
     private static string DetectRegime(decimal pnl)
@@ -5495,6 +5641,27 @@ public sealed class A84_RegimeResearchService
                 $"{name}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt"),
             sb.ToString());
     }
+
+    private static string PadRightSafe(string value, int totalWidth)
+    {
+        value ??= string.Empty;
+
+        if (value.Length == totalWidth)
+            return value;
+
+        if (value.Length < totalWidth)
+            return value.PadRight(totalWidth);
+
+        if (totalWidth <= 3)
+            return value[..totalWidth];
+
+        return value[..(totalWidth - 3)] + "...";
+    }
+
+    private sealed record GrowthScenario(
+        string Name,
+        decimal MonthlyRate,
+        string Interpretation);
 }
 
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
@@ -8840,9 +9007,9 @@ public sealed class SymbolTimeframePnlReportService
  
  T Y P E :   . c s 
  
- S I Z E :   3 . 1 9   K B 
+ S I Z E :   3 . 0 2   K B 
  
- L I N E S :   7 4 
+ L I N E S :   7 3 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
@@ -8863,7 +9030,7 @@ public sealed class UniversalResearchReportService
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(selectedStrategies);
 
-        // PATCH 12:
+        // PATCH 12 / PATCH 15:
         // One single stored canonical dictionary instance is the source of truth.
         // No fallback recompute path is allowed here.
         var canonicalCio = GetStoredCanonicalCioOrThrow(result);
@@ -8876,15 +9043,14 @@ public sealed class UniversalResearchReportService
 
         var (fitnessRows, allowed) = fitnessSvc.ComputeFitness(result, cfg);
 
-        // A84_03 / A84_04 family reads the same stored canonical dictionary instance.
+        // PATCH 15:
+        // A84_04 scenario mode now needs full portfolio context:
+        // equity timeline, canonical CIO concentration, and current run outcome.
         new A84_RegimeResearchService().Generate(
-            result.SymbolTimeframePnL,
+            result,
             canonicalCio);
 
         // A84_05
-        // This service does not receive canonical CIO via signature in the audited snapshot,
-        // so the stored result.CanonicalCioPostGatingWeights is assigned to the same exact instance
-        // before GenerateAndWrite is called.
         result.CanonicalCioPostGatingWeights = canonicalCio;
         fitnessSvc.GenerateAndWrite(result, runUtc, cfg);
 
@@ -12839,9 +13005,6 @@ TQGA is now an institutional research-grade prototype with:
 and is moving toward more complete production-grade quant architecture.
 
 ===== AUDIT COMPLETE =====
-
-
-
 
 
 </div>
