@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -8,7 +8,7 @@
 <div>
 <pre>
 
-===== PROJECT TREEE =====
+===== PROJECT TREE =====
 Folder PATH listing for volume D
 Volume serial number is B0A6-5B28
 D:.
@@ -702,9 +702,9 @@ public sealed class PortfolioBacktestResult
  
  T Y P E :   . c s 
  
- S I Z E :   4 8 . 3 2   K B 
+ S I Z E :   5 3 . 6 1   K B 
  
- L I N E S :   1 1 0 6 
+ L I N E S :   1 1 7 3 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
@@ -728,12 +728,18 @@ public sealed class PortfolioBacktestRunner
 
     private const decimal PortfolioCapital = 100_000m;
 
-    // WAVE B Ã¢â‚¬â€ institutional scarcity controls
+    // WAVE B â€” institutional scarcity controls
     private const int WaveBTopNMarkets = 8;
     private const int WaveBMinMarkets = 4;
     private const int WaveBPerSymbolCap = 1;
     private const decimal WaveBMinScoreThreshold = 0.62m;
     private const decimal WaveBMaxWeightPerMarket = 0.18m;
+
+    // PATCH 22 â€” dispersion / gap guard
+    // Goal: when the Wave B score curve is too flat, do NOT pretend that broad candidate count = real breadth.
+    private const decimal WaveBMinRelativeToLeaderFinalScore = 0.90m;
+    private const decimal WaveBMinRelativeToLeaderPreTradeScore = 0.85m;
+    private const int WaveBDispersionGuardMinMarkets = 1;
 
     public PortfolioBacktestRunner(
         IServiceProvider root,
@@ -1259,7 +1265,10 @@ public sealed class PortfolioBacktestRunner
                 TimeframePreferenceScore = timeframePreferenceScore,
                 LiquidityScore = liquidityScore,
                 LeadershipScore = leadershipScore,
-                FinalScore = finalScore
+                FinalScore = finalScore,
+                RelativeToLeaderFinalScore = 0m,
+                RelativeToLeaderPreTradeScore = 0m,
+                PassesDispersionGuard = false
             });
         }
 
@@ -1270,12 +1279,56 @@ public sealed class PortfolioBacktestRunner
             .ThenBy(x => x.Market.Timeframe, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        decimal leaderFinalScore = ranked.Count == 0
+            ? 0m
+            : ranked[0].FinalScore;
+
+        decimal leaderPreTradeScore = ranked.Count == 0
+            ? 0m
+            : ranked[0].NormalizedPreTradeScore;
+
+        if (leaderFinalScore <= 0m)
+            leaderFinalScore = 1m;
+
+        if (leaderPreTradeScore <= 0m)
+            leaderPreTradeScore = 1m;
+
+        for (int i = 0; i < ranked.Count; i++)
+        {
+            var candidate = ranked[i];
+
+            if (i == 0)
+            {
+                candidate.RelativeToLeaderFinalScore = 1.00m;
+                candidate.RelativeToLeaderPreTradeScore = 1.00m;
+                candidate.PassesDispersionGuard = true;
+                continue;
+            }
+
+            candidate.RelativeToLeaderFinalScore = candidate.FinalScore / leaderFinalScore;
+            candidate.RelativeToLeaderPreTradeScore = candidate.NormalizedPreTradeScore / leaderPreTradeScore;
+
+            candidate.PassesDispersionGuard =
+                candidate.RelativeToLeaderFinalScore >= WaveBMinRelativeToLeaderFinalScore &&
+                candidate.RelativeToLeaderPreTradeScore >= WaveBMinRelativeToLeaderPreTradeScore;
+        }
+
         var selectedCandidates = new List<WaveBCandidate>();
         var selectedPerSymbol = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        bool dispersionGuardTriggered = false;
 
         foreach (var candidate in ranked)
         {
             string marketKey = $"{candidate.Market.Symbol}::{candidate.Market.Timeframe}";
+
+            if (!candidate.PassesDispersionGuard)
+            {
+                combinedRejections[marketKey] =
+                    $"WaveBRejected:DispersionGuard(relFinal={candidate.RelativeToLeaderFinalScore:F4},minFinal={WaveBMinRelativeToLeaderFinalScore:F2},relPre={candidate.RelativeToLeaderPreTradeScore:F4},minPre={WaveBMinRelativeToLeaderPreTradeScore:F2})";
+                dispersionGuardTriggered = true;
+                continue;
+            }
 
             if (candidate.FinalScore < WaveBMinScoreThreshold)
             {
@@ -1306,16 +1359,29 @@ public sealed class PortfolioBacktestRunner
             selectedPerSymbol[candidate.Market.Symbol] = currentSymbolCount + 1;
         }
 
-        if (selectedCandidates.Count < WaveBMinMarkets)
+        int effectiveMinMarkets = dispersionGuardTriggered
+            ? WaveBDispersionGuardMinMarkets
+            : WaveBMinMarkets;
+
+        // PATCH 22:
+        // Only force-fill to minimum breadth when dispersion guard is NOT active.
+        // If the curve is flat / weak, do not pretend breadth by backfilling second-tier names.
+        if (!dispersionGuardTriggered && selectedCandidates.Count < effectiveMinMarkets)
         {
             foreach (var candidate in ranked)
             {
-                if (selectedCandidates.Count >= WaveBMinMarkets)
+                if (selectedCandidates.Count >= effectiveMinMarkets)
                     break;
 
                 if (selectedCandidates.Any(x =>
                         x.Market.Symbol.Equals(candidate.Market.Symbol, StringComparison.OrdinalIgnoreCase) &&
                         x.Market.Timeframe.Equals(candidate.Market.Timeframe, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                if (!candidate.PassesDispersionGuard)
+                    continue;
+
+                if (candidate.FinalScore < WaveBMinScoreThreshold)
                     continue;
 
                 int currentSymbolCount = selectedPerSymbol.TryGetValue(candidate.Market.Symbol, out int existingCount)
@@ -1326,6 +1392,7 @@ public sealed class PortfolioBacktestRunner
                     continue;
 
                 string marketKey = $"{candidate.Market.Symbol}::{candidate.Market.Timeframe}";
+
                 selectedCandidates.Add(candidate);
                 selectedPerSymbol[candidate.Market.Symbol] = currentSymbolCount + 1;
 
@@ -1346,7 +1413,11 @@ public sealed class PortfolioBacktestRunner
             SelectedMarkets = selectedCandidates.Select(x => x.Market).ToList(),
             AllocationWeights = allocationWeights,
             CashWeight = cashWeight,
-            SelectedPerSymbolCounts = new Dictionary<string, int>(selectedPerSymbol, StringComparer.OrdinalIgnoreCase)
+            SelectedPerSymbolCounts = new Dictionary<string, int>(selectedPerSymbol, StringComparer.OrdinalIgnoreCase),
+            DispersionGuardTriggered = dispersionGuardTriggered,
+            EffectiveMinMarkets = effectiveMinMarkets,
+            LeaderFinalScore = ranked.Count == 0 ? 0m : ranked[0].FinalScore,
+            LeaderBasePreTradeScore = ranked.Count == 0 ? 0m : ranked[0].BasePreTradeScore
         };
     }
 
@@ -1375,6 +1446,16 @@ public sealed class PortfolioBacktestRunner
         sb.AppendLine($"WaveBPerSymbolCap      : {WaveBPerSymbolCap}");
         sb.AppendLine($"WaveBMinScoreThreshold : {WaveBMinScoreThreshold:F2}");
         sb.AppendLine($"WaveBMaxWeightPerMarket: {WaveBMaxWeightPerMarket:P2}");
+        sb.AppendLine($"WaveBMinRelLeaderFinal : {WaveBMinRelativeToLeaderFinalScore:F2}");
+        sb.AppendLine($"WaveBMinRelLeaderPre   : {WaveBMinRelativeToLeaderPreTradeScore:F2}");
+        sb.AppendLine($"WaveBGuardMinMarkets   : {WaveBDispersionGuardMinMarkets}");
+        sb.AppendLine();
+        sb.AppendLine("DISPERSION GUARD STATE");
+        sb.AppendLine("----------------------");
+        sb.AppendLine($"Dispersion Guard Triggered : {(waveBSelection.DispersionGuardTriggered ? "YES" : "NO")}");
+        sb.AppendLine($"Effective Min Markets      : {waveBSelection.EffectiveMinMarkets}");
+        sb.AppendLine($"Leader Base PreTrade Score : {waveBSelection.LeaderBasePreTradeScore:F6}");
+        sb.AppendLine($"Leader Final Score         : {waveBSelection.LeaderFinalScore:F4}");
         sb.AppendLine();
 
         sb.AppendLine("PRE-TRADE RANKED MARKETS");
@@ -1415,7 +1496,16 @@ public sealed class PortfolioBacktestRunner
                         : "NOT_SELECTED";
 
                 sb.AppendLine(
-                    $"{rank,2}. {marketKey,-16} base={c.BasePreTradeScore,10:F6} norm={c.NormalizedPreTradeScore,8:F4} tf={c.TimeframePreferenceScore,6:F2} liq={c.LiquidityScore,6:F2} lead={c.LeadershipScore,6:F2} final={c.FinalScore,8:F4}  => {selectionState}");
+                    $"{rank,2}. {marketKey,-16} " +
+                    $"base={c.BasePreTradeScore,10:F6} " +
+                    $"norm={c.NormalizedPreTradeScore,8:F4} " +
+                    $"tf={c.TimeframePreferenceScore,6:F2} " +
+                    $"liq={c.LiquidityScore,6:F2} " +
+                    $"lead={c.LeadershipScore,6:F2} " +
+                    $"final={c.FinalScore,8:F4} " +
+                    $"relFinal={c.RelativeToLeaderFinalScore,8:F4} " +
+                    $"relPre={c.RelativeToLeaderPreTradeScore,8:F4} " +
+                    $"disp={(c.PassesDispersionGuard ? "PASS" : "BLOCK"),6}  => {selectionState}");
                 rank++;
             }
         }
@@ -1797,25 +1887,6 @@ public sealed class PortfolioBacktestRunner
                     foldPnl += (ledger.TotalPnL * marketWeight) - frictionCost;
                 }
             }
-
-            decimal foldStart = PortfolioCapital;
-            decimal foldEnd = PortfolioCapital + foldPnl;
-            decimal foldReturnPct = foldStart <= 0m
-                ? 0m
-                : ((foldEnd - foldStart) / foldStart) * 100m;
-
-            folds.Add(new WalkForwardFoldSnapshot
-            {
-                FoldNo = fold,
-                TrainStartUtc = trainStartUtc,
-                TrainEndUtc = trainEndUtc,
-                TestStartUtc = testStartUtc,
-                TestEndUtc = testEndUtc,
-                StartEquity = foldStart,
-                EndEquity = foldEnd,
-                ReturnPct = foldReturnPct,
-                TestPoints = System.Math.Max(0, testSize)
-            });
         }
 
         return folds;
@@ -1869,8 +1940,8 @@ public sealed class PortfolioBacktestRunner
                 $"Portfolio Delta : {portfolioDelta:F2}\n" +
                 $"Strategy Sum    : {strategySum:F2}\n" +
                 $"Symbol Sum      : {symbolSum:F2}\n" +
-                $"ÃŽâ€ vs Strategy   : {(portfolioDelta - strategySum):F2}\n" +
-                $"ÃŽâ€ vs Symbol     : {(portfolioDelta - symbolSum):F2}");
+                $"Î” vs Strategy   : {(portfolioDelta - strategySum):F2}\n" +
+                $"Î” vs Symbol     : {(portfolioDelta - symbolSum):F2}");
         }
 
         return new PortfolioBacktestResult
@@ -2068,6 +2139,11 @@ public sealed class PortfolioBacktestRunner
         public decimal LiquidityScore { get; init; }
         public decimal LeadershipScore { get; init; }
         public decimal FinalScore { get; init; }
+
+        // PATCH 22
+        public decimal RelativeToLeaderFinalScore { get; set; }
+        public decimal RelativeToLeaderPreTradeScore { get; set; }
+        public bool PassesDispersionGuard { get; set; }
     }
 
     private sealed class WaveBSelectionSnapshot
@@ -2077,6 +2153,12 @@ public sealed class PortfolioBacktestRunner
         public Dictionary<MarketKey, decimal> AllocationWeights { get; init; } = new();
         public Dictionary<string, int> SelectedPerSymbolCounts { get; init; } = new(StringComparer.OrdinalIgnoreCase);
         public decimal CashWeight { get; init; }
+
+        // PATCH 22
+        public bool DispersionGuardTriggered { get; init; }
+        public int EffectiveMinMarkets { get; init; }
+        public decimal LeaderFinalScore { get; init; }
+        public decimal LeaderBasePreTradeScore { get; init; }
     }
 }
 
