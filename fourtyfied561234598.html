@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Test Page</title>
-</head>
-<body>
-<div>
-<pre>
-
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -641,14 +631,15 @@ public sealed class StrategyFitnessSnapshot
  
  T Y P E :   . c s 
  
- S I Z E :   1 . 7 5   K B 
+ S I Z E :   2 . 7 3   K B 
  
- L I N E S :   2 5 
+ L I N E S :   4 3 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
  using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TQGA.Application.Backtesting;
 
@@ -677,6 +668,28 @@ public sealed class PortfolioBacktestResult
 
     // PATCH 3: canonical post-gating CIO state used by all downstream reports
     public Dictionary<string, decimal> CanonicalCioPostGatingWeights { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    // PATCH 21:
+    // MarketAllocationWeights is retained for compatibility, but its meaning is now explicit:
+    // it is the runner candidate sleeve mix BEFORE final post-gating deployment semantics.
+    public IReadOnlyDictionary<string, decimal> RunnerCandidateAllocationWeightsView =>
+        MarketAllocationWeights;
+
+    public decimal RunnerCandidateAllocationMixSum =>
+        MarketAllocationWeights?.Values.Sum() ?? 0m;
+
+    // PATCH 21:
+    // Canonical post-gating CIO dictionary is the gross deployable allocation snapshot.
+    public IReadOnlyDictionary<string, decimal> CanonicalDeployableAllocationWeightsView =>
+        CanonicalCioPostGatingWeights;
+
+    public decimal CanonicalDeployableAllocationSum =>
+        CanonicalCioPostGatingWeights?.Values.Sum() ?? 0m;
+
+    // PATCH 21:
+    // Gross preserved cash paired with canonical deployable allocation.
+    public decimal CanonicalPreservedCashWeight =>
+        CashAllocationWeight;
 
     public bool HasMarketAllocationWeights =>
         MarketAllocationWeights != null &&
@@ -6067,9 +6080,9 @@ public sealed class AlphaRankingReportService
  
  T Y P E :   . c s 
  
- S I Z E :   8 . 5 5   K B 
+ S I Z E :   1 2 . 0 9   K B 
  
- L I N E S :   2 0 4 
+ L I N E S :   2 7 0 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
@@ -6127,60 +6140,15 @@ public sealed class CioCapitalReportService
 
         sb.AppendLine();
 
-        if (runnerMarketAllocationWeights is not null && runnerMarketAllocationWeights.Count > 0)
-        {
-            sb.AppendLine("SECTION B — RUNNER MARKET CAPITAL ALLOCATION");
-            sb.AppendLine("--------------------------------------------");
+        AppendRunnerCandidateMixSection(
+            sb,
+            runnerMarketAllocationWeights,
+            cashWeight);
 
-            foreach (var kv in runnerMarketAllocationWeights.OrderByDescending(x => x.Value))
-                sb.AppendLine($"{kv.Key} -> {(kv.Value * 100m):F2}%");
-
-            sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
-            sb.AppendLine();
-
-            AppendAllocationMetrics(
-                sb,
-                sectionTitle: "SECTION C — RUNNER ALLOCATION QUALITY METRICS",
-                underline: "----------------------------------------------",
-                allocationWeights: runnerMarketAllocationWeights,
-                cashWeight: cashWeight);
-        }
-        else
-        {
-            sb.AppendLine("SECTION B — RUNNER MARKET CAPITAL ALLOCATION");
-            sb.AppendLine("--------------------------------------------");
-            sb.AppendLine("NO DATA: Runner market allocation weights are empty.");
-            sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
-            sb.AppendLine();
-        }
-
-        if (canonicalCioPostGatingWeights is not null)
-        {
-            sb.AppendLine("SECTION D — POST-GATING CANONICAL CIO ALLOCATION");
-            sb.AppendLine("------------------------------------------------");
-
-            if (canonicalCioPostGatingWeights.Count == 0)
-            {
-                sb.AppendLine("NO DATA: Canonical post-gating CIO weights are empty.");
-                sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
-                sb.AppendLine();
-            }
-            else
-            {
-                foreach (var kv in canonicalCioPostGatingWeights.OrderByDescending(x => x.Value))
-                    sb.AppendLine($"{kv.Key} -> {(kv.Value * 100m):F2}%");
-
-                sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
-                sb.AppendLine();
-
-                AppendAllocationMetrics(
-                    sb,
-                    sectionTitle: "SECTION E — POST-GATING CONCENTRATION RISK",
-                    underline: "------------------------------------------",
-                    allocationWeights: canonicalCioPostGatingWeights,
-                    cashWeight: cashWeight);
-            }
-        }
+        AppendCanonicalDeployableSection(
+            sb,
+            canonicalCioPostGatingWeights,
+            cashWeight);
 
         File.WriteAllText(
             Path.Combine(
@@ -6189,28 +6157,145 @@ public sealed class CioCapitalReportService
             sb.ToString());
     }
 
-    private static void AppendAllocationMetrics(
+    private static void AppendRunnerCandidateMixSection(
+        StringBuilder sb,
+        IReadOnlyDictionary<string, decimal>? runnerMarketAllocationWeights,
+        decimal cashWeight)
+    {
+        sb.AppendLine("SECTION B — RUNNER CANDIDATE MIX (PRE-DEPLOYMENT)");
+        sb.AppendLine("-------------------------------------------------");
+        sb.AppendLine("SEMANTICS: These weights describe relative mix inside the candidate sleeve.");
+        sb.AppendLine("SEMANTICS: They are NOT gross deployed portfolio weights.");
+        sb.AppendLine("SEMANTICS: Preserved cash is shown only as a reference to downstream deployment posture.");
+        sb.AppendLine();
+
+        if (runnerMarketAllocationWeights is null || runnerMarketAllocationWeights.Count == 0)
+        {
+            sb.AppendLine("NO DATA: Runner candidate mix is empty.");
+            sb.AppendLine($"Reference Preserved Cash (gross) -> {(cashWeight * 100m):F2}%");
+            sb.AppendLine();
+            return;
+        }
+
+        foreach (var kv in runnerMarketAllocationWeights.OrderByDescending(x => x.Value))
+            sb.AppendLine($"{kv.Key} -> {(kv.Value * 100m):F2}%");
+
+        sb.AppendLine($"Reference Preserved Cash (gross) -> {(cashWeight * 100m):F2}%");
+        sb.AppendLine();
+
+        AppendCandidateMixMetrics(
+            sb,
+            sectionTitle: "SECTION C — RUNNER CANDIDATE MIX METRICS",
+            underline: "-----------------------------------------",
+            candidateMixWeights: runnerMarketAllocationWeights,
+            referenceCashWeight: cashWeight);
+    }
+
+    private static void AppendCanonicalDeployableSection(
+        StringBuilder sb,
+        IReadOnlyDictionary<string, decimal>? canonicalCioPostGatingWeights,
+        decimal cashWeight)
+    {
+        sb.AppendLine("SECTION D — CANONICAL DEPLOYABLE CIO ALLOCATION (GROSS CAPITAL)");
+        sb.AppendLine("---------------------------------------------------------------");
+        sb.AppendLine("SEMANTICS: This section is the true post-gating deployable capital snapshot.");
+        sb.AppendLine("SEMANTICS: Cash here is gross preserved capital, paired directly with canonical CIO weights.");
+        sb.AppendLine();
+
+        if (canonicalCioPostGatingWeights is null)
+        {
+            sb.AppendLine("NO DATA: Canonical post-gating CIO allocation is null.");
+            sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
+            sb.AppendLine();
+            return;
+        }
+
+        if (canonicalCioPostGatingWeights.Count == 0)
+        {
+            sb.AppendLine("NO DATA: Canonical post-gating CIO weights are empty.");
+            sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
+            sb.AppendLine();
+
+            AppendDeployableAllocationMetrics(
+                sb,
+                sectionTitle: "SECTION E — CANONICAL DEPLOYABLE ALLOCATION METRICS",
+                underline: "----------------------------------------------------",
+                deployableWeights: canonicalCioPostGatingWeights,
+                cashWeight: cashWeight);
+
+            return;
+        }
+
+        foreach (var kv in canonicalCioPostGatingWeights.OrderByDescending(x => x.Value))
+            sb.AppendLine($"{kv.Key} -> {(kv.Value * 100m):F2}%");
+
+        sb.AppendLine($"CASH -> {(cashWeight * 100m):F2}%");
+        sb.AppendLine();
+
+        AppendDeployableAllocationMetrics(
+            sb,
+            sectionTitle: "SECTION E — CANONICAL DEPLOYABLE ALLOCATION METRICS",
+            underline: "----------------------------------------------------",
+            deployableWeights: canonicalCioPostGatingWeights,
+            cashWeight: cashWeight);
+    }
+
+    private static void AppendCandidateMixMetrics(
         StringBuilder sb,
         string sectionTitle,
         string underline,
-        IReadOnlyDictionary<string, decimal> allocationWeights,
+        IReadOnlyDictionary<string, decimal> candidateMixWeights,
+        decimal referenceCashWeight)
+    {
+        sb.AppendLine(sectionTitle);
+        sb.AppendLine(underline);
+
+        int marketCount = candidateMixWeights.Count;
+        decimal mixSum = candidateMixWeights.Values.Sum();
+        decimal maxWeight = candidateMixWeights.Values.DefaultIfEmpty(0m).Max();
+        decimal minWeight = candidateMixWeights.Values.DefaultIfEmpty(0m).Min();
+        decimal hhi = candidateMixWeights.Values.Sum(x => x * x);
+
+        sb.AppendLine($"Candidate Markets: {marketCount}");
+        sb.AppendLine($"Candidate Mix Sum: {(mixSum * 100m):F2}%");
+        sb.AppendLine($"Reference Preserved Cash (gross): {(referenceCashWeight * 100m):F2}%");
+        sb.AppendLine($"Max Candidate Sleeve Weight: {(maxWeight * 100m):F2}%");
+        sb.AppendLine($"Min Candidate Sleeve Weight: {(minWeight * 100m):F2}%");
+        sb.AppendLine($"HHI Candidate Mix: {hhi:F4}");
+        sb.AppendLine();
+
+        sb.AppendLine("INTERPRETATION");
+        sb.AppendLine("--------------");
+        sb.AppendLine("Candidate mix weights are internal sleeve proportions only.");
+        sb.AppendLine("Do NOT add candidate mix sum and preserved cash together.");
+        sb.AppendLine("Gross deployment truth is reported only in Section D / Section E.");
+        sb.AppendLine();
+    }
+
+    private static void AppendDeployableAllocationMetrics(
+        StringBuilder sb,
+        string sectionTitle,
+        string underline,
+        IReadOnlyDictionary<string, decimal> deployableWeights,
         decimal cashWeight)
     {
         sb.AppendLine(sectionTitle);
         sb.AppendLine(underline);
 
-        int marketCount = allocationWeights.Count;
-        decimal maxWeight = allocationWeights.Values.DefaultIfEmpty(0m).Max();
-        decimal minWeight = allocationWeights.Values.DefaultIfEmpty(0m).Min();
-        decimal totalAllocated = allocationWeights.Values.Sum();
-        decimal hhi = allocationWeights.Values.Sum(x => x * x);
+        int marketCount = deployableWeights.Count;
+        decimal totalAllocated = deployableWeights.Values.Sum();
+        decimal maxWeight = deployableWeights.Values.DefaultIfEmpty(0m).Max();
+        decimal minWeight = deployableWeights.Values.DefaultIfEmpty(0m).Min();
+        decimal hhi = deployableWeights.Values.Sum(x => x * x);
+        decimal grossTotal = totalAllocated + cashWeight;
 
-        sb.AppendLine($"Markets Allocated: {marketCount}");
-        sb.AppendLine($"Total Market Allocation: {(totalAllocated * 100m):F2}%");
-        sb.AppendLine($"Cash Allocation: {(cashWeight * 100m):F2}%");
-        sb.AppendLine($"Max Market Weight: {(maxWeight * 100m):F2}%");
-        sb.AppendLine($"Min Market Weight: {(minWeight * 100m):F2}%");
-        sb.AppendLine($"HHI Concentration: {hhi:F4}");
+        sb.AppendLine($"Deployable Markets: {marketCount}");
+        sb.AppendLine($"Gross Deployable Allocation: {(totalAllocated * 100m):F2}%");
+        sb.AppendLine($"Gross Preserved Cash: {(cashWeight * 100m):F2}%");
+        sb.AppendLine($"Gross Total (Deployable + Cash): {(grossTotal * 100m):F2}%");
+        sb.AppendLine($"Max Gross Market Weight: {(maxWeight * 100m):F2}%");
+        sb.AppendLine($"Min Gross Market Weight: {(minWeight * 100m):F2}%");
+        sb.AppendLine($"HHI Deployable Allocation: {hhi:F4}");
         sb.AppendLine();
 
         sb.AppendLine("REALISM / RISK FLAGS");
@@ -6220,66 +6305,72 @@ public sealed class CioCapitalReportService
 
         if (marketCount == 0)
         {
-            sb.AppendLine("WARNING: No allocated markets.");
+            sb.AppendLine("WARNING: No deployable markets survived into canonical CIO allocation.");
             wroteWarning = true;
         }
 
         if (marketCount == 1)
         {
-            sb.AppendLine("WARNING: Single-market allocation. Institutional diversification is absent.");
+            sb.AppendLine("WARNING: Single-market deployable allocation. Institutional diversification is absent.");
             wroteWarning = true;
         }
         else if (marketCount <= 3)
         {
-            sb.AppendLine("WARNING: Very low diversification. Allocation breadth is thin.");
+            sb.AppendLine("WARNING: Very low deployable breadth.");
             wroteWarning = true;
         }
         else if (marketCount < 5)
         {
-            sb.AppendLine("WARNING: Low diversification.");
+            sb.AppendLine("WARNING: Low deployable breadth.");
             wroteWarning = true;
         }
 
         if (maxWeight >= 0.90m)
         {
-            sb.AppendLine("WARNING: Extreme concentration. One market dominates almost all capital.");
+            sb.AppendLine("WARNING: Extreme gross concentration. One market dominates almost all deployable capital.");
             wroteWarning = true;
         }
         else if (maxWeight >= 0.80m)
         {
-            sb.AppendLine("WARNING: Severe concentration. Max market weight exceeds 80%.");
+            sb.AppendLine("WARNING: Severe gross concentration. Max market weight exceeds 80%.");
             wroteWarning = true;
         }
         else if (maxWeight >= 0.60m)
         {
-            sb.AppendLine("WARNING: High concentration. Max market weight exceeds 60%.");
+            sb.AppendLine("WARNING: High gross concentration. Max market weight exceeds 60%.");
             wroteWarning = true;
         }
         else if (maxWeight > 0.25m)
         {
-            sb.AppendLine("WARNING: Elevated concentration. Max market weight exceeds 25%.");
+            sb.AppendLine("WARNING: Elevated gross concentration. Max market weight exceeds 25%.");
             wroteWarning = true;
         }
 
         if (hhi >= 0.80m)
         {
-            sb.AppendLine("WARNING: HHI indicates extreme concentration.");
+            sb.AppendLine("WARNING: HHI indicates extreme deployable concentration.");
             wroteWarning = true;
         }
         else if (hhi >= 0.50m)
         {
-            sb.AppendLine("WARNING: HHI indicates high concentration.");
+            sb.AppendLine("WARNING: HHI indicates high deployable concentration.");
             wroteWarning = true;
         }
 
         if (cashWeight > 0.25m)
         {
-            sb.AppendLine("WARNING: High idle cash.");
+            sb.AppendLine("WARNING: High preserved cash.");
+            wroteWarning = true;
+        }
+
+        if (Math.Abs(grossTotal - 1m) > 0.0001m)
+        {
+            sb.AppendLine("WARNING: Gross deployable allocation plus cash does not reconcile to 100.00%.");
             wroteWarning = true;
         }
 
         if (!wroteWarning)
-            sb.AppendLine("OK: No major concentration warning under current thresholds.");
+            sb.AppendLine("OK: No major deployable capital warning under current thresholds.");
 
         sb.AppendLine();
         sb.AppendLine("OPERATOR INTERPRETATION");
@@ -6287,24 +6378,24 @@ public sealed class CioCapitalReportService
 
         if (marketCount == 0)
         {
-            sb.AppendLine("Capital realism is weak because no allocable markets survived into this allocation set.");
+            sb.AppendLine("Capital realism is weak because no markets survived into gross deployable CIO allocation.");
         }
         else if (marketCount == 1 || maxWeight >= 0.80m)
         {
-            sb.AppendLine("Capital realism is weak for institutional use. The system is effectively operating as a single-edge engine.");
+            sb.AppendLine("Capital realism is weak for institutional use. The system is effectively operating as a single-edge deployer.");
         }
         else if (marketCount <= 3 || maxWeight >= 0.60m)
         {
-            sb.AppendLine("Capital realism is moderate-to-weak. Portfolio breadth is limited and concentration risk is material.");
+            sb.AppendLine("Capital realism is moderate-to-weak. Deployable breadth is limited and concentration risk is material.");
         }
         else
         {
-            sb.AppendLine("Capital realism is acceptable under current simple concentration thresholds.");
+            sb.AppendLine("Capital realism is acceptable under current simple deployable concentration thresholds.");
         }
 
         if (cashWeight > 0.25m)
         {
-            sb.AppendLine("High cash may be correct under Patch 20 defensive posture when regime quality and breadth are weak.");
+            sb.AppendLine("High cash may be correct under Patch 20 / Patch 21 defensive posture when regime quality and breadth are weak.");
         }
 
         sb.AppendLine();
@@ -8540,16 +8631,16 @@ public sealed class QuickAuditReportService
  
  T Y P E :   . c s 
  
- S I Z E :   1 . 8   K B 
+ S I Z E :   4 . 9 1   K B 
  
- L I N E S :   4 6 
+ L I N E S :   9 8 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
  using System;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
 
@@ -8559,6 +8650,8 @@ public sealed class ReconciliationReportService
 {
     public void Generate(PortfolioBacktestResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
+
         var sb = new StringBuilder();
 
         decimal start = 100000m;
@@ -8567,35 +8660,92 @@ public sealed class ReconciliationReportService
             : start;
 
         decimal delta = end - start;
-
         decimal strategySum = result.StrategyPnL.Values.Sum();
         decimal symbolSum = result.SymbolPnL.Values.Sum();
-
         decimal diffStrategy = delta - strategySum;
         decimal diffSymbol = delta - symbolSum;
+
+        var runnerCandidateMix = result.MarketAllocationWeights
+            ?? new System.Collections.Generic.Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+        var canonicalDeployable = result.CanonicalCioPostGatingWeights
+            ?? new System.Collections.Generic.Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+        decimal runnerCandidateMixSum = runnerCandidateMix.Values.Sum();
+        decimal canonicalDeployableSum = canonicalDeployable.Values.Sum();
+        decimal cashWeight = result.CashAllocationWeight;
+        decimal grossDeployablePlusCash = canonicalDeployableSum + cashWeight;
 
         sb.AppendLine("REPORT 31 â€” RECONCILIATION");
         sb.AppendLine("===========================");
         sb.AppendLine();
 
+        sb.AppendLine("SECTION A â€” ECONOMIC RECONCILIATION");
+        sb.AppendLine("-----------------------------------");
         sb.AppendLine($"Start Equity     : {start:F2}");
         sb.AppendLine($"End Equity       : {end:F2}");
         sb.AppendLine($"Portfolio Delta  : {delta:F2}");
         sb.AppendLine();
-
         sb.AppendLine($"Strategy Sum     : {strategySum:F2}");
         sb.AppendLine($"Symbol Sum       : {symbolSum:F2}");
-        sb.AppendLine();
-
         sb.AppendLine($"Î” vs Strategy    : {diffStrategy:F2}");
         sb.AppendLine($"Î” vs Symbol      : {diffSymbol:F2}");
         sb.AppendLine();
 
-        bool ok = Math.Abs(diffStrategy) < 1m && Math.Abs(diffSymbol) < 1m;
+        bool economicOk = Math.Abs(diffStrategy) < 1m && Math.Abs(diffSymbol) < 1m;
+        sb.AppendLine(economicOk
+            ? "ECONOMIC STATUS: PASS"
+            : "ECONOMIC STATUS: FAIL â€” ECONOMIC INCONSISTENCY");
+        sb.AppendLine();
 
-        sb.AppendLine(ok
-            ? "STATUS: PASS"
-            : "STATUS: FAIL â€” ECONOMIC INCONSISTENCY");
+        sb.AppendLine("SECTION B â€” ALLOCATION SEMANTICS SNAPSHOT");
+        sb.AppendLine("-----------------------------------------");
+        sb.AppendLine("Runner Candidate Mix Count          : " + runnerCandidateMix.Count);
+        sb.AppendLine($"Runner Candidate Mix Sum            : {runnerCandidateMixSum:P2}");
+        sb.AppendLine("Canonical Deployable Count          : " + canonicalDeployable.Count);
+        sb.AppendLine($"Canonical Deployable Sum            : {canonicalDeployableSum:P2}");
+        sb.AppendLine($"Preserved Cash (gross)             : {cashWeight:P2}");
+        sb.AppendLine($"Gross Deployable + Cash            : {grossDeployablePlusCash:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION C â€” INTERPRETATION");
+        sb.AppendLine("--------------------------");
+        sb.AppendLine("Runner candidate mix is a relative sleeve mix only.");
+        sb.AppendLine("Canonical deployable allocation plus preserved cash is the gross-capital truth.");
+        sb.AppendLine("Do NOT add runner candidate mix sum to preserved cash.");
+        sb.AppendLine();
+
+        bool semanticOk = Math.Abs(grossDeployablePlusCash - 1m) < 0.0001m;
+
+        if (runnerCandidateMix.Count > 0 && Math.Abs(runnerCandidateMixSum - 1m) < 0.0001m && cashWeight > 0m)
+        {
+            sb.AppendLine("NOTE: Candidate mix sums to 100% because it is an internal sleeve distribution, not gross capital deployment.");
+        }
+
+        if (!semanticOk)
+        {
+            sb.AppendLine("WARNING: Canonical deployable allocation plus preserved cash does not reconcile to 100.00% gross capital.");
+        }
+        else
+        {
+            sb.AppendLine("ALLOCATION SEMANTICS STATUS: PASS");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("SECTION D â€” DEPLOYABLE CIO SNAPSHOT");
+        sb.AppendLine("-----------------------------------");
+
+        if (canonicalDeployable.Count == 0)
+        {
+            sb.AppendLine("NO CANONICAL DEPLOYABLE MARKETS.");
+        }
+        else
+        {
+            foreach (var kv in canonicalDeployable.OrderByDescending(x => x.Value))
+                sb.AppendLine($"{kv.Key}   {kv.Value:P2}");
+        }
+
+        sb.AppendLine();
 
         Directory.CreateDirectory(DataPaths.Reports);
 
@@ -13289,12 +13439,6 @@ and is moving toward more complete production-grade quant architecture.
 
 ===== AUDIT COMPLETE =====
 
-   
-
-</pre>
-</div>
-</body>
-</html>
    
 
 </pre>
