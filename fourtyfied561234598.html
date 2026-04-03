@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -5151,9 +5151,9 @@ public sealed class A84MarketRegimeDetectionReportService
  
  T Y P E :   . c s 
  
- S I Z E :   1 0 . 4 1   K B 
+ S I Z E :   1 4 . 6 7   K B 
  
- L I N E S :   2 4 6 
+ L I N E S :   3 2 1 
  
  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
@@ -5178,6 +5178,16 @@ public sealed class A84StrategyFitnessGatingReportService
         public int TopKMarkets { get; init; } = 20;
         public decimal MaxWeightPerMarket { get; init; } = 0.10m;
         public decimal MaxWeightPerSymbol { get; init; } = 0.25m;
+
+        // PATCH 23 — regime-aware scarcity override
+        // Goal:
+        // when Wave B + cash preservation already forced the system into defensive scarcity,
+        // do NOT auto-reject the strongest positive strategy only because trade count is below the normal threshold.
+        public decimal ScarcityModeMinCashWeight { get; init; } = 0.75m;
+        public int ScarcityModeMaxSelectedMarkets { get; init; } = 1;
+        public int ScarcityOverrideMinTrades { get; init; } = 12;
+        public decimal ScarcityOverrideMinPnL { get; init; } = 50m;
+        public int ScarcityOverrideMaxStrategies { get; init; } = 1;
     }
 
     public sealed class FitnessRow
@@ -5190,6 +5200,9 @@ public sealed class A84StrategyFitnessGatingReportService
         public decimal FitnessScore { get; init; }
         public bool Allowed { get; init; }
         public string GateReason { get; init; } = "";
+
+        // PATCH 23
+        public bool ScarcityOverrideApplied { get; init; }
     }
 
     public (Dictionary<int, FitnessRow> fitness, HashSet<int> allowedIds) ComputeFitness(
@@ -5201,6 +5214,11 @@ public sealed class A84StrategyFitnessGatingReportService
 
         var fitness = new Dictionary<int, FitnessRow>();
         var allowed = new HashSet<int>();
+
+        bool scarcityModeActive = IsScarcityDefensiveMode(result, cfg);
+        int scarcityWinnerId = GetScarcityWinnerStrategyId(result);
+
+        int scarcityOverrideAppliedCount = 0;
 
         foreach (var kv in result.StrategyPnL.OrderBy(k => k.Key))
         {
@@ -5224,6 +5242,7 @@ public sealed class A84StrategyFitnessGatingReportService
 
             bool allowedFlag = true;
             string reason = "OK";
+            bool scarcityOverrideApplied = false;
 
             if (trades < cfg.MinTrades)
             {
@@ -5241,6 +5260,31 @@ public sealed class A84StrategyFitnessGatingReportService
                 reason = "GATED: fitness<=0";
             }
 
+            // PATCH 23:
+            // scarcity override may rescue exactly one top positive winner
+            // when:
+            // - defensive scarcity mode is active
+            // - normal gate failure is ONLY low trades
+            // - strategy is the top positive PnL winner
+            // - trades clear a lower scarcity threshold
+            // - pnl is materially positive
+            if (!allowedFlag &&
+                scarcityModeActive &&
+                scarcityOverrideAppliedCount < cfg.ScarcityOverrideMaxStrategies &&
+                sid == scarcityWinnerId &&
+                trades >= cfg.ScarcityOverrideMinTrades &&
+                pnl > cfg.ScarcityOverrideMinPnL &&
+                scoreCore > 0m &&
+                reason.StartsWith("GATED: trades<", StringComparison.OrdinalIgnoreCase))
+            {
+                allowedFlag = true;
+                scarcityOverrideApplied = true;
+                scarcityOverrideAppliedCount++;
+
+                reason =
+                    $"SCARCITY_OVERRIDE: defensive mode active, top positive winner rescued despite trades<{cfg.MinTrades}";
+            }
+
             var row = new FitnessRow
             {
                 StrategyId = sid,
@@ -5250,7 +5294,8 @@ public sealed class A84StrategyFitnessGatingReportService
                 Exits = exits,
                 FitnessScore = scoreCore,
                 Allowed = allowedFlag,
-                GateReason = reason
+                GateReason = reason,
+                ScarcityOverrideApplied = scarcityOverrideApplied
             };
 
             fitness[sid] = row;
@@ -5270,6 +5315,7 @@ public sealed class A84StrategyFitnessGatingReportService
         foreach (var id in fitness.Keys.ToList())
         {
             var r = fitness[id];
+
             if (!allowed.Contains(id) && r.Allowed)
             {
                 fitness[id] = new FitnessRow
@@ -5281,7 +5327,8 @@ public sealed class A84StrategyFitnessGatingReportService
                     Exits = r.Exits,
                     FitnessScore = r.FitnessScore,
                     Allowed = false,
-                    GateReason = "GATED: max strategies clamp"
+                    GateReason = "GATED: max strategies clamp",
+                    ScarcityOverrideApplied = false
                 };
             }
         }
@@ -5309,6 +5356,7 @@ public sealed class A84StrategyFitnessGatingReportService
                 continue;
 
             var mk = new MarketKey(symbol, tf);
+
             if (!scoreByMarket.ContainsKey(mk))
                 scoreByMarket[mk] = 0m;
 
@@ -5349,19 +5397,25 @@ public sealed class A84StrategyFitnessGatingReportService
         var canonicalCio = result.CanonicalCioPostGatingWeights
             ?? new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
+        bool scarcityModeActive = IsScarcityDefensiveMode(result, cfg);
+        int scarcityWinnerId = GetScarcityWinnerStrategyId(result);
+
         var outFile = Path.Combine(
             DataPaths.Reports,
             $"A84_05_STRATEGY_FITNESS_{runUtc:yyyyMMdd_HHmmss}.txt");
 
         var sb = new StringBuilder();
+
         sb.AppendLine("A84_05 — STRATEGY FITNESS + CIO GATING");
         sb.AppendLine("======================================");
         sb.AppendLine();
         sb.AppendLine($"Run Timestamp (UTC) : {runUtc:yyyy-MM-dd HH:mm:ss}");
         sb.AppendLine();
+
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
         sb.AppendLine("PATCH_13C_A84_05_CANONICAL_ONLY");
+        sb.AppendLine("PATCH_23_SCARCITY_STRATEGY_GATE");
         sb.AppendLine("SOURCE = exact result.CanonicalCioPostGatingWeights");
         sb.AppendLine("RECOMPUTE = DISABLED");
         sb.AppendLine("LOCAL_CAP = DISABLED");
@@ -5371,22 +5425,35 @@ public sealed class A84StrategyFitnessGatingReportService
 
         sb.AppendLine("FITNESS CONFIG (GATING INPUTS ONLY)");
         sb.AppendLine("-----------------------------------");
-        sb.AppendLine($"MinTrades          : {cfg.MinTrades}");
-        sb.AppendLine($"MinPnL             : {cfg.MinPnL:0.##}");
-        sb.AppendLine($"TopKMarkets        : {cfg.TopKMarkets}");
-        sb.AppendLine($"MaxWeightPerMarket : {cfg.MaxWeightPerMarket:P2}  (NOT USED FOR A84_05 PUBLISH)");
-        sb.AppendLine($"MaxWeightPerSymbol : {cfg.MaxWeightPerSymbol:P2}  (NOT USED FOR A84_05 PUBLISH)");
+        sb.AppendLine($"MinTrades                : {cfg.MinTrades}");
+        sb.AppendLine($"MinPnL                   : {cfg.MinPnL:0.##}");
+        sb.AppendLine($"TopKMarkets              : {cfg.TopKMarkets}");
+        sb.AppendLine($"MaxWeightPerMarket       : {cfg.MaxWeightPerMarket:P2}  (NOT USED FOR A84_05 PUBLISH)");
+        sb.AppendLine($"MaxWeightPerSymbol       : {cfg.MaxWeightPerSymbol:P2}  (NOT USED FOR A84_05 PUBLISH)");
+        sb.AppendLine($"ScarcityModeMinCash      : {cfg.ScarcityModeMinCashWeight:P2}");
+        sb.AppendLine($"ScarcityModeMaxMarkets   : {cfg.ScarcityModeMaxSelectedMarkets}");
+        sb.AppendLine($"ScarcityOverrideMinTrades: {cfg.ScarcityOverrideMinTrades}");
+        sb.AppendLine($"ScarcityOverrideMinPnL   : {cfg.ScarcityOverrideMinPnL:0.##}");
+        sb.AppendLine($"ScarcityOverrideMaxStrat : {cfg.ScarcityOverrideMaxStrategies}");
+        sb.AppendLine();
+
+        sb.AppendLine("SCARCITY DEFENSIVE MODE");
+        sb.AppendLine("-----------------------");
+        sb.AppendLine($"Active                   : {(scarcityModeActive ? "YES" : "NO")}");
+        sb.AppendLine($"Runner Selected Markets  : {result.SelectedMarkets?.Count ?? 0}");
+        sb.AppendLine($"Runner Cash Weight       : {result.CashAllocationWeight:P2}");
+        sb.AppendLine($"Top Positive Winner      : {(scarcityWinnerId <= 0 ? "NONE" : $"S{scarcityWinnerId:00}")}");
         sb.AppendLine();
 
         sb.AppendLine("STRATEGY FITNESS TABLE");
         sb.AppendLine("----------------------");
-        sb.AppendLine("Code | PnL         | Trades | Exits | Fitness   | Allowed | GateReason");
-        sb.AppendLine("-----+-------------+--------+-------+-----------+---------+---------------------------");
+        sb.AppendLine("Code | PnL         | Trades | Exits | Fitness   | Allowed | Override | GateReason");
+        sb.AppendLine("-----+-------------+--------+-------+-----------+---------+----------+-----------------------------------------------");
 
         foreach (var row in fitness.Values.OrderByDescending(r => r.FitnessScore))
         {
             sb.AppendLine(
-                $"{row.StrategyCode,-4} | {row.PnL,11:0.00} | {row.Trades,6} | {row.Exits,5} | {row.FitnessScore,9:0.0000} | {(row.Allowed ? "YES" : "NO "),-7} | {row.GateReason}");
+                $"{row.StrategyCode,-4} | {row.PnL,11:0.00} | {row.Trades,6} | {row.Exits,5} | {row.FitnessScore,9:0.0000} | {(row.Allowed ? "YES" : "NO "),-7} | {(row.ScarcityOverrideApplied ? "YES" : "NO "),-8} | {row.GateReason}");
         }
 
         sb.AppendLine();
@@ -5403,7 +5470,6 @@ public sealed class A84StrategyFitnessGatingReportService
 
         sb.AppendLine("CIO WEIGHTS (POST-GATING) TOP 20");
         sb.AppendLine("-------------------------------");
-
         if (canonicalCio.Count == 0)
         {
             sb.AppendLine("NO DATA: Stored canonical CIO weights are empty.");
@@ -5447,6 +5513,30 @@ public sealed class A84StrategyFitnessGatingReportService
         timeframe = parts[2].Trim();
 
         return !(string.IsNullOrWhiteSpace(symbol) || string.IsNullOrWhiteSpace(timeframe));
+    }
+
+    private static bool IsScarcityDefensiveMode(
+        PortfolioBacktestResult result,
+        FitnessConfig cfg)
+    {
+        int selectedMarkets = result.SelectedMarkets?.Count ?? 0;
+        decimal cashWeight = result.CashAllocationWeight;
+
+        return selectedMarkets <= cfg.ScarcityModeMaxSelectedMarkets &&
+               cashWeight >= cfg.ScarcityModeMinCashWeight;
+    }
+
+    private static int GetScarcityWinnerStrategyId(PortfolioBacktestResult result)
+    {
+        if (result.StrategyPnL == null || result.StrategyPnL.Count == 0)
+            return 0;
+
+        return result.StrategyPnL
+            .Where(x => x.Value > 0m)
+            .OrderByDescending(x => x.Value)
+            .ThenBy(x => x.Key)
+            .Select(x => x.Key)
+            .FirstOrDefault();
     }
 }
 
