@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-07__18-08-42.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-07__18-08-42.txt
-GENERATED: 2026-04-07 18:08:42
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-07__18-38-26.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-07__18-38-26.txt
+GENERATED: 2026-04-07 18:38:26
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,8 +20,8 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───088d4e77-c3d7-42a8-8a5a-916493106e63.vsidx
-│       │   └───5bb37ec9-2183-4805-91a5-7cbd43a82fef.vsidx
+│       │   ├───5bb37ec9-2183-4805-91a5-7cbd43a82fef.vsidx
+│       │   └───fde190ee-1f5c-46fc-9966-eea38cb6f4c7.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -6729,8 +6729,8 @@ public sealed class FullReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubCodeAuditPublishService.cs
 TYPE: .cs
-SIZE: 5.11 KB
-LINES: 145
+SIZE: 5.49 KB
+LINES: 152
 ==============================
 using System;
 using System.ComponentModel;
@@ -6746,6 +6746,8 @@ public sealed class GitHubCodeAuditPublishService
 {
     private const string TargetPublishedFileName = "fourtyfied561234598.html";
     private const string PublicUrl = "https://arifpisonium.github.io/fourtyfied561234598.html";
+    private const string RemoteName = "origin";
+    private const string BranchName = "main";
 
     public GitHubCodeAuditPublishResult PublishLatestAuditHtml(string repoRootPath)
     {
@@ -6769,6 +6771,11 @@ public sealed class GitHubCodeAuditPublishService
         if (string.IsNullOrWhiteSpace(sourceHtmlText))
             throw new InvalidOperationException($"Audit HTML file is empty: {latestAuditHtml}");
 
+        // PATCH:
+        // First sync local repo with remote because the user may have manually edited/published on GitHub web.
+        RunGit(repoRootPath, $"fetch {RemoteName}");
+        RunGit(repoRootPath, $"pull --rebase {RemoteName} {BranchName}");
+
         string destinationPath = Path.Combine(repoRootPath, TargetPublishedFileName);
         string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
 
@@ -6776,7 +6783,7 @@ public sealed class GitHubCodeAuditPublishService
 
         RunGit(repoRootPath, $"add \"{TargetPublishedFileName}\"");
         RunGit(repoRootPath, $"commit -m \"TQGA code audit publish {timestamp}\"", allowNoChanges: true);
-        RunGit(repoRootPath, "push");
+        RunGit(repoRootPath, $"push {RemoteName} {BranchName}");
 
         return new GitHubCodeAuditPublishResult
         {
