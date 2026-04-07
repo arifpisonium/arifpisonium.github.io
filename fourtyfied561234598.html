@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-07__18-38-26.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-07__18-38-26.txt
-GENERATED: 2026-04-07 18:38:26
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-07__20-15-36.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-07__20-15-36.txt
+GENERATED: 2026-04-07 20:15:36
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -21,7 +21,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
 │       │   ├───5bb37ec9-2183-4805-91a5-7cbd43a82fef.vsidx
-│       │   └───fde190ee-1f5c-46fc-9966-eea38cb6f4c7.vsidx
+│       │   └───c36836a6-9c63-43b1-96ce-a0da15d6d2c4.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -6729,8 +6729,8 @@ public sealed class FullReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubCodeAuditPublishService.cs
 TYPE: .cs
-SIZE: 5.49 KB
-LINES: 152
+SIZE: 5.99 KB
+LINES: 169
 ==============================
 using System;
 using System.ComponentModel;
@@ -6772,9 +6772,19 @@ public sealed class GitHubCodeAuditPublishService
             throw new InvalidOperationException($"Audit HTML file is empty: {latestAuditHtml}");
 
         // PATCH:
-        // First sync local repo with remote because the user may have manually edited/published on GitHub web.
+        // This repo is a publish mirror and may be edited manually on GitHub web.
+        // We do NOT want rebase/merge conflict workflows here.
+        // Always recover to a clean state first, then hard-sync to origin/main.
+
+        // 1) Abort any unfinished rebase if present.
+        RunGit(repoRootPath, "rebase --abort", allowFailure: true);
+
+        // 2) Fetch latest remote state.
         RunGit(repoRootPath, $"fetch {RemoteName}");
-        RunGit(repoRootPath, $"pull --rebase {RemoteName} {BranchName}");
+
+        // 3) Force local repo to match remote main exactly.
+        // This intentionally discards local uncommitted / unpublished repo changes.
+        RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
 
         string destinationPath = Path.Combine(repoRootPath, TargetPublishedFileName);
         string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
@@ -6804,7 +6814,11 @@ public sealed class GitHubCodeAuditPublishService
         }
     }
 
-    private static void RunGit(string workingDirectory, string arguments, bool allowNoChanges = false)
+    private static void RunGit(
+        string workingDirectory,
+        string arguments,
+        bool allowNoChanges = false,
+        bool allowFailure = false)
     {
         string gitExePath = ResolveGitExecutablePath();
 
@@ -6837,20 +6851,23 @@ public sealed class GitHubCodeAuditPublishService
 
         process.WaitForExit();
 
-        if (process.ExitCode != 0)
+        if (process.ExitCode == 0)
+            return;
+
+        string combined = $"{stdOut}\n{stdErr}".Trim();
+
+        if (allowFailure)
+            return;
+
+        if (allowNoChanges &amp;&amp;
+            (combined.Contains("nothing to commit", StringComparison.OrdinalIgnoreCase) ||
+             combined.Contains("no changes added to commit", StringComparison.OrdinalIgnoreCase)))
         {
-            string combined = $"{stdOut}\n{stdErr}".Trim();
-
-            if (allowNoChanges &amp;&amp;
-                (combined.Contains("nothing to commit", StringComparison.OrdinalIgnoreCase) ||
-                 combined.Contains("no changes added to commit", StringComparison.OrdinalIgnoreCase)))
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                $"Git command failed.\n\nCommand: git {arguments}\n\nOutput:\n{combined}");
+            return;
         }
+
+        throw new InvalidOperationException(
+            $"Git command failed.\n\nCommand: git {arguments}\n\nOutput:\n{combined}");
     }
 
     private static string ResolveGitExecutablePath()
