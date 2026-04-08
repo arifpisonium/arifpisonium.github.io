@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-07__20-15-36.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-07__20-15-36.txt
-GENERATED: 2026-04-07 20:15:36
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__11-06-59.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__11-06-59.txt
+GENERATED: 2026-04-08 11:06:59
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,8 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───5bb37ec9-2183-4805-91a5-7cbd43a82fef.vsidx
-│       │   └───c36836a6-9c63-43b1-96ce-a0da15d6d2c4.vsidx
+│       │   └───3f3106db-e613-41bf-a36a-8b0d58bc6f98.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -6905,12 +6904,13 @@ public sealed class GitHubCodeAuditPublishResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubPagesPublishService.cs
 TYPE: .cs
-SIZE: 19.69 KB
-LINES: 476
+SIZE: 22.48 KB
+LINES: 545
 ==============================
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using TQGA.Application.Paths;
 
 namespace TQGA.Application.Services;
 
@@ -6918,6 +6918,8 @@ public sealed class GitHubPagesPublishService
 {
     private const string RepoPathConfigFileName = "github_pages_repo_path.txt";
     private const int WebSafeMaxChars = 500_000;
+    private const string RemoteName = "origin";
+    private const string BranchName = "main";
 
     public GitHubPagesPublishResult PublishReportAll31(
         string sourceReportPath,
@@ -6939,8 +6941,6 @@ public sealed class GitHubPagesPublishService
         string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         string sourceFileName = Path.GetFileName(sourceReportPath);
 
-        // IMPORTANT:
-        // Keep full archives OUTSIDE the GitHub Pages repo.
         string localArchiveRoot = GetLocalArchiveRoot(repoRootPath);
         Directory.CreateDirectory(localArchiveRoot);
 
@@ -6953,10 +6953,8 @@ public sealed class GitHubPagesPublishService
         string reportsIndexHtmlPath = Path.Combine(repoRootPath, "reports.html");
         string gitIgnorePath = Path.Combine(repoRootPath, ".gitignore");
 
-        // Full heavy report stays only in local archive.
         File.Copy(sourceReportPath, archivedReportPath, overwrite: true);
 
-        // Web-safe publish content only.
         string webSafeText = TrimReportForWeb(sourceReportText, WebSafeMaxChars);
         File.WriteAllText(latestReportPath, webSafeText, Encoding.UTF8);
 
@@ -6968,11 +6966,7 @@ public sealed class GitHubPagesPublishService
 
         EnsureGitIgnoreRules(gitIgnorePath);
 
-        // One-time and repeat-safe Git cleanup:
-        // remove any previously tracked large files from index before adding current trimmed files.
         CleanupGitTrackedLargeFiles(repoRootPath);
-
-        // Also remove stray heavy files physically from repo root if they exist.
         CleanupPhysicalLargeFilesFromRepoRoot(repoRootPath);
 
         RunGit(repoRootPath, "add .");
@@ -6992,6 +6986,65 @@ public sealed class GitHubPagesPublishService
             PublicUrl = "https://arifpisonium.github.io/",
             PublicLatestTextUrl = "https://arifpisonium.github.io/FULL_REPORT_LATEST.txt",
             PublicReportsIndexUrl = "https://arifpisonium.github.io/reports.html"
+        };
+    }
+
+    public GitHubLatestReportHtmlPublishResult PublishLatestReportAll31Html(string repoRootPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(repoRootPath);
+
+        if (!Directory.Exists(repoRootPath))
+            throw new DirectoryNotFoundException($"GitHub Pages repo folder not found: {repoRootPath}");
+
+        EnsureGitRepository(repoRootPath);
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string latestReportHtmlPath = Directory
+            .EnumerateFiles(DataPaths.Reports, "REPORT_ALL_31_*.html", SearchOption.TopDirectoryOnly)
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault()
+            ?? throw new FileNotFoundException(
+                "No generated REPORT_ALL_31 HTML file was found in Reports. Please click REPORT ALL 31 first.");
+
+        string sourceHtmlText = File.ReadAllText(latestReportHtmlPath, Encoding.UTF8);
+        if (string.IsNullOrWhiteSpace(sourceHtmlText))
+            throw new InvalidOperationException($"REPORT_ALL_31 HTML file is empty: {latestReportHtmlPath}");
+
+        // Same operational discipline as code-audit publishing:
+        // manual GitHub web edits may exist, so always hard-sync local clone to remote first.
+        RunGit(repoRootPath, "rebase --abort", allowFailure: true);
+        RunGit(repoRootPath, $"fetch {RemoteName}");
+        RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
+
+        string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+        string localArchiveRoot = GetLocalArchiveRoot(repoRootPath);
+        Directory.CreateDirectory(localArchiveRoot);
+
+        string archivedHtmlPath = Path.Combine(
+            localArchiveRoot,
+            $"REPORT_ALL_31_PUBLISHED_HTML_{timestamp}.html");
+
+        string publishedIndexHtmlPath = Path.Combine(repoRootPath, "index.html");
+
+        File.Copy(latestReportHtmlPath, archivedHtmlPath, overwrite: true);
+        File.WriteAllText(
+            publishedIndexHtmlPath,
+            sourceHtmlText,
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        RunGit(repoRootPath, "add index.html");
+        RunGit(repoRootPath, $"commit -m \"TQGA report html publish {timestamp}\"", allowNoChanges: true);
+        RunGit(repoRootPath, $"push {RemoteName} {BranchName}");
+
+        SaveRepoPath(repoRootPath);
+
+        return new GitHubLatestReportHtmlPublishResult
+        {
+            RepoRootPath = repoRootPath,
+            SourceReportHtmlPath = latestReportHtmlPath,
+            PublishedIndexHtmlPath = publishedIndexHtmlPath,
+            ArchivedHtmlPath = archivedHtmlPath,
+            PublicUrl = "https://arifpisonium.github.io/"
         };
     }
 
@@ -7041,12 +7094,10 @@ public sealed class GitHubPagesPublishService
     {
         RunGit(repoRootPath, "reset HEAD .", allowNoChanges: true);
 
-        // Remove previously tracked heavy files from Git index only (keep working copy if still present).
         RunGit(repoRootPath, "rm --cached --ignore-unmatch FULL_REPORT_*.txt", allowNoChanges: true);
         RunGit(repoRootPath, "rm --cached --ignore-unmatch REPORT_ALL_31_*.txt", allowNoChanges: true);
         RunGit(repoRootPath, "rm -r --cached --ignore-unmatch reports", allowNoChanges: true);
 
-        // Re-add current lightweight files later via git add .
         RunGit(repoRootPath, "rm --cached --ignore-unmatch FULL_REPORT_LATEST.txt", allowNoChanges: true);
         RunGit(repoRootPath, "rm --cached --ignore-unmatch index.html", allowNoChanges: true);
         RunGit(repoRootPath, "rm --cached --ignore-unmatch reports.html", allowNoChanges: true);
@@ -7091,7 +7142,11 @@ public sealed class GitHubPagesPublishService
         }
     }
 
-    private static void RunGit(string workingDirectory, string arguments, bool allowNoChanges = false)
+    private static void RunGit(
+        string workingDirectory,
+        string arguments,
+        bool allowNoChanges = false,
+        bool allowFailure = false)
     {
         string gitExePath = ResolveGitExecutablePath();
 
@@ -7126,21 +7181,25 @@ public sealed class GitHubPagesPublishService
 
         process.WaitForExit();
 
-        if (process.ExitCode != 0)
+        if (process.ExitCode == 0)
+            return;
+
+        string combined = $"{stdOut}\n{stdErr}".Trim();
+
+        if (allowFailure)
+            return;
+
+        if (allowNoChanges &amp;&amp;
+            (combined.Contains("nothing to commit", StringComparison.OrdinalIgnoreCase) ||
+             combined.Contains("did not match any files", StringComparison.OrdinalIgnoreCase) ||
+             combined.Contains("fatal: pathspec", StringComparison.OrdinalIgnoreCase) ||
+             combined.Contains("no changes added to commit", StringComparison.OrdinalIgnoreCase)))
         {
-            string combined = $"{stdOut}\n{stdErr}".Trim();
-
-            if (allowNoChanges &amp;&amp;
-                (combined.Contains("nothing to commit", StringComparison.OrdinalIgnoreCase) ||
-                 combined.Contains("did not match any files", StringComparison.OrdinalIgnoreCase) ||
-                 combined.Contains("fatal: pathspec", StringComparison.OrdinalIgnoreCase)))
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                $"Git command failed.\nExecutable: {gitExePath}\nCommand: git {arguments}\n\n{combined}");
+            return;
         }
+
+        throw new InvalidOperationException(
+            $"Git command failed.\nExecutable: {gitExePath}\nCommand: git {arguments}\n\n{combined}");
     }
 
     private static string ResolveGitExecutablePath()
@@ -7383,6 +7442,15 @@ public sealed class GitHubPagesPublishResult
     public string PublicUrl { get; init; } = string.Empty;
     public string PublicLatestTextUrl { get; init; } = string.Empty;
     public string PublicReportsIndexUrl { get; init; } = string.Empty;
+}
+
+public sealed class GitHubLatestReportHtmlPublishResult
+{
+    public string RepoRootPath { get; init; } = string.Empty;
+    public string SourceReportHtmlPath { get; init; } = string.Empty;
+    public string PublishedIndexHtmlPath { get; init; } = string.Empty;
+    public string ArchivedHtmlPath { get; init; } = string.Empty;
+    public string PublicUrl { get; init; } = string.Empty;
 }
 
 ==============================
@@ -12497,8 +12565,8 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 26.41 KB
-LINES: 732
+SIZE: 28.92 KB
+LINES: 811
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -12537,6 +12605,7 @@ public sealed class MainForm : Form
     private Button? _btnGitPublished;
     private Button? _btnCodesFile;
     private Button? _btnGitHubPublished;
+    private Button? _btnGitHubReportsPublished;
 
     private Label? _lblStrategies;
     private CheckedListBox? _strategyList;
@@ -12617,7 +12686,8 @@ public sealed class MainForm : Form
         _btnReportAll31 = new Button { Text = "REPORT ALL 31", Width = 220, Top = 350, Left = 30 };
         _btnGitPublished = new Button { Text = "GIT PUBLISHED", Width = 220, Top = 400, Left = 30 };
         _btnCodesFile = new Button { Text = "CODES FILE", Width = 220, Top = 450, Left = 30 };
-        _btnGitHubPublished = new Button { Text = "GITHUB PUBLISHED", Width = 220, Top = 500, Left = 30 };
+        _btnGitHubPublished = new Button { Text = "GITHUB Codes Published", Width = 220, Top = 500, Left = 30 };
+        _btnGitHubReportsPublished = new Button { Text = "GITHUB Reports Published", Width = 220, Top = 550, Left = 30 };
 
         _btnDownload.Click += async (_, _) =&gt; await RunSafe(_bootstrapper.ForceFullDownloadAsync);
         _btnUpdate.Click += async (_, _) =&gt; await RunSafe(_bootstrapper.UpdateAsync);
@@ -12627,6 +12697,7 @@ public sealed class MainForm : Form
         _btnGitPublished.Click += async (_, _) =&gt; await GitPublishedAsync();
         _btnCodesFile.Click += async (_, _) =&gt; await BuildCodesFileAsync();
         _btnGitHubPublished.Click += async (_, _) =&gt; await GitHubPublishedAsync();
+        _btnGitHubReportsPublished.Click += async (_, _) =&gt; await GitHubReportsPublishedAsync();
 
         _btnFullReportSave.Click += (_, _) =&gt;
         {
@@ -12682,7 +12753,7 @@ public sealed class MainForm : Form
         Controls.AddRange(
         [
             _btnDownload, _btnUpdate, _btnRunResearch, _btnFullReportSave, _btnFullReportClipboard,
-            _btnPublished, _btnReportAll31, _btnGitPublished, _btnCodesFile, _btnGitHubPublished,
+            _btnPublished, _btnReportAll31, _btnGitPublished, _btnCodesFile, _btnGitHubPublished, _btnGitHubReportsPublished,
             _lblStrategies, _strategyList, _btnSelectAll, _btnSelectNone,
             _lblTimeframes, _timeframeList, _btnTfAll, _btnTfNone,
             _lblCoinCategories, _coinCategoryList, _btnCatAll, _btnCatNone,
@@ -12828,10 +12899,12 @@ public sealed class MainForm : Form
         try
         {
             string report31Path = await BuildReportAll31Async(copyToClipboard: true);
+            string report31HtmlPath = Path.ChangeExtension(report31Path, ".html");
 
             MessageBox.Show(
                 $"REPORT ALL 31 generated successfully.\n\n" +
-                $"Output File: {report31Path}\n\n" +
+                $"TXT File: {report31Path}\n" +
+                $"HTML File: {report31HtmlPath}\n\n" +
                 $"The formatted audit report has also been copied to clipboard.",
                 "REPORT ALL 31",
                 MessageBoxButtons.OK,
@@ -12940,19 +13013,54 @@ public sealed class MainForm : Form
                 _gitHubCodeAuditPublish.PublishLatestAuditHtml(repoRootPath));
 
             MessageBox.Show(
-                $"GITHUB published completed successfully.\n\n" +
+                $"GITHUB Codes Published completed successfully.\n\n" +
                 $"Source Audit HTML: {publishResult.SourceAuditHtmlPath}\n" +
                 $"Published Repo File: {publishResult.PublishedHtmlPath}\n" +
                 $"Public URL: {publishResult.PublicUrl}",
-                "GITHUB PUBLISHED",
+                "GITHUB Codes Published",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"GITHUB published failed.\n\n{ex.Message}",
-                "GITHUB PUBLISHED ERROR",
+                $"GITHUB Codes Published failed.\n\n{ex.Message}",
+                "GITHUB Codes Published ERROR",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            Toggle(true);
+        }
+    }
+
+    private async Task GitHubReportsPublishedAsync()
+    {
+        Toggle(false);
+
+        try
+        {
+            string repoRootPath = ResolveGitRepoPath();
+
+            var publishResult = await Task.Run(() =&gt;
+                _gitHubPagesPublish.PublishLatestReportAll31Html(repoRootPath));
+
+            MessageBox.Show(
+                $"GITHUB Reports Published completed successfully.\n\n" +
+                $"Source Report HTML: {publishResult.SourceReportHtmlPath}\n" +
+                $"Published Repo File: {publishResult.PublishedIndexHtmlPath}\n" +
+                $"Archive File (Local Only): {publishResult.ArchivedHtmlPath}\n" +
+                $"Public URL: {publishResult.PublicUrl}",
+                "GITHUB Reports Published",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"GITHUB Reports Published failed.\n\n{ex.Message}",
+                "GITHUB Reports Published ERROR",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         }
@@ -13029,6 +13137,10 @@ public sealed class MainForm : Form
 
         await File.WriteAllTextAsync(report31Path, formattedText);
 
+        string report31HtmlPath = Path.ChangeExtension(report31Path, ".html");
+        string htmlWrapped = WrapTextAsHtml(formattedText);
+        await File.WriteAllTextAsync(report31HtmlPath, htmlWrapped);
+
         if (copyToClipboard)
             Clipboard.SetText(formattedText);
 
@@ -13102,6 +13214,40 @@ public sealed class MainForm : Form
         }
 
         return string.Join(Environment.NewLine, output);
+    }
+
+    private static string WrapTextAsHtml(string text)
+    {
+        string encoded = HtmlEncode(text);
+
+        return
+$@"&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset=""utf-8""&gt;
+  &lt;title&gt;Test Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div&gt;
+&lt;pre&gt;
+
+{encoded}
+
+&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;";
+    }
+
+    private static string HtmlEncode(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        return text
+            .Replace("&amp;", "&amp;amp;")
+            .Replace("&lt;", "&amp;lt;")
+            .Replace("&gt;", "&amp;gt;");
     }
 
     private static string WrapLine(string text, int maxWidth)
@@ -13211,6 +13357,7 @@ public sealed class MainForm : Form
         if (_btnGitPublished != null) _btnGitPublished.Enabled = enabled;
         if (_btnCodesFile != null) _btnCodesFile.Enabled = enabled;
         if (_btnGitHubPublished != null) _btnGitHubPublished.Enabled = enabled;
+        if (_btnGitHubReportsPublished != null) _btnGitHubReportsPublished.Enabled = enabled;
 
         if (_strategyList != null) _strategyList.Enabled = enabled;
         if (_timeframeList != null) _timeframeList.Enabled = enabled;
