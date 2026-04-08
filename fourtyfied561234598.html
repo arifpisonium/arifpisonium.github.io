@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__12-50-11.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__12-50-11.txt
-GENERATED: 2026-04-08 12:50:11
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__17-38-34.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__17-38-34.txt
+GENERATED: 2026-04-08 17:38:34
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -21,7 +21,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
 │       │   ├───04908e81-50fd-4601-b08f-d895a5f893b1.vsidx
-│       │   └───797135fd-7350-4dad-971f-4ab3669e45ec.vsidx
+│       │   └───e8c9c40c-0749-476b-b60f-791cb569770f.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -3466,16 +3466,23 @@ public sealed class PortfolioRiskBudgetEngine
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Portfolio\PreTradeMarketSelectionService.cs
 TYPE: .cs
-SIZE: 6.33 KB
-LINES: 196
+SIZE: 20.6 KB
+LINES: 506
 ==============================
+using System.Text;
 using TQGA.Application.Interfaces;
+using TQGA.Application.Paths;
 using TQGA.Domain.Market;
 
 namespace TQGA.Application.Portfolio;
 
 public sealed class PreTradeMarketSelectionService
 {
+    private const decimal MinAverageDollarVolume = 2_000_000m;
+    private const decimal MinAverageAbsoluteReturn = 0.006m;
+    private const decimal HighVolThreshold = 0.012m;
+    private const decimal MaxTrendExtension = 0.18m;
+
     public SelectionResult SelectMarkets(
         ICandleDataFeed feed,
         IReadOnlyList&lt;string&gt; symbols,
@@ -3493,12 +3500,14 @@ public sealed class PreTradeMarketSelectionService
 
         var accepted = new List&lt;SelectedMarket&gt;();
         var rejected = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+        var telemetryRows = new List&lt;PreTradeTelemetryRow&gt;();
 
         foreach (var symbol in symbols)
         {
             foreach (var timeframe in timeframes)
             {
                 var market = new MarketKey(symbol, timeframe);
+                var marketKey = $"{symbol}::{timeframe}";
 
                 var candles = feed.GetCandles(symbol, timeframe)
                     .OrderBy(c =&gt; c.Time)
@@ -3507,50 +3516,88 @@ public sealed class PreTradeMarketSelectionService
 
                 if (candles.Count &lt; 120)
                 {
-                    rejected[$"{symbol}::{timeframe}"] = "REJECT: insufficient history";
+                    const string reason = "REJECT: insufficient history";
+
+                    rejected[marketKey] = reason;
+                    telemetryRows.Add(new PreTradeTelemetryRow
+                    {
+                        Market = market,
+                        CandleCount = candles.Count,
+                        AverageDollarVolume = 0m,
+                        AverageAbsoluteReturn = 0m,
+                        LeadershipScore = 0m,
+                        TimeframeBonus = GetTimeframeBonus(timeframe),
+                        RegimeBonus = 0m,
+                        TrendExtension = 0m,
+                        FinalScore = 0m,
+                        RegimeState = MarketTrendState.Unknown,
+                        Decision = reason,
+                        PassedHistory = false,
+                        PassedLiquidity = false,
+                        PassedVolatility = false,
+                        PassedRegime = false,
+                        PassedExtension = false,
+                        SelectedTopN = false
+                    });
                     continue;
                 }
 
                 var avgDollarVolume = candles.Average(c =&gt; c.Close * c.Volume);
-                if (avgDollarVolume &lt; 2_000_000m)
-                {
-                    rejected[$"{symbol}::{timeframe}"] = "REJECT: low liquidity";
-                    continue;
-                }
-
                 var avgAbsReturn = ComputeAverageAbsoluteReturn(candles);
-                if (avgAbsReturn &lt; 0.006m)
-                {
-                    rejected[$"{symbol}::{timeframe}"] = "REJECT: dead / too low volatility";
-                    continue;
-                }
-
                 var trend = ComputeTrendState(candles);
-                if (trend is not MarketTrendState.TrendUp and not MarketTrendState.HighVolUp)
-                {
-                    rejected[$"{symbol}::{timeframe}"] = "REJECT: regime not trend/high-vol-up";
-                    continue;
-                }
-
                 var maturity = ComputeTrendExtension(candles);
-                if (maturity &gt; 0.18m)
-                {
-                    rejected[$"{symbol}::{timeframe}"] = "REJECT: late / overextended trend";
-                    continue;
-                }
 
                 leadership.TryGetValue(market, out var leadershipScore);
 
-                decimal timeframeBonus = timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase)
-                    ? 0.20m
-                    : timeframe.Equals("1h", StringComparison.OrdinalIgnoreCase)
-                        ? 0.05m
-                        : 0.00m;
-
+                decimal timeframeBonus = GetTimeframeBonus(timeframe);
                 decimal regimeBonus = trend == MarketTrendState.HighVolUp ? 0.15m : 0.08m;
                 decimal qualityPenalty = maturity * 0.50m;
+                decimal finalScore = leadershipScore + timeframeBonus + regimeBonus - qualityPenalty;
 
-                var finalScore = leadershipScore + timeframeBonus + regimeBonus - qualityPenalty;
+                bool passedLiquidity = avgDollarVolume &gt;= MinAverageDollarVolume;
+                bool passedVolatility = avgAbsReturn &gt;= MinAverageAbsoluteReturn;
+                bool passedRegime = trend is MarketTrendState.TrendUp or MarketTrendState.HighVolUp;
+                bool passedExtension = maturity &lt;= MaxTrendExtension;
+
+                string? rejectionReason = null;
+
+                if (!passedLiquidity)
+                    rejectionReason = "REJECT: low liquidity";
+                else if (!passedVolatility)
+                    rejectionReason = "REJECT: dead / too low volatility";
+                else if (!passedRegime)
+                    rejectionReason = "REJECT: regime not trend/high-vol-up";
+                else if (!passedExtension)
+                    rejectionReason = "REJECT: late / overextended trend";
+
+                var row = new PreTradeTelemetryRow
+                {
+                    Market = market,
+                    CandleCount = candles.Count,
+                    AverageDollarVolume = avgDollarVolume,
+                    AverageAbsoluteReturn = avgAbsReturn,
+                    LeadershipScore = leadershipScore,
+                    TimeframeBonus = timeframeBonus,
+                    RegimeBonus = regimeBonus,
+                    TrendExtension = maturity,
+                    FinalScore = finalScore,
+                    RegimeState = trend,
+                    Decision = rejectionReason ?? "ACCEPT: pre-topN",
+                    PassedHistory = true,
+                    PassedLiquidity = passedLiquidity,
+                    PassedVolatility = passedVolatility,
+                    PassedRegime = passedRegime,
+                    PassedExtension = passedExtension,
+                    SelectedTopN = false
+                };
+
+                telemetryRows.Add(row);
+
+                if (rejectionReason != null)
+                {
+                    rejected[marketKey] = rejectionReason;
+                    continue;
+                }
 
                 accepted.Add(new SelectedMarket(
                     market,
@@ -3577,9 +3624,252 @@ public sealed class PreTradeMarketSelectionService
                 $"REJECT: outside top {topN} leadership set";
         }
 
+        foreach (var row in telemetryRows)
+        {
+            if (selectedSet.Contains(row.Market))
+            {
+                row.Decision = "SELECTED: top leadership set";
+                row.SelectedTopN = true;
+            }
+            else if (row.Decision == "ACCEPT: pre-topN")
+            {
+                row.Decision = $"REJECT: outside top {topN} leadership set";
+            }
+        }
+
+        WritePreTradeRegimeTelemetryReport(
+            telemetryRows,
+            selected,
+            topN);
+
         return new SelectionResult(
             selected,
             rejected);
+    }
+
+    private static void WritePreTradeRegimeTelemetryReport(
+        IReadOnlyList&lt;PreTradeTelemetryRow&gt; telemetryRows,
+        IReadOnlyList&lt;SelectedMarket&gt; selectedMarkets,
+        int topN)
+    {
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_17_PRETRADE_REGIME_TELEMETRY_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+
+        var sb = new StringBuilder();
+
+        int totalUniverse = telemetryRows.Count;
+        int selectedCount = telemetryRows.Count(x =&gt; x.SelectedTopN);
+        int acceptedPreTopNCount = telemetryRows.Count(x =&gt; x.Decision.StartsWith("SELECTED:", StringComparison.OrdinalIgnoreCase)
+                                                          || x.Decision.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase));
+
+        int insufficientHistoryCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: insufficient history", StringComparison.OrdinalIgnoreCase));
+        int lowLiquidityCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase));
+        int lowVolCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: dead / too low volatility", StringComparison.OrdinalIgnoreCase));
+        int regimeRejectCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase));
+        int extensionRejectCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: late / overextended trend", StringComparison.OrdinalIgnoreCase));
+        int outsideTopNCount = telemetryRows.Count(x =&gt; x.Decision.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase));
+
+        sb.AppendLine("REPORT 17 — PRE-TRADE / REGIME GATE TELEMETRY");
+        sb.AppendLine("============================================");
+        sb.AppendLine();
+        sb.AppendLine("PUBLISH PATH SIGNATURE");
+        sb.AppendLine("----------------------");
+        sb.AppendLine("PATCH_25_PRETRADE_REGIME_GATE_TELEMETRY");
+        sb.AppendLine("SOURCE = PreTradeMarketSelectionService.SelectMarkets");
+        sb.AppendLine();
+
+        sb.AppendLine("CONFIGURATION");
+        sb.AppendLine("-------------");
+        sb.AppendLine($"TopN Leadership Set                 : {topN}");
+        sb.AppendLine($"Min Average Dollar Volume           : {MinAverageDollarVolume:N0}");
+        sb.AppendLine($"Min Average Absolute Return         : {MinAverageAbsoluteReturn:F4}");
+        sb.AppendLine($"High Vol Threshold                  : {HighVolThreshold:F4}");
+        sb.AppendLine($"Max Trend Extension                 : {MaxTrendExtension:F2}");
+        sb.AppendLine();
+
+        sb.AppendLine("FUNNEL TELEMETRY");
+        sb.AppendLine("----------------");
+        sb.AppendLine($"Raw Candidate Universe              : {totalUniverse}");
+        sb.AppendLine($"Passed Structural Gates             : {acceptedPreTopNCount}");
+        sb.AppendLine($"Selected Final TopN                 : {selectedCount}");
+        sb.AppendLine($"Rejected: insufficient history      : {insufficientHistoryCount}");
+        sb.AppendLine($"Rejected: low liquidity             : {lowLiquidityCount}");
+        sb.AppendLine($"Rejected: dead / low volatility     : {lowVolCount}");
+        sb.AppendLine($"Rejected: regime                    : {regimeRejectCount}");
+        sb.AppendLine($"Rejected: overextended trend        : {extensionRejectCount}");
+        sb.AppendLine($"Rejected: outside topN              : {outsideTopNCount}");
+        sb.AppendLine();
+
+        sb.AppendLine("REJECTION BUCKET COUNTS");
+        sb.AppendLine("-----------------------");
+        foreach (var bucket in telemetryRows
+                     .GroupBy(x =&gt; x.Decision)
+                     .OrderByDescending(g =&gt; g.Count())
+                     .ThenBy(g =&gt; g.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            sb.AppendLine($"{bucket.Key,-40} {bucket.Count(),6}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("REGIME STATE COUNTS");
+        sb.AppendLine("-------------------");
+        foreach (var bucket in telemetryRows
+                     .GroupBy(x =&gt; x.RegimeState.ToString())
+                     .OrderByDescending(g =&gt; g.Count())
+                     .ThenBy(g =&gt; g.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            sb.AppendLine($"{bucket.Key,-20} {bucket.Count(),6}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("SELECTED MARKETS");
+        sb.AppendLine("----------------");
+        if (selectedMarkets.Count == 0)
+        {
+            sb.AppendLine("NO SELECTED MARKETS");
+        }
+        else
+        {
+            int rank = 1;
+            foreach (var row in selectedMarkets.OrderByDescending(x =&gt; x.Score))
+            {
+                sb.AppendLine(
+                    $"{rank,2}. {row.Market.Symbol}::{row.Market.Timeframe,-4} " +
+                    $"score={row.Score,8:F4} " +
+                    $"liq={row.AverageDollarVolume,14:N0} " +
+                    $"vol={row.AverageAbsoluteReturn,8:F4} " +
+                    $"regime={row.RegimeLabel,-10} " +
+                    $"extension={row.TrendExtension,7:F4}");
+                rank++;
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("TOP REGIME NEAR MISSES");
+        sb.AppendLine("----------------------");
+        var regimeNearMisses = telemetryRows
+            .Where(x =&gt; x.Decision.Equals("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.FinalScore)
+            .ThenByDescending(x =&gt; x.LeadershipScore)
+            .Take(15)
+            .ToList();
+
+        if (regimeNearMisses.Count == 0)
+        {
+            sb.AppendLine("NO REGIME NEAR MISSES");
+        }
+        else
+        {
+            foreach (var row in regimeNearMisses)
+            {
+                sb.AppendLine(
+                    $"{row.Market.Symbol}::{row.Market.Timeframe,-4} " +
+                    $"regime={row.RegimeState,-12} " +
+                    $"score={row.FinalScore,8:F4} " +
+                    $"lead={row.LeadershipScore,8:F4} " +
+                    $"liq={row.AverageDollarVolume,14:N0} " +
+                    $"vol={row.AverageAbsoluteReturn,8:F4} " +
+                    $"extension={row.TrendExtension,7:F4}");
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("TOP LIQUIDITY NEAR MISSES");
+        sb.AppendLine("-------------------------");
+        var liquidityNearMisses = telemetryRows
+            .Where(x =&gt; x.Decision.Equals("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.AverageDollarVolume)
+            .Take(15)
+            .ToList();
+
+        if (liquidityNearMisses.Count == 0)
+        {
+            sb.AppendLine("NO LIQUIDITY NEAR MISSES");
+        }
+        else
+        {
+            foreach (var row in liquidityNearMisses)
+            {
+                decimal gap = Math.Max(0m, MinAverageDollarVolume - row.AverageDollarVolume);
+                sb.AppendLine(
+                    $"{row.Market.Symbol}::{row.Market.Timeframe,-4} " +
+                    $"liq={row.AverageDollarVolume,14:N0} " +
+                    $"gap={gap,14:N0} " +
+                    $"score={row.FinalScore,8:F4} " +
+                    $"regime={row.RegimeState,-12} " +
+                    $"vol={row.AverageAbsoluteReturn,8:F4}");
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("TOP EXTENSION NEAR MISSES");
+        sb.AppendLine("-------------------------");
+        var extensionNearMisses = telemetryRows
+            .Where(x =&gt; x.Decision.Equals("REJECT: late / overextended trend", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(x =&gt; x.TrendExtension)
+            .Take(15)
+            .ToList();
+
+        if (extensionNearMisses.Count == 0)
+        {
+            sb.AppendLine("NO EXTENSION NEAR MISSES");
+        }
+        else
+        {
+            foreach (var row in extensionNearMisses)
+            {
+                decimal gap = Math.Max(0m, row.TrendExtension - MaxTrendExtension);
+                sb.AppendLine(
+                    $"{row.Market.Symbol}::{row.Market.Timeframe,-4} " +
+                    $"extension={row.TrendExtension,8:F4} " +
+                    $"gap={gap,8:F4} " +
+                    $"score={row.FinalScore,8:F4} " +
+                    $"regime={row.RegimeState,-12} " +
+                    $"liq={row.AverageDollarVolume,14:N0}");
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("FULL TELEMETRY TABLE");
+        sb.AppendLine("--------------------");
+        sb.AppendLine("Market               Candles  LiqPass  VolPass  RegPass  ExtPass  Regime        LeadScore  FinalScore  Avg$Vol        AvgAbsRet  Extension  Decision");
+        sb.AppendLine("-------------------  -------  -------  -------  -------  -------  ------------  ---------  ----------  -------------  ---------  ---------  ----------------------------------------");
+
+        foreach (var row in telemetryRows
+                     .OrderByDescending(x =&gt; x.SelectedTopN)
+                     .ThenByDescending(x =&gt; x.FinalScore)
+                     .ThenBy(x =&gt; x.Market.Symbol, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(x =&gt; x.Market.Timeframe, StringComparer.OrdinalIgnoreCase))
+        {
+            sb.AppendLine(
+                $"{($"{row.Market.Symbol}::{row.Market.Timeframe}"),-19} " +
+                $"{row.CandleCount,7}  " +
+                $"{(row.PassedLiquidity ? "YES" : "NO "),7}  " +
+                $"{(row.PassedVolatility ? "YES" : "NO "),7}  " +
+                $"{(row.PassedRegime ? "YES" : "NO "),7}  " +
+                $"{(row.PassedExtension ? "YES" : "NO "),7}  " +
+                $"{row.RegimeState,-12}  " +
+                $"{row.LeadershipScore,9:F4}  " +
+                $"{row.FinalScore,10:F4}  " +
+                $"{row.AverageDollarVolume,13:N0}  " +
+                $"{row.AverageAbsoluteReturn,9:F4}  " +
+                $"{row.TrendExtension,9:F4}  " +
+                $"{row.Decision}");
+        }
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static decimal GetTimeframeBonus(string timeframe)
+    {
+        return timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase)
+            ? 0.20m
+            : timeframe.Equals("1h", StringComparison.OrdinalIgnoreCase)
+                ? 0.05m
+                : 0.00m;
     }
 
     private static decimal ComputeAverageAbsoluteReturn(IReadOnlyList&lt;Candle&gt; candles)
@@ -3594,7 +3884,6 @@ public sealed class PreTradeMarketSelectionService
         {
             var prev = candles[i - 1].Close;
             var cur = candles[i].Close;
-
             if (prev == 0m)
                 continue;
 
@@ -3619,7 +3908,7 @@ public sealed class PreTradeMarketSelectionService
 
         bool trendUp = emaFast &gt; emaMid &amp;&amp; emaMid &gt; emaSlow;
         bool trendDown = emaFast &lt; emaMid &amp;&amp; emaMid &lt; emaSlow;
-        bool highVol = avgAbsRet &gt;= 0.012m;
+        bool highVol = avgAbsRet &gt;= HighVolThreshold;
 
         if (trendUp &amp;&amp; highVol) return MarketTrendState.HighVolUp;
         if (trendUp) return MarketTrendState.TrendUp;
@@ -3654,6 +3943,27 @@ public sealed class PreTradeMarketSelectionService
         decimal AverageAbsoluteReturn,
         string RegimeLabel,
         decimal TrendExtension);
+
+    private sealed class PreTradeTelemetryRow
+    {
+        public required MarketKey Market { get; init; }
+        public int CandleCount { get; init; }
+        public decimal AverageDollarVolume { get; init; }
+        public decimal AverageAbsoluteReturn { get; init; }
+        public decimal LeadershipScore { get; init; }
+        public decimal TimeframeBonus { get; init; }
+        public decimal RegimeBonus { get; init; }
+        public decimal TrendExtension { get; init; }
+        public decimal FinalScore { get; set; }
+        public MarketTrendState RegimeState { get; init; }
+        public string Decision { get; set; } = string.Empty;
+        public bool PassedHistory { get; init; }
+        public bool PassedLiquidity { get; init; }
+        public bool PassedVolatility { get; init; }
+        public bool PassedRegime { get; init; }
+        public bool PassedExtension { get; init; }
+        public bool SelectedTopN { get; set; }
+    }
 
     private enum MarketTrendState
     {
