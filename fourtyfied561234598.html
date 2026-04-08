@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__11-06-59.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__11-06-59.txt
-GENERATED: 2026-04-08 11:06:59
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__12-02-41.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__12-02-41.txt
+GENERATED: 2026-04-08 12:02:41
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,8 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───3f3106db-e613-41bf-a36a-8b0d58bc6f98.vsidx
+│       │   ├───04908e81-50fd-4601-b08f-d895a5f893b1.vsidx
+│       │   └───40054272-04c0-4cc6-80e3-8979d3554840.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -98,6 +99,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───PortfolioEquityReportService.cs
 │   │   ├───QuickAuditReportService.cs
 │   │   ├───ReconciliationReportService.cs
+│   │   ├───Report19EdgeDeathMapReportService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -9114,6 +9116,411 @@ public sealed class ReconciliationReportService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report19EdgeDeathMapReportService.cs
+TYPE: .cs
+SIZE: 16.93 KB
+LINES: 398
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report19EdgeDeathMapReportService
+{
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots,
+        IReadOnlyCollection&lt;int&gt; allowedStrategyIds)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+        ArgumentNullException.ThrowIfNull(allowedStrategyIds);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_19_EDGE_DEATH_MAP_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var selectedMarkets = result.SelectedMarkets?
+            .Where(x =&gt; !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x =&gt; x, StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            ?? new List&lt;string&gt;();
+
+        var rejectionMap = result.MarketSelectionRejections?
+            .Where(kv =&gt; !string.IsNullOrWhiteSpace(kv.Key))
+            .GroupBy(kv =&gt; kv.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g =&gt; g.Key,
+                g =&gt; g.Last().Value ?? string.Empty,
+                StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+
+        var candidateUniverse = selectedMarkets
+            .Concat(rejectionMap.Keys)
+            .Where(x =&gt; !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x =&gt; x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var canonicalDeployable = result.CanonicalCioPostGatingWeights?
+            .Where(kv =&gt; !string.IsNullOrWhiteSpace(kv.Key) &amp;&amp; kv.Value &gt; 0m)
+            .ToDictionary(kv =&gt; kv.Key, kv =&gt; kv.Value, StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        var runnerCandidateMix = result.MarketAllocationWeights?
+            .Where(kv =&gt; !string.IsNullOrWhiteSpace(kv.Key) &amp;&amp; kv.Value &gt; 0m)
+            .ToDictionary(kv =&gt; kv.Key, kv =&gt; kv.Value, StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        int rawCandidateCount = candidateUniverse.Count;
+        int rejectedCount = rejectionMap.Count;
+        int selectedAfterWaveBCount = selectedMarkets.Count;
+        int deployableCount = canonicalDeployable.Count;
+        decimal preservedCash = result.CashAllocationWeight;
+
+        int totalStrategies = fitnessSnapshots.Count;
+        int allowedStrategies = allowedStrategyIds.Count;
+        int rejectedStrategies = Math.Max(0, totalStrategies - allowedStrategies);
+        int scarcityOverrideCount = fitnessSnapshots.Values.Count(x =&gt;
+            !string.IsNullOrWhiteSpace(x.GateReason) &amp;&amp;
+            x.GateReason.Contains("SCARCITY_OVERRIDE", StringComparison.OrdinalIgnoreCase));
+
+        int lostInCanonicalNormalization = selectedMarkets.Count(x =&gt;
+            !canonicalDeployable.ContainsKey(x));
+
+        var rejectionReasonCounts = BuildRejectionReasonCounts(rejectionMap);
+        var strategyGateReasonCounts = BuildStrategyGateReasonCounts(fitnessSnapshots);
+        string dominantKillZone = DetermineDominantKillZone(
+            rejectionReasonCounts,
+            strategyGateReasonCounts,
+            selectedAfterWaveBCount,
+            deployableCount,
+            preservedCash);
+
+        sb.AppendLine("REPORT 19 — EDGE DEATH MAP");
+        sb.AppendLine("==========================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Institutional funnel audit of where candidate breadth is dying.");
+        sb.AppendLine("This report is designed to explain why final deployable alpha breadth is narrow.");
+        sb.AppendLine();
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)              : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Raw Candidate Universe           : {rawCandidateCount}");
+        sb.AppendLine($"Rejected Before Final Deploy     : {rejectedCount}");
+        sb.AppendLine($"Selected After Wave B            : {selectedAfterWaveBCount}");
+        sb.AppendLine($"Runner Candidate Mix Count       : {runnerCandidateMix.Count}");
+        sb.AppendLine($"Canonical Deployable Count       : {deployableCount}");
+        sb.AppendLine($"Preserved Cash Weight            : {preservedCash:P2}");
+        sb.AppendLine($"Total Strategies Evaluated       : {totalStrategies}");
+        sb.AppendLine($"Strategies Allowed               : {allowedStrategies}");
+        sb.AppendLine($"Strategies Rejected              : {rejectedStrategies}");
+        sb.AppendLine($"Scarcity Override Count          : {scarcityOverrideCount}");
+        sb.AppendLine($"Lost In Canonical Normalization  : {lostInCanonicalNormalization}");
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION A — CANDIDATE FUNNEL");
+        sb.AppendLine("----------------------------");
+        sb.AppendLine($"1. Raw Candidate Universe             : {rawCandidateCount}");
+        sb.AppendLine($"2. Markets Rejected (reason present)  : {rejectedCount}");
+        sb.AppendLine($"3. Markets Selected After Wave B      : {selectedAfterWaveBCount}");
+        sb.AppendLine($"4. Runner Candidate Mix Count         : {runnerCandidateMix.Count}");
+        sb.AppendLine($"5. Canonical Deployable Markets       : {deployableCount}");
+        sb.AppendLine($"6. Preserved Cash                     : {preservedCash:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION B — MARKET REJECTION REASON COUNTS");
+        sb.AppendLine("------------------------------------------");
+        if (rejectionReasonCounts.Count == 0)
+        {
+            sb.AppendLine("NO MARKET REJECTION DATA");
+        }
+        else
+        {
+            foreach (var kv in rejectionReasonCounts.OrderByDescending(x =&gt; x.Value).ThenBy(x =&gt; x.Key, StringComparer.OrdinalIgnoreCase))
+                sb.AppendLine($"{kv.Key,-36} {kv.Value,6}");
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION C — STRATEGY GATE REASON COUNTS");
+        sb.AppendLine("---------------------------------------");
+        if (strategyGateReasonCounts.Count == 0)
+        {
+            sb.AppendLine("NO STRATEGY GATE DATA");
+        }
+        else
+        {
+            foreach (var kv in strategyGateReasonCounts.OrderByDescending(x =&gt; x.Value).ThenBy(x =&gt; x.Key, StringComparer.OrdinalIgnoreCase))
+                sb.AppendLine($"{kv.Key,-36} {kv.Value,6}");
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION D — NEAR MISS MARKETS");
+        sb.AppendLine("-----------------------------");
+        WriteNearMissMarkets(sb, result, rejectionMap);
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION E — STRATEGY FITNESS SNAPSHOT");
+        sb.AppendLine("-------------------------------------");
+        if (fitnessSnapshots.Count == 0)
+        {
+            sb.AppendLine("NO FITNESS SNAPSHOT DATA");
+        }
+        else
+        {
+            sb.AppendLine("StrId | StrategyCode | Allowed | Trades | Exits | FitnessScore | PnL | GateReason");
+            sb.AppendLine("------+--------------+---------+--------+-------+--------------+-----+-----------");
+            foreach (var row in fitnessSnapshots.Values.OrderBy(x =&gt; x.StrategyId))
+            {
+                sb.AppendLine(
+                    $"{row.StrategyId,5} | " +
+                    $"{TrimTo(row.StrategyCode, 12),-12} | " +
+                    $"{(row.Allowed ? "YES" : "NO "),-7} | " +
+                    $"{row.Trades,6} | " +
+                    $"{row.Exits,5} | " +
+                    $"{row.FitnessScore,12:F4} | " +
+                    $"{row.PnL,7:F2} | " +
+                    $"{row.GateReason}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION F — FINAL DEPLOYABLE ALLOCATION");
+        sb.AppendLine("---------------------------------------");
+        if (canonicalDeployable.Count == 0)
+        {
+            sb.AppendLine("NO CANONICAL DEPLOYABLE MARKETS");
+        }
+        else
+        {
+            foreach (var kv in canonicalDeployable.OrderByDescending(x =&gt; x.Value))
+                sb.AppendLine($"{kv.Key,-24} {kv.Value,10:P2}");
+        }
+        sb.AppendLine($"CASH{' ',20} {preservedCash,10:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION G — BREADTH KILL VERDICT");
+        sb.AppendLine("--------------------------------");
+        sb.AppendLine($"Dominant Kill Zone : {dominantKillZone}");
+        sb.AppendLine(BuildVerdictNarrative(
+            dominantKillZone,
+            rawCandidateCount,
+            selectedAfterWaveBCount,
+            deployableCount,
+            preservedCash,
+            scarcityOverrideCount,
+            lostInCanonicalNormalization));
+        sb.AppendLine();
+
+        sb.AppendLine("SECTION H — OPERATOR INTERPRETATION");
+        sb.AppendLine("-----------------------------------");
+        sb.AppendLine("This report should be used before changing thresholds.");
+        sb.AppendLine("Do not loosen gates blindly.");
+        sb.AppendLine("First identify where breadth dies:");
+        sb.AppendLine("1) market selection / Wave B");
+        sb.AppendLine("2) strategy fitness gating");
+        sb.AppendLine("3) canonical CIO deployment");
+        sb.AppendLine("4) preserved-cash regime defense");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static Dictionary&lt;string, int&gt; BuildRejectionReasonCounts(
+        IReadOnlyDictionary&lt;string, string&gt; rejectionMap)
+    {
+        var counts = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var kv in rejectionMap)
+        {
+            string bucket = NormalizeMarketRejectionReason(kv.Value);
+            if (counts.TryGetValue(bucket, out int current))
+                counts[bucket] = current + 1;
+            else
+                counts[bucket] = 1;
+        }
+
+        return counts;
+    }
+
+    private static Dictionary&lt;string, int&gt; BuildStrategyGateReasonCounts(
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        var counts = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var row in fitnessSnapshots.Values)
+        {
+            string reason = string.IsNullOrWhiteSpace(row.GateReason)
+                ? (row.Allowed ? "ALLOWED" : "UNKNOWN")
+                : row.GateReason.Trim();
+
+            if (counts.TryGetValue(reason, out int current))
+                counts[reason] = current + 1;
+            else
+                counts[reason] = 1;
+        }
+
+        return counts;
+    }
+
+    private static string NormalizeMarketRejectionReason(string? reason)
+    {
+        string value = reason?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(value))
+            return "UNKNOWN";
+
+        if (value.Contains("dispersion", StringComparison.OrdinalIgnoreCase))
+            return "DispersionGuard";
+
+        if (value.Contains("per-symbol", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("per symbol", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("symbol cap", StringComparison.OrdinalIgnoreCase))
+            return "PerSymbolCap";
+
+        if (value.Contains("top-n", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("top n", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("overflow", StringComparison.OrdinalIgnoreCase))
+            return "TopNOverflow";
+
+        if (value.Contains("threshold", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("below", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("score", StringComparison.OrdinalIgnoreCase))
+            return "BelowMinScore";
+
+        if (value.Contains("pre-trade", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("pretrade", StringComparison.OrdinalIgnoreCase))
+            return "PreTradeSelection";
+
+        if (value.Contains("duplicate", StringComparison.OrdinalIgnoreCase))
+            return "DuplicateFiltered";
+
+        return value;
+    }
+
+    private static string DetermineDominantKillZone(
+        IReadOnlyDictionary&lt;string, int&gt; marketRejectionReasons,
+        IReadOnlyDictionary&lt;string, int&gt; strategyGateReasons,
+        int selectedAfterWaveBCount,
+        int deployableCount,
+        decimal preservedCash)
+    {
+        int marketRejectTotal = marketRejectionReasons.Values.Sum();
+        int strategyRejectTotal = strategyGateReasons
+            .Where(kv =&gt; !kv.Key.Equals("ALLOWED", StringComparison.OrdinalIgnoreCase) &amp;&amp;
+                         !kv.Key.Contains("SCARCITY_OVERRIDE", StringComparison.OrdinalIgnoreCase))
+            .Sum(kv =&gt; kv.Value);
+
+        if (selectedAfterWaveBCount &lt;= 1 &amp;&amp; marketRejectTotal &gt;= strategyRejectTotal)
+            return "WAVE_B_SELECTION";
+
+        if (strategyRejectTotal &gt; marketRejectTotal &amp;&amp; strategyRejectTotal &gt; 0)
+            return "STRATEGY_FITNESS_GATING";
+
+        if (deployableCount &lt; selectedAfterWaveBCount)
+            return "CANONICAL_CIO_DEPLOYMENT";
+
+        if (preservedCash &gt;= 0.50m)
+            return "REGIME_CASH_PRESERVATION";
+
+        return "MIXED_OR_UNCLEAR";
+    }
+
+    private static void WriteNearMissMarkets(
+        StringBuilder sb,
+        PortfolioBacktestResult result,
+        IReadOnlyDictionary&lt;string, string&gt; rejectionMap)
+    {
+        var symbolTfPnl = result.SymbolTimeframePnL
+            ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        var rows = rejectionMap
+            .Select(kv =&gt; new
+            {
+                Market = kv.Key,
+                Reason = kv.Value,
+                PnL = symbolTfPnl.TryGetValue(kv.Key, out decimal pnl) ? pnl : 0m
+            })
+            .OrderByDescending(x =&gt; x.PnL)
+            .ThenBy(x =&gt; x.Market, StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .ToList();
+
+        if (rows.Count == 0)
+        {
+            sb.AppendLine("NO NEAR MISS MARKET DATA");
+            return;
+        }
+
+        sb.AppendLine("Market                    PnL         Reason");
+        sb.AppendLine("------------------------  ----------  --------------------------------");
+        foreach (var row in rows)
+        {
+            sb.AppendLine($"{TrimTo(row.Market, 24),-24}  {row.PnL,10:F2}  {row.Reason}");
+        }
+    }
+
+    private static string BuildVerdictNarrative(
+        string dominantKillZone,
+        int rawCandidateCount,
+        int selectedAfterWaveBCount,
+        int deployableCount,
+        decimal preservedCash,
+        int scarcityOverrideCount,
+        int lostInCanonicalNormalization)
+    {
+        return dominantKillZone switch
+        {
+            "WAVE_B_SELECTION" =&gt;
+                $"Breadth is dying primarily before or during Wave B. " +
+                $"Raw candidates = {rawCandidateCount}, selected after Wave B = {selectedAfterWaveBCount}. " +
+                $"This suggests market-level selection pressure is the main bottleneck.",
+
+            "STRATEGY_FITNESS_GATING" =&gt;
+                $"Breadth is dying primarily at strategy fitness gating. " +
+                $"Markets are surviving far enough to be candidates, but too many strategy sleeves are rejected before robust deployment.",
+
+            "CANONICAL_CIO_DEPLOYMENT" =&gt;
+                $"Breadth is dying between runner selection and final deployable CIO normalization. " +
+                $"Selected after Wave B = {selectedAfterWaveBCount}, final deployable = {deployableCount}, " +
+                $"lost in canonical normalization = {lostInCanonicalNormalization}.",
+
+            "REGIME_CASH_PRESERVATION" =&gt;
+                $"The main visible constraint is defensive capital preservation. " +
+                $"Preserved cash = {preservedCash:P2}. " +
+                $"Scarcity override count = {scarcityOverrideCount}. " +
+                $"The platform is choosing honesty over forced deployment.",
+
+            _ =&gt;
+                $"No single bottleneck dominates cleanly. " +
+                $"This run likely reflects mixed pressure across Wave B, strategy gating, and final deployable normalization."
+        };
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -9757,8 +10164,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 3.02 KB
-LINES: 87
+SIZE: 3.38 KB
+LINES: 96
 ==============================
 using System;
 using System.Collections.Generic;
@@ -9814,6 +10221,15 @@ public sealed class UniversalResearchReportService
                 Allowed = kv.Value.Allowed,
                 GateReason = kv.Value.GateReason
             });
+
+        // REPORT 19 — EDGE DEATH MAP
+        // Must be generated inside the main universal report path so FULL REPORT / REPORT ALL 31
+        // automatically includes it from DataPaths.Reports.
+        new Report19EdgeDeathMapReportService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots,
+            allowed);
 
         // A84_00
         new A84ExecutiveSummaryReportService().GenerateAndWrite(
