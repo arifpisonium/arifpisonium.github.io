@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__12-02-41.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__12-02-41.txt
-GENERATED: 2026-04-08 12:02:41
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__12-37-11.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__12-37-11.txt
+GENERATED: 2026-04-08 12:37:11
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -21,7 +21,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
 │       │   ├───04908e81-50fd-4601-b08f-d895a5f893b1.vsidx
-│       │   └───40054272-04c0-4cc6-80e3-8979d3554840.vsidx
+│       │   └───3a9f515a-1fcd-4ace-b5a9-173129d2a124.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -644,8 +644,8 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 53.61 KB
-LINES: 1453
+SIZE: 63.24 KB
+LINES: 1634
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
@@ -674,11 +674,22 @@ public sealed class PortfolioBacktestRunner
     private const decimal WaveBMinScoreThreshold = 0.62m;
     private const decimal WaveBMaxWeightPerMarket = 0.18m;
 
-    // PATCH 22 — dispersion / gap guard
+    // PATCH 22 — strict dispersion / gap guard
     // Goal: when the Wave B score curve is too flat, do NOT pretend that broad candidate count = real breadth.
     private const decimal WaveBMinRelativeToLeaderFinalScore = 0.90m;
     private const decimal WaveBMinRelativeToLeaderPreTradeScore = 0.85m;
     private const int WaveBDispersionGuardMinMarkets = 1;
+
+    // PATCH 24 — adaptive scarcity-only relaxed dispersion mode
+    // IMPORTANT:
+    // - This does NOT relax regime gate.
+    // - This does NOT relax liquidity gate.
+    // - This does NOT relax min score threshold.
+    // - It only gives a narrow second chance to near-miss candidates when
+    //   strict dispersion leaves breadth critically thin.
+    private const decimal WaveBScarcityRelaxedMinRelativeToLeaderFinalScore = 0.88m;
+    private const decimal WaveBScarcityRelaxedMinRelativeToLeaderPreTradeScore = 0.82m;
+    private const int WaveBScarcityRelaxedTargetMinMarkets = 3;
 
     public PortfolioBacktestRunner(
         IServiceProvider root,
@@ -1207,7 +1218,9 @@ public sealed class PortfolioBacktestRunner
                 FinalScore = finalScore,
                 RelativeToLeaderFinalScore = 0m,
                 RelativeToLeaderPreTradeScore = 0m,
-                PassesDispersionGuard = false
+                PassesDispersionGuard = false,
+                PassesRelaxedDispersionGuard = false,
+                SelectedByScarcityRelaxedDispersion = false
             });
         }
 
@@ -1241,6 +1254,7 @@ public sealed class PortfolioBacktestRunner
                 candidate.RelativeToLeaderFinalScore = 1.00m;
                 candidate.RelativeToLeaderPreTradeScore = 1.00m;
                 candidate.PassesDispersionGuard = true;
+                candidate.PassesRelaxedDispersionGuard = true;
                 continue;
             }
 
@@ -1250,23 +1264,51 @@ public sealed class PortfolioBacktestRunner
             candidate.PassesDispersionGuard =
                 candidate.RelativeToLeaderFinalScore &gt;= WaveBMinRelativeToLeaderFinalScore &amp;&amp;
                 candidate.RelativeToLeaderPreTradeScore &gt;= WaveBMinRelativeToLeaderPreTradeScore;
+
+            candidate.PassesRelaxedDispersionGuard =
+                candidate.RelativeToLeaderFinalScore &gt;= WaveBScarcityRelaxedMinRelativeToLeaderFinalScore &amp;&amp;
+                candidate.RelativeToLeaderPreTradeScore &gt;= WaveBScarcityRelaxedMinRelativeToLeaderPreTradeScore;
         }
+
+        int viableAfterThresholdCount = ranked.Count(x =&gt; x.FinalScore &gt;= WaveBMinScoreThreshold);
+
+        int strictDispersionPassCount = ranked.Count(x =&gt;
+            x.FinalScore &gt;= WaveBMinScoreThreshold &amp;&amp;
+            x.PassesDispersionGuard);
+
+        int relaxedDispersionPassCount = ranked.Count(x =&gt;
+            x.FinalScore &gt;= WaveBMinScoreThreshold &amp;&amp;
+            x.PassesRelaxedDispersionGuard);
+
+        bool scarcityDispersionModeActive =
+            strictDispersionPassCount &lt; WaveBScarcityRelaxedTargetMinMarkets &amp;&amp;
+            relaxedDispersionPassCount &gt; strictDispersionPassCount;
 
         var selectedCandidates = new List&lt;WaveBCandidate&gt;();
         var selectedPerSymbol = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase);
 
         bool dispersionGuardTriggered = false;
+        int scarcityRelaxedDispersionRescueCount = 0;
 
         foreach (var candidate in ranked)
         {
             string marketKey = $"{candidate.Market.Symbol}::{candidate.Market.Timeframe}";
+            bool selectedByScarcityRelaxedDispersion = false;
 
             if (!candidate.PassesDispersionGuard)
             {
-                combinedRejections[marketKey] =
-                    $"WaveBRejected:DispersionGuard(relFinal={candidate.RelativeToLeaderFinalScore:F4},minFinal={WaveBMinRelativeToLeaderFinalScore:F2},relPre={candidate.RelativeToLeaderPreTradeScore:F4},minPre={WaveBMinRelativeToLeaderPreTradeScore:F2})";
-                dispersionGuardTriggered = true;
-                continue;
+                if (scarcityDispersionModeActive &amp;&amp; candidate.PassesRelaxedDispersionGuard)
+                {
+                    selectedByScarcityRelaxedDispersion = true;
+                    candidate.SelectedByScarcityRelaxedDispersion = true;
+                }
+                else
+                {
+                    combinedRejections[marketKey] =
+                        $"WaveBRejected:DispersionGuard(relFinal={candidate.RelativeToLeaderFinalScore:F4},minFinal={WaveBMinRelativeToLeaderFinalScore:F2},relPre={candidate.RelativeToLeaderPreTradeScore:F4},minPre={WaveBMinRelativeToLeaderPreTradeScore:F2})";
+                    dispersionGuardTriggered = true;
+                    continue;
+                }
             }
 
             if (candidate.FinalScore &lt; WaveBMinScoreThreshold)
@@ -1296,16 +1338,26 @@ public sealed class PortfolioBacktestRunner
 
             selectedCandidates.Add(candidate);
             selectedPerSymbol[candidate.Market.Symbol] = currentSymbolCount + 1;
+
+            if (selectedByScarcityRelaxedDispersion)
+                scarcityRelaxedDispersionRescueCount++;
+
+            if (combinedRejections.ContainsKey(marketKey) &amp;&amp;
+                combinedRejections[marketKey].StartsWith("WaveBRejected:", StringComparison.OrdinalIgnoreCase))
+            {
+                combinedRejections.Remove(marketKey);
+            }
         }
 
         int effectiveMinMarkets = dispersionGuardTriggered
             ? WaveBDispersionGuardMinMarkets
             : WaveBMinMarkets;
 
-        // PATCH 22:
-        // Only force-fill to minimum breadth when dispersion guard is NOT active.
-        // If the curve is flat / weak, do not pretend breadth by backfilling second-tier names.
-        if (!dispersionGuardTriggered &amp;&amp; selectedCandidates.Count &lt; effectiveMinMarkets)
+        // PATCH 22 / PATCH 24:
+        // Only backfill when strict dispersion guard did NOT trigger.
+        // If scarcity mode is active, we still keep honesty and do not force-fill
+        // beyond organically surviving names.
+        if (!dispersionGuardTriggered &amp;&amp; !scarcityDispersionModeActive &amp;&amp; selectedCandidates.Count &lt; effectiveMinMarkets)
         {
             foreach (var candidate in ranked)
             {
@@ -1356,7 +1408,19 @@ public sealed class PortfolioBacktestRunner
             DispersionGuardTriggered = dispersionGuardTriggered,
             EffectiveMinMarkets = effectiveMinMarkets,
             LeaderFinalScore = ranked.Count == 0 ? 0m : ranked[0].FinalScore,
-            LeaderBasePreTradeScore = ranked.Count == 0 ? 0m : ranked[0].BasePreTradeScore
+            LeaderBasePreTradeScore = ranked.Count == 0 ? 0m : ranked[0].BasePreTradeScore,
+
+            ViableAfterThresholdCount = viableAfterThresholdCount,
+            StrictDispersionPassCount = strictDispersionPassCount,
+            RelaxedDispersionPassCount = relaxedDispersionPassCount,
+            ScarcityDispersionModeActive = scarcityDispersionModeActive,
+            ScarcityRelaxedDispersionRescueCount = scarcityRelaxedDispersionRescueCount,
+            EffectiveMinRelativeToLeaderFinalScore = scarcityDispersionModeActive
+                ? WaveBScarcityRelaxedMinRelativeToLeaderFinalScore
+                : WaveBMinRelativeToLeaderFinalScore,
+            EffectiveMinRelativeToLeaderPreTradeScore = scarcityDispersionModeActive
+                ? WaveBScarcityRelaxedMinRelativeToLeaderPreTradeScore
+                : WaveBMinRelativeToLeaderPreTradeScore
         };
     }
 
@@ -1369,32 +1433,61 @@ public sealed class PortfolioBacktestRunner
         Directory.CreateDirectory(DataPaths.Reports);
 
         var sb = new System.Text.StringBuilder();
+
         sb.AppendLine("REPORT 18 — WAVE B DIAGNOSTIC");
         sb.AppendLine("============================");
         sb.AppendLine();
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
-        sb.AppendLine("PATCH_18_WAVE_B_DIAGNOSTIC");
+        sb.AppendLine("PATCH_24_WAVE_B_TELEMETRY_AND_ADAPTIVE_SCARCITY_DISPERSION");
         sb.AppendLine("SOURCE = PortfolioBacktestRunner.ApplyWaveBSelection");
         sb.AppendLine();
 
         sb.AppendLine("CONFIGURATION");
         sb.AppendLine("-------------");
-        sb.AppendLine($"WaveBTopNMarkets       : {WaveBTopNMarkets}");
-        sb.AppendLine($"WaveBMinMarkets        : {WaveBMinMarkets}");
-        sb.AppendLine($"WaveBPerSymbolCap      : {WaveBPerSymbolCap}");
-        sb.AppendLine($"WaveBMinScoreThreshold : {WaveBMinScoreThreshold:F2}");
-        sb.AppendLine($"WaveBMaxWeightPerMarket: {WaveBMaxWeightPerMarket:P2}");
-        sb.AppendLine($"WaveBMinRelLeaderFinal : {WaveBMinRelativeToLeaderFinalScore:F2}");
-        sb.AppendLine($"WaveBMinRelLeaderPre   : {WaveBMinRelativeToLeaderPreTradeScore:F2}");
-        sb.AppendLine($"WaveBGuardMinMarkets   : {WaveBDispersionGuardMinMarkets}");
+        sb.AppendLine($"WaveBTopNMarkets                    : {WaveBTopNMarkets}");
+        sb.AppendLine($"WaveBMinMarkets                     : {WaveBMinMarkets}");
+        sb.AppendLine($"WaveBPerSymbolCap                   : {WaveBPerSymbolCap}");
+        sb.AppendLine($"WaveBMinScoreThreshold              : {WaveBMinScoreThreshold:F2}");
+        sb.AppendLine($"WaveBMaxWeightPerMarket             : {WaveBMaxWeightPerMarket:P2}");
+        sb.AppendLine($"WaveBStrictMinRelLeaderFinal        : {WaveBMinRelativeToLeaderFinalScore:F2}");
+        sb.AppendLine($"WaveBStrictMinRelLeaderPre          : {WaveBMinRelativeToLeaderPreTradeScore:F2}");
+        sb.AppendLine($"WaveBRelaxedMinRelLeaderFinal       : {WaveBScarcityRelaxedMinRelativeToLeaderFinalScore:F2}");
+        sb.AppendLine($"WaveBRelaxedMinRelLeaderPre         : {WaveBScarcityRelaxedMinRelativeToLeaderPreTradeScore:F2}");
+        sb.AppendLine($"WaveBGuardMinMarkets                : {WaveBDispersionGuardMinMarkets}");
+        sb.AppendLine($"WaveBScarcityRelaxedTargetMinMkts   : {WaveBScarcityRelaxedTargetMinMarkets}");
         sb.AppendLine();
+
+        sb.AppendLine("FUNNEL TELEMETRY");
+        sb.AppendLine("----------------");
+        int preTradeCount = 0;
+        try
+        {
+            preTradeCount = ((IEnumerable&lt;dynamic&gt;)preTradeSelection.SelectedMarkets).Count();
+        }
+        catch
+        {
+            preTradeCount = 0;
+        }
+
+        sb.AppendLine($"PreTrade Ranked Count               : {preTradeCount}");
+        sb.AppendLine($"Wave B Candidate Count              : {waveBSelection.RankedCandidates.Count}");
+        sb.AppendLine($"Viable After Score Threshold        : {waveBSelection.ViableAfterThresholdCount}");
+        sb.AppendLine($"Strict Dispersion Pass Count        : {waveBSelection.StrictDispersionPassCount}");
+        sb.AppendLine($"Relaxed Dispersion Pass Count       : {waveBSelection.RelaxedDispersionPassCount}");
+        sb.AppendLine($"Selected Final Count                : {waveBSelection.SelectedMarkets.Count}");
+        sb.AppendLine($"Scarcity Dispersion Mode Active     : {(waveBSelection.ScarcityDispersionModeActive ? "YES" : "NO")}");
+        sb.AppendLine($"Scarcity Relaxed Rescues            : {waveBSelection.ScarcityRelaxedDispersionRescueCount}");
+        sb.AppendLine();
+
         sb.AppendLine("DISPERSION GUARD STATE");
         sb.AppendLine("----------------------");
-        sb.AppendLine($"Dispersion Guard Triggered : {(waveBSelection.DispersionGuardTriggered ? "YES" : "NO")}");
-        sb.AppendLine($"Effective Min Markets      : {waveBSelection.EffectiveMinMarkets}");
-        sb.AppendLine($"Leader Base PreTrade Score : {waveBSelection.LeaderBasePreTradeScore:F6}");
-        sb.AppendLine($"Leader Final Score         : {waveBSelection.LeaderFinalScore:F4}");
+        sb.AppendLine($"Dispersion Guard Triggered          : {(waveBSelection.DispersionGuardTriggered ? "YES" : "NO")}");
+        sb.AppendLine($"Effective Min Markets               : {waveBSelection.EffectiveMinMarkets}");
+        sb.AppendLine($"Leader Base PreTrade Score          : {waveBSelection.LeaderBasePreTradeScore:F6}");
+        sb.AppendLine($"Leader Final Score                  : {waveBSelection.LeaderFinalScore:F4}");
+        sb.AppendLine($"Effective Min Rel Final             : {waveBSelection.EffectiveMinRelativeToLeaderFinalScore:F2}");
+        sb.AppendLine($"Effective Min Rel Pre               : {waveBSelection.EffectiveMinRelativeToLeaderPreTradeScore:F2}");
         sb.AppendLine();
 
         sb.AppendLine("PRE-TRADE RANKED MARKETS");
@@ -1428,11 +1521,15 @@ public sealed class PortfolioBacktestRunner
             foreach (var c in waveBSelection.RankedCandidates)
             {
                 string marketKey = $"{c.Market.Symbol}::{c.Market.Timeframe}";
-                string selectionState = waveBSelection.AllocationWeights.ContainsKey(c.Market)
-                    ? "SELECTED"
-                    : combinedRejections.TryGetValue(marketKey, out var reason)
-                        ? reason
-                        : "NOT_SELECTED";
+
+                string selectionState =
+                    waveBSelection.AllocationWeights.ContainsKey(c.Market)
+                        ? (c.SelectedByScarcityRelaxedDispersion
+                            ? "SELECTED:SCARCITY_RELAXED_DISPERSION"
+                            : "SELECTED")
+                        : combinedRejections.TryGetValue(marketKey, out var reason)
+                            ? reason
+                            : "NOT_SELECTED";
 
                 sb.AppendLine(
                     $"{rank,2}. {marketKey,-16} " +
@@ -1444,9 +1541,85 @@ public sealed class PortfolioBacktestRunner
                     $"final={c.FinalScore,8:F4} " +
                     $"relFinal={c.RelativeToLeaderFinalScore,8:F4} " +
                     $"relPre={c.RelativeToLeaderPreTradeScore,8:F4} " +
-                    $"disp={(c.PassesDispersionGuard ? "PASS" : "BLOCK"),6}  =&gt; {selectionState}");
+                    $"strict={(c.PassesDispersionGuard ? "PASS" : "BLOCK"),6} " +
+                    $"relaxed={(c.PassesRelaxedDispersionGuard ? "PASS" : "BLOCK"),6} " +
+                    $"rescued={(c.SelectedByScarcityRelaxedDispersion ? "YES" : "NO "),4} =&gt; {selectionState}");
+
                 rank++;
             }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("TOP NEAR MISS REJECTIONS");
+        sb.AppendLine("------------------------");
+        var nearMisses = waveBSelection.RankedCandidates
+            .Where(c =&gt; !waveBSelection.AllocationWeights.ContainsKey(c.Market))
+            .OrderByDescending(c =&gt; c.FinalScore)
+            .ThenByDescending(c =&gt; c.NormalizedPreTradeScore)
+            .Take(12)
+            .ToList();
+
+        if (nearMisses.Count == 0)
+        {
+            sb.AppendLine("NO NEAR MISS REJECTIONS.");
+        }
+        else
+        {
+            foreach (var c in nearMisses)
+            {
+                string marketKey = $"{c.Market.Symbol}::{c.Market.Timeframe}";
+                string reason = combinedRejections.TryGetValue(marketKey, out var r) ? r : "NOT_SELECTED";
+
+                decimal scoreGap = System.Math.Max(0m, WaveBMinScoreThreshold - c.FinalScore);
+                decimal strictFinalGap = System.Math.Max(0m, WaveBMinRelativeToLeaderFinalScore - c.RelativeToLeaderFinalScore);
+                decimal strictPreGap = System.Math.Max(0m, WaveBMinRelativeToLeaderPreTradeScore - c.RelativeToLeaderPreTradeScore);
+                decimal relaxedFinalGap = System.Math.Max(0m, WaveBScarcityRelaxedMinRelativeToLeaderFinalScore - c.RelativeToLeaderFinalScore);
+                decimal relaxedPreGap = System.Math.Max(0m, WaveBScarcityRelaxedMinRelativeToLeaderPreTradeScore - c.RelativeToLeaderPreTradeScore);
+
+                sb.AppendLine(
+                    $"{marketKey,-18} " +
+                    $"final={c.FinalScore,8:F4} " +
+                    $"scoreGap={scoreGap,7:F4} " +
+                    $"strictGapFinal={strictFinalGap,7:F4} " +
+                    $"strictGapPre={strictPreGap,7:F4} " +
+                    $"relaxedGapFinal={relaxedFinalGap,7:F4} " +
+                    $"relaxedGapPre={relaxedPreGap,7:F4}  =&gt; {reason}");
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("REJECTION BUCKET COUNTS");
+        sb.AppendLine("-----------------------");
+        if (combinedRejections == null || combinedRejections.Count == 0)
+        {
+            sb.AppendLine("NO REJECTIONS RECORDED.");
+        }
+        else
+        {
+            var buckets = combinedRejections
+                .GroupBy(kv =&gt;
+                {
+                    string value = kv.Value ?? string.Empty;
+
+                    if (value.StartsWith("WaveBRejected:DispersionGuard", StringComparison.OrdinalIgnoreCase))
+                        return "WaveBRejected:DispersionGuard";
+
+                    if (value.StartsWith("WaveBRejected:BelowThreshold", StringComparison.OrdinalIgnoreCase))
+                        return "WaveBRejected:BelowThreshold";
+
+                    if (value.StartsWith("WaveBRejected:PerSymbolCap", StringComparison.OrdinalIgnoreCase))
+                        return "WaveBRejected:PerSymbolCap";
+
+                    if (value.StartsWith("WaveBRejected:TopNOverflow", StringComparison.OrdinalIgnoreCase))
+                        return "WaveBRejected:TopNOverflow";
+
+                    return value;
+                })
+                .OrderByDescending(g =&gt; g.Count())
+                .ThenBy(g =&gt; g.Key, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var bucket in buckets)
+                sb.AppendLine($"{bucket.Key,-36} {bucket.Count(),6}");
         }
 
         sb.AppendLine();
@@ -1462,22 +1635,17 @@ public sealed class PortfolioBacktestRunner
             foreach (var market in waveBSelection.SelectedMarkets)
             {
                 decimal weight = waveBSelection.AllocationWeights.TryGetValue(market, out var w) ? w : 0m;
-                sb.AppendLine($"{rank,2}. {market.Symbol}::{market.Timeframe,-4} finalWeight={weight:P2}");
+                var candidate = waveBSelection.RankedCandidates.FirstOrDefault(x =&gt;
+                    x.Market.Symbol.Equals(market.Symbol, StringComparison.OrdinalIgnoreCase) &amp;&amp;
+                    x.Market.Timeframe.Equals(market.Timeframe, StringComparison.OrdinalIgnoreCase));
+
+                string source = candidate != null &amp;&amp; candidate.SelectedByScarcityRelaxedDispersion
+                    ? "SCARCITY_RELAXED_DISPERSION"
+                    : "STRICT";
+
+                sb.AppendLine($"{rank,2}. {market.Symbol}::{market.Timeframe,-4} finalWeight={weight:P2} source={source}");
                 rank++;
             }
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("REJECTION REASONS");
-        sb.AppendLine("-----------------");
-        if (combinedRejections == null || combinedRejections.Count == 0)
-        {
-            sb.AppendLine("NO REJECTIONS RECORDED.");
-        }
-        else
-        {
-            foreach (var kv in combinedRejections.OrderBy(x =&gt; x.Key, StringComparer.OrdinalIgnoreCase))
-                sb.AppendLine($"{kv.Key,-18} {kv.Value}");
         }
 
         sb.AppendLine();
@@ -2083,6 +2251,10 @@ public sealed class PortfolioBacktestRunner
         public decimal RelativeToLeaderFinalScore { get; set; }
         public decimal RelativeToLeaderPreTradeScore { get; set; }
         public bool PassesDispersionGuard { get; set; }
+
+        // PATCH 24
+        public bool PassesRelaxedDispersionGuard { get; set; }
+        public bool SelectedByScarcityRelaxedDispersion { get; set; }
     }
 
     private sealed class WaveBSelectionSnapshot
@@ -2098,6 +2270,15 @@ public sealed class PortfolioBacktestRunner
         public int EffectiveMinMarkets { get; init; }
         public decimal LeaderFinalScore { get; init; }
         public decimal LeaderBasePreTradeScore { get; init; }
+
+        // PATCH 24
+        public int ViableAfterThresholdCount { get; init; }
+        public int StrictDispersionPassCount { get; init; }
+        public int RelaxedDispersionPassCount { get; init; }
+        public bool ScarcityDispersionModeActive { get; init; }
+        public int ScarcityRelaxedDispersionRescueCount { get; init; }
+        public decimal EffectiveMinRelativeToLeaderFinalScore { get; init; }
+        public decimal EffectiveMinRelativeToLeaderPreTradeScore { get; init; }
     }
 }
 
