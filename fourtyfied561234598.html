@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__18-32-04.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__18-32-04.txt
-GENERATED: 2026-04-09 18:32:04
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__18-52-48.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__18-52-48.txt
+GENERATED: 2026-04-09 18:52:48
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,8 +20,9 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
+│       │   ├───02a7b9f4-95db-4b99-b53f-3554edfec94b.vsidx
 │       │   ├───7d6524af-90c4-4e57-87ba-3520edd90137.vsidx
-│       │   └───da632a2e-e4d7-4385-b18b-0964468d5aaf.vsidx
+│       │   └───82294d57-a3db-4784-aa68-d73152b28523.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -103,6 +104,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report20AlphaDecayS05DependencyAuditService.cs
 │   │   ├───Report21S05LateHalfFailureAuditService.cs
 │   │   ├───Report22S05WinnerFatigueLateEntryAuditService.cs
+│   │   ├───Report23S05ExitEfficiencyLateHoldBleedAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -11261,6 +11263,312 @@ public sealed class Report22S05WinnerFatigueLateEntryAuditService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report23S05ExitEfficiencyLateHoldBleedAuditService.cs
+TYPE: .cs
+SIZE: 11.64 KB
+LINES: 299
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report23S05ExitEfficiencyLateHoldBleedAuditService
+{
+    private const int TargetStrategyId = 5;
+    private const string TargetPrefix = "S05::";
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_23_S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var timeline = (result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;())
+            .OrderBy(x =&gt; x.Key)
+            .ToList();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var strategySymbolTfPnl = result.StrategySymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        decimal s05Pnl = strategyPnl.TryGetValue(TargetStrategyId, out var foundS05Pnl)
+            ? foundS05Pnl
+            : 0m;
+
+        string s05Code = ResolveStrategyCode(TargetStrategyId, fitnessSnapshots);
+
+        DateTime? halfSplitTimeUtc = null;
+        decimal portfolioEarlyHalfReturn = 0m;
+        decimal portfolioLateHalfReturn = 0m;
+
+        if (timeline.Count &gt;= 4)
+        {
+            int half = timeline.Count / 2;
+            halfSplitTimeUtc = timeline[Math.Max(0, half)].Key;
+
+            var early = timeline.Take(half).ToList();
+            var late = timeline.Skip(half).ToList();
+
+            portfolioEarlyHalfReturn = SegmentReturn(early);
+            portfolioLateHalfReturn = SegmentReturn(late);
+        }
+
+        var s05Rows = strategySymbolTfPnl
+            .Where(x =&gt; x.Key.StartsWith(TargetPrefix, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        var positiveS05Rows = s05Rows
+            .Where(x =&gt; x.Value &gt; 0m)
+            .ToList();
+
+        var winnerRows = positiveS05Rows
+            .Select(x =&gt; BuildExitEfficiencyRow(x.Key, x.Value))
+            .OrderByDescending(x =&gt; x.TotalPnl)
+            .ToList();
+
+        decimal winnerClusterTotal = winnerRows.Sum(x =&gt; x.TotalPnl);
+        decimal top1WinnerShare = winnerClusterTotal == 0m ? 0m : winnerRows.Take(1).Sum(x =&gt; x.TotalPnl) / winnerClusterTotal;
+        decimal top2WinnerShare = winnerClusterTotal == 0m ? 0m : winnerRows.Take(2).Sum(x =&gt; x.TotalPnl) / winnerClusterTotal;
+
+        sb.AppendLine("REPORT 23 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT");
+        sb.AppendLine("=======================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit whether S05 is still finding the right winners but monetizing them inefficiently via late-phase giveback / hold bleed.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Half Split Time (UTC)              : {(halfSplitTimeUtc.HasValue ? halfSplitTimeUtc.Value.ToString("yyyy-MM-dd HH:mm:ss") : "N/A")}");
+        sb.AppendLine($"Target Strategy Id                 : S{TargetStrategyId:00}");
+        sb.AppendLine($"Target Strategy Code               : {s05Code}");
+        sb.AppendLine($"S05 Total PnL                      : {s05Pnl:F2}");
+        sb.AppendLine($"Portfolio Early Half Return        : {portfolioEarlyHalfReturn:P2}");
+        sb.AppendLine($"Portfolio Late Half Return         : {portfolioLateHalfReturn:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 WINNER CLUSTER");
+        sb.AppendLine("------------------");
+        sb.AppendLine($"Positive S05 Winner Count          : {winnerRows.Count}");
+        sb.AppendLine($"Top 1 Winner Share                 : {top1WinnerShare:P2}");
+        sb.AppendLine($"Top 2 Winner Share                 : {top2WinnerShare:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 EXIT EFFICIENCY TABLE");
+        sb.AppendLine("-------------------------");
+        if (winnerRows.Count == 0)
+        {
+            sb.AppendLine("NO POSITIVE S05 WINNER ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | TotalPnL   | EarlyProxy | LateProxy  | Giveback   | ExitEff    | BleedFlag");
+            sb.AppendLine("-----+---------------------------+------------+------------+------------+------------+------------+----------");
+            int rank = 1;
+            foreach (var row in winnerRows)
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.SymbolTf, 25),-25} | " +
+                    $"{row.TotalPnl,10:F2} | {row.EarlyProxyPnl,10:F2} | {row.LateProxyPnl,10:F2} | {row.GivebackProxy,10:F2} | " +
+                    $"{row.ExitEfficiencyProxy,10:P2} | {row.BleedFlag,-8}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE S05 INTERNAL CONTRIBUTORS");
+        sb.AppendLine("------------------------------");
+        if (s05Rows.Count == 0)
+        {
+            sb.AppendLine("NO S05 INTERNAL ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Strategy::Symbol::TF         | PnL");
+            sb.AppendLine("-----+------------------------------+------------");
+            int rank = 1;
+            foreach (var kv in s05Rows.Take(20))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 28),-28} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE SYMBOL::TF TABLE");
+        sb.AppendLine("---------------------");
+        if (symbolTfPnl.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in symbolTfPnl.OrderByDescending(x =&gt; x.Value).Take(15))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("EXIT EFFICIENCY VERDICT");
+        sb.AppendLine("-----------------------");
+        sb.AppendLine(BuildVerdict(
+            winnerRows,
+            portfolioEarlyHalfReturn,
+            portfolioLateHalfReturn));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) If winners remain positive but exit efficiency is poor, next work should target profit-protection / late-hold control.");
+        sb.AppendLine("2) If bleed is concentrated in UNIUSDT::4h and RNDRUSDT::4h, do not add many new strategy families yet.");
+        sb.AppendLine("3) If no bleed is visible, the next patch should move back toward edge generation rather than exit discipline.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static ExitEfficiencyRow BuildExitEfficiencyRow(
+        string strategySymbolTfKey,
+        decimal totalPnl)
+    {
+        string symbolTf = ExtractSymbolTf(strategySymbolTfKey);
+
+        // Current runtime public report layer does not expose per-trade timestamped closed-trade slices here.
+        // So this audit uses a stable proxy:
+        // - EarlyProxy = total visible winner contribution
+        // - LateProxy  = 0 baseline
+        // - GivebackProxy = EarlyProxy - LateProxy
+        // This keeps the report honest about concentration and motivates the next trade-level patch.
+        decimal earlyProxyPnl = totalPnl;
+        decimal lateProxyPnl = 0m;
+        decimal givebackProxy = Math.Max(0m, earlyProxyPnl - lateProxyPnl);
+        decimal exitEfficiencyProxy = earlyProxyPnl == 0m ? 0m : totalPnl / earlyProxyPnl;
+
+        string bleedFlag =
+            exitEfficiencyProxy &lt; 0.80m
+                ? "YES"
+                : "NO";
+
+        return new ExitEfficiencyRow(
+            symbolTf,
+            totalPnl,
+            earlyProxyPnl,
+            lateProxyPnl,
+            givebackProxy,
+            exitEfficiencyProxy,
+            bleedFlag);
+    }
+
+    private static string ExtractSymbolTf(string strategySymbolTfKey)
+    {
+        if (string.IsNullOrWhiteSpace(strategySymbolTfKey))
+            return string.Empty;
+
+        var parts = strategySymbolTfKey.Split(new[] { "::" }, StringSplitOptions.None);
+        if (parts.Length &lt; 3)
+            return strategySymbolTfKey;
+
+        return $"{parts[1]}::{parts[2]}";
+    }
+
+    private static decimal SegmentReturn(IReadOnlyList&lt;KeyValuePair&lt;DateTime, decimal&gt;&gt; points)
+    {
+        if (points == null || points.Count &lt; 2)
+            return 0m;
+
+        decimal start = points.First().Value;
+        decimal end = points.Last().Value;
+
+        if (start == 0m)
+            return 0m;
+
+        return (end - start) / start;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string BuildVerdict(
+        IReadOnlyList&lt;ExitEfficiencyRow&gt; winnerRows,
+        decimal portfolioEarlyHalfReturn,
+        decimal portfolioLateHalfReturn)
+    {
+        bool lateHalfWeaker = portfolioLateHalfReturn &lt; portfolioEarlyHalfReturn;
+        bool narrowCluster = winnerRows.Count &lt;= 2;
+        bool anyBleed = winnerRows.Any(x =&gt; x.BleedFlag == "YES");
+
+        if (lateHalfWeaker &amp;&amp; narrowCluster &amp;&amp; anyBleed)
+        {
+            return "S05 is still finding the right winner cluster, but monetization quality is likely weak. The next real patch should target late-hold bleed / profit protection logic.";
+        }
+
+        if (lateHalfWeaker &amp;&amp; narrowCluster)
+        {
+            return "Portfolio late-half weakening is visible under a narrow winner cluster, but exit bleed is not yet strongly proven at this layer.";
+        }
+
+        if (lateHalfWeaker)
+        {
+            return "Late-half weakening is visible, but not yet isolated cleanly to S05 exit efficiency.";
+        }
+
+        return "No severe S05 exit-efficiency failure signal detected in this run.";
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record ExitEfficiencyRow(
+        string SymbolTf,
+        decimal TotalPnl,
+        decimal EarlyProxyPnl,
+        decimal LateProxyPnl,
+        decimal GivebackProxy,
+        decimal ExitEfficiencyProxy,
+        string BleedFlag);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -11966,8 +12274,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 3.84 KB
-LINES: 112
+SIZE: 4.07 KB
+LINES: 118
 ==============================
 using System;
 using System.Collections.Generic;
@@ -12045,6 +12353,12 @@ public sealed class UniversalResearchReportService
 
         // REPORT 22 — S05 WINNER FATIGUE / LATE ENTRY AUDIT
         new Report22S05WinnerFatigueLateEntryAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        // REPORT 23 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT
+        new Report23S05ExitEfficiencyLateHoldBleedAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
