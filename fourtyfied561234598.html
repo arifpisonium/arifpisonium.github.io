@@ -9,29 +9,22 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__10-23-30.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__10-23-30.txt
-GENERATED: 2026-04-09 10:23:30
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__12-01-59.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__12-01-59.txt
+GENERATED: 2026-04-09 12:01:59
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
-│   ├───ProjectEvaluation
-│   │   ├───tqga.metadata.v10.bin
-│   │   ├───tqga.projects.v10.bin
-│   │   └───tqga.strings.v10.bin
 │   └───TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───53a1d84f-0e55-43eb-b901-699a2b1f0f5c.vsidx
-│       │   └───5cf8fce7-dffe-4c18-8b52-e6400fb7c2ca.vsidx
+│       │   └───7af3bcc2-3617-4ef9-be63-d81500ec36a1.vsidx
 │       └───v18
-│           ├───.futdcache.v2
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
-│           ├───DocumentLayout.json
-│           └───HierarchyCache.v1.txt
+│           └───DocumentLayout.json
 ├───TQGA.Application
 │   ├───Accounting
 │   │   ├───EquityCurve.cs
@@ -107,6 +100,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───ReconciliationReportService.cs
 │   │   ├───Report19EdgeDeathMapReportService.cs
 │   │   ├───Report20AlphaDecayS05DependencyAuditService.cs
+│   │   ├───Report21S05LateHalfFailureAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -10646,6 +10640,311 @@ public sealed class Report20AlphaDecayS05DependencyAuditService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report21S05LateHalfFailureAuditService.cs
+TYPE: .cs
+SIZE: 11.98 KB
+LINES: 298
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report21S05LateHalfFailureAuditService
+{
+    private const int TargetStrategyId = 5;
+    private const string TargetStrategyCode = "EmaTrendQuantStrategy";
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_21_S05_LATE_HALF_FAILURE_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var timeline = (result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;())
+            .OrderBy(x =&gt; x.Key)
+            .ToList();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var strategySymbolTfPnl = result.StrategySymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var runnerMix = result.MarketAllocationWeights ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var canonical = result.CanonicalCioPostGatingWeights ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = result.SelectedMarkets ?? new List&lt;string&gt;();
+
+        decimal totalStrategyPnl = strategyPnl.Values.Sum();
+        decimal totalSymbolTfPnl = symbolTfPnl.Values.Sum();
+
+        decimal s05Pnl = strategyPnl.TryGetValue(TargetStrategyId, out var foundS05Pnl)
+            ? foundS05Pnl
+            : 0m;
+
+        string s05Code = ResolveStrategyCode(TargetStrategyId, fitnessSnapshots);
+
+        decimal s05DependencyRatio =
+            totalStrategyPnl == 0m ? 0m : s05Pnl / totalStrategyPnl;
+
+        decimal earlyHalfReturn = 0m;
+        decimal lateHalfReturn = 0m;
+        decimal decayDelta = 0m;
+
+        if (timeline.Count &gt;= 4)
+        {
+            int half = timeline.Count / 2;
+            var early = timeline.Take(half).ToList();
+            var late = timeline.Skip(half).ToList();
+
+            earlyHalfReturn = SegmentReturn(early);
+            lateHalfReturn = SegmentReturn(late);
+            decayDelta = lateHalfReturn - earlyHalfReturn;
+        }
+
+        var s05Rows = strategySymbolTfPnl
+            .Where(x =&gt; x.Key.StartsWith("S05::", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        decimal s05Top1Share = 0m;
+        decimal s05Top2Share = 0m;
+        decimal s05TotalByRows = s05Rows.Sum(x =&gt; x.Value);
+
+        if (s05TotalByRows != 0m &amp;&amp; s05Rows.Count &gt; 0)
+        {
+            s05Top1Share = s05Rows.Take(1).Sum(x =&gt; x.Value) / s05TotalByRows;
+            s05Top2Share = s05Rows.Take(2).Sum(x =&gt; x.Value) / s05TotalByRows;
+        }
+
+        var s05PositiveRows = s05Rows
+            .Where(x =&gt; x.Value &gt; 0m)
+            .ToList();
+
+        var s05NegativeRows = s05Rows
+            .Where(x =&gt; x.Value &lt; 0m)
+            .OrderBy(x =&gt; x.Value)
+            .ToList();
+
+        decimal selectedTop2Pnl = symbolTfPnl
+            .OrderByDescending(x =&gt; x.Value)
+            .Take(2)
+            .Sum(x =&gt; x.Value);
+
+        decimal selectedTop2Share =
+            totalSymbolTfPnl == 0m ? 0m : selectedTop2Pnl / totalSymbolTfPnl;
+
+        sb.AppendLine("REPORT 21 — S05 LATE-HALF FAILURE AUDIT");
+        sb.AppendLine("=======================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit whether current alpha fatigue is primarily a late-half weakening of the dominant S05 sleeve.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Portfolio Timeline Points          : {timeline.Count}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarkets.Count}");
+        sb.AppendLine($"Runner Candidate Mix Count         : {runnerMix.Count}");
+        sb.AppendLine($"Canonical Deployable Count         : {canonical.Count}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("PORTFOLIO LATE-HALF STATE");
+        sb.AppendLine("-------------------------");
+        sb.AppendLine($"Early Half Return                  : {earlyHalfReturn:P2}");
+        sb.AppendLine($"Late Half Return                   : {lateHalfReturn:P2}");
+        sb.AppendLine($"Decay Delta                        : {decayDelta:P2}");
+        sb.AppendLine($"Late-Half Weaker Flag              : {(lateHalfReturn &lt; earlyHalfReturn ? "YES" : "NO")}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 DOMINANCE");
+        sb.AppendLine("-------------");
+        sb.AppendLine($"Target Strategy Id                 : S{TargetStrategyId:00}");
+        sb.AppendLine($"Target Strategy Code               : {s05Code}");
+        sb.AppendLine($"Target Strategy PnL                : {s05Pnl:F2}");
+        sb.AppendLine($"Total Strategy PnL                 : {totalStrategyPnl:F2}");
+        sb.AppendLine($"S05 Dependency Ratio               : {s05DependencyRatio:P2}");
+        sb.AppendLine($"S05 Missing Flag                   : {(s05Pnl == 0m ? "YES" : "NO")}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 INTERNAL CONCENTRATION");
+        sb.AppendLine("--------------------------");
+        sb.AppendLine($"S05 Symbol::TF Contribution Count  : {s05Rows.Count}");
+        sb.AppendLine($"S05 Top 1 Share                    : {s05Top1Share:P2}");
+        sb.AppendLine($"S05 Top 2 Share                    : {s05Top2Share:P2}");
+        sb.AppendLine($"Portfolio Top 2 Symbol::TF Share   : {selectedTop2Share:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 POSITIVE CONTRIBUTORS");
+        sb.AppendLine("-------------------------");
+        if (s05PositiveRows.Count == 0)
+        {
+            sb.AppendLine("NO POSITIVE S05 CONTRIBUTORS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Strategy::Symbol::TF         | PnL        | Share of S05");
+            sb.AppendLine("-----+------------------------------+------------+------------");
+            int rank = 1;
+            foreach (var kv in s05PositiveRows.Take(15))
+            {
+                decimal share = s05TotalByRows == 0m ? 0m : kv.Value / s05TotalByRows;
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 28),-28} | {kv.Value,10:F2} | {share,10:P2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S05 NEGATIVE CONTRIBUTORS");
+        sb.AppendLine("-------------------------");
+        if (s05NegativeRows.Count == 0)
+        {
+            sb.AppendLine("NO NEGATIVE S05 CONTRIBUTORS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Strategy::Symbol::TF         | PnL");
+            sb.AppendLine("-----+------------------------------+------------");
+            int rank = 1;
+            foreach (var kv in s05NegativeRows.Take(15))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 28),-28} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE DEPLOYED SYMBOL::TF WINNERS");
+        sb.AppendLine("-------------------------------");
+        if (symbolTfPnl.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in symbolTfPnl.OrderByDescending(x =&gt; x.Value).Take(10))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S05 FAILURE HYPOTHESIS");
+        sb.AppendLine("----------------------");
+        sb.AppendLine(BuildFailureHypothesis(
+            s05DependencyRatio,
+            s05Top2Share,
+            earlyHalfReturn,
+            lateHalfReturn,
+            canonical.Count,
+            result.CashAllocationWeight));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) If S05 dependency is extreme and late-half return is weaker, treat this as durability failure, not a pure breadth problem.");
+        sb.AppendLine("2) Do not add many new strategy families before isolating why S05 weakened.");
+        sb.AppendLine("3) Inspect whether UNIUSDT::4h and RNDRUSDT::4h remain the only monetized S05 cluster.");
+        sb.AppendLine("4) Prefer targeted S05 durability research over broad architecture changes.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static decimal SegmentReturn(IReadOnlyList&lt;KeyValuePair&lt;DateTime, decimal&gt;&gt; points)
+    {
+        if (points == null || points.Count &lt; 2)
+            return 0m;
+
+        decimal start = points.First().Value;
+        decimal end = points.Last().Value;
+
+        if (start == 0m)
+            return 0m;
+
+        return (end - start) / start;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string BuildFailureHypothesis(
+        decimal s05DependencyRatio,
+        decimal s05Top2Share,
+        decimal earlyHalfReturn,
+        decimal lateHalfReturn,
+        int canonicalCount,
+        decimal cashWeight)
+    {
+        bool highS05Dependency = s05DependencyRatio &gt;= 0.60m;
+        bool concentratedInsideS05 = s05Top2Share &gt;= 0.80m;
+        bool lateHalfWeaker = lateHalfReturn &lt; earlyHalfReturn;
+        bool narrowDeployment = canonicalCount &lt;= 2;
+        bool highCash = cashWeight &gt;= 0.75m;
+
+        if (highS05Dependency &amp;&amp; concentratedInsideS05 &amp;&amp; lateHalfWeaker &amp;&amp; narrowDeployment &amp;&amp; highCash)
+        {
+            return "S05 is carrying the platform through a tiny winner cluster, but that cluster is weakening late in the run. This is classic edge-fatigue under narrow deployment.";
+        }
+
+        if (highS05Dependency &amp;&amp; lateHalfWeaker)
+        {
+            return "The dominant sleeve is too important and the portfolio weakens late. Investigate S05 durability before expanding confidence.";
+        }
+
+        if (concentratedInsideS05 &amp;&amp; lateHalfWeaker)
+        {
+            return "S05 is not broad enough internally. Late-half weakness likely reflects fatigue in a narrow symbol::TF cluster.";
+        }
+
+        if (lateHalfWeaker)
+        {
+            return "Late-half weakness is visible, but the precise S05 failure mode is not extreme yet. Continue targeted durability diagnostics.";
+        }
+
+        return "No severe S05 late-half failure pattern detected in this run.";
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -11144,8 +11443,8 @@ public sealed class StrategySymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\StructureReportService.cs
 TYPE: .cs
-SIZE: 1.13 KB
-LINES: 42
+SIZE: 3.3 KB
+LINES: 104
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
@@ -11155,8 +11454,16 @@ namespace TQGA.Application.Services;
 
 public sealed class StructureReportService
 {
+    private const string OldReportsRoot = @"D:\D DATA BACKUP\Data\Old Reports";
+
     public void Generate()
     {
+        // PATCH:
+        // Before creating the new STRUCTURE_{timestamp}.txt file,
+        // move all existing files from Reports into a timestamped archival folder
+        // under D:\D DATA BACKUP\Data\Old Reports.
+        ArchiveExistingReportsBeforeStructureWrite();
+
         var strategyTypes = AppDomain.CurrentDomain
             .GetAssemblies()
             .SelectMany(a =&gt; a.GetTypes())
@@ -11167,7 +11474,6 @@ public sealed class StructureReportService
             .ToList();
 
         var sb = new StringBuilder();
-
         sb.AppendLine("TQGA ARCHITECTURE REPORT");
         sb.AppendLine("========================");
         sb.AppendLine();
@@ -11183,10 +11489,65 @@ public sealed class StructureReportService
             id++;
         }
 
+        Directory.CreateDirectory(DataPaths.Reports);
+
         File.WriteAllText(
-            Path.Combine(DataPaths.Reports,
+            Path.Combine(
+                DataPaths.Reports,
                 $"STRUCTURE_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt"),
             sb.ToString());
+    }
+
+    private static void ArchiveExistingReportsBeforeStructureWrite()
+    {
+        Directory.CreateDirectory(DataPaths.Reports);
+        Directory.CreateDirectory(OldReportsRoot);
+
+        var filesToMove = Directory
+            .EnumerateFiles(DataPaths.Reports, "*", SearchOption.TopDirectoryOnly)
+            .ToList();
+
+        if (filesToMove.Count == 0)
+            return;
+
+        string archiveFolderName = $"just old folder {DateTime.UtcNow:yyyyMMdd_HHmmss}";
+        string archiveFolderPath = Path.Combine(OldReportsRoot, archiveFolderName);
+
+        Directory.CreateDirectory(archiveFolderPath);
+
+        foreach (string sourceFilePath in filesToMove)
+        {
+            string fileName = Path.GetFileName(sourceFilePath);
+            string destinationFilePath = Path.Combine(archiveFolderPath, fileName);
+
+            destinationFilePath = ResolveUniqueDestinationPath(destinationFilePath);
+
+            File.Move(sourceFilePath, destinationFilePath);
+        }
+    }
+
+    private static string ResolveUniqueDestinationPath(string destinationFilePath)
+    {
+        if (!File.Exists(destinationFilePath))
+            return destinationFilePath;
+
+        string directory = Path.GetDirectoryName(destinationFilePath) ?? string.Empty;
+        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(destinationFilePath);
+        string extension = Path.GetExtension(destinationFilePath);
+
+        int suffix = 1;
+        string candidate;
+
+        do
+        {
+            candidate = Path.Combine(
+                directory,
+                $"{fileNameWithoutExtension}__DUP_{suffix}{extension}");
+            suffix++;
+        }
+        while (File.Exists(candidate));
+
+        return candidate;
     }
 }
 
@@ -11289,8 +11650,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 3.43 KB
-LINES: 100
+SIZE: 3.63 KB
+LINES: 106
 ==============================
 using System;
 using System.Collections.Generic;
@@ -11356,6 +11717,12 @@ public sealed class UniversalResearchReportService
 
         // REPORT 20 — ALPHA DECAY / S05 DEPENDENCY AUDIT
         new Report20AlphaDecayS05DependencyAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        // REPORT 21 — S05 LATE-HALF FAILURE AUDIT
+        new Report21S05LateHalfFailureAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
