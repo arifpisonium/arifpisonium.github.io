@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__08-46-09.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__08-46-09.txt
-GENERATED: 2026-04-09 08:46:09
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__10-23-30.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__10-23-30.txt
+GENERATED: 2026-04-09 10:23:30
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -24,7 +24,8 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───06b14ad0-eabd-4bce-af08-d59073166118.vsidx
+│       │   ├───53a1d84f-0e55-43eb-b901-699a2b1f0f5c.vsidx
+│       │   └───5cf8fce7-dffe-4c18-8b52-e6400fb7c2ca.vsidx
 │       └───v18
 │           ├───.futdcache.v2
 │           ├───.suo
@@ -105,6 +106,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───QuickAuditReportService.cs
 │   │   ├───ReconciliationReportService.cs
 │   │   ├───Report19EdgeDeathMapReportService.cs
+│   │   ├───Report20AlphaDecayS05DependencyAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -10251,6 +10253,399 @@ public sealed class Report19EdgeDeathMapReportService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report20AlphaDecayS05DependencyAuditService.cs
+TYPE: .cs
+SIZE: 15.46 KB
+LINES: 386
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report20AlphaDecayS05DependencyAuditService
+{
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_20_ALPHA_DECAY_S05_DEPENDENCY_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var timeline = (result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;())
+            .OrderBy(x =&gt; x.Key)
+            .ToList();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var strategySymbolTfPnl = result.StrategySymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = result.SelectedMarkets ?? new List&lt;string&gt;();
+        var runnerMix = result.MarketAllocationWeights ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var canonical = result.CanonicalCioPostGatingWeights ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        decimal totalStrategyPnl = strategyPnl.Values.Sum();
+        decimal totalSymbolTfPnl = symbolTfPnl.Values.Sum();
+
+        var dominantStrategy = strategyPnl
+            .OrderByDescending(x =&gt; x.Value)
+            .FirstOrDefault();
+
+        int dominantStrategyId = dominantStrategy.Key;
+        decimal dominantStrategyPnl = dominantStrategy.Value;
+
+        decimal dominantStrategyDependencyRatio =
+            totalStrategyPnl == 0m ? 0m : dominantStrategyPnl / totalStrategyPnl;
+
+        decimal top1SymbolTfPnl = symbolTfPnl.Count == 0 ? 0m : symbolTfPnl.Values.Max();
+        decimal top2SymbolTfPnl = symbolTfPnl
+            .OrderByDescending(x =&gt; x.Value)
+            .Take(2)
+            .Sum(x =&gt; x.Value);
+
+        decimal top1SymbolTfDependencyRatio =
+            totalSymbolTfPnl == 0m ? 0m : top1SymbolTfPnl / totalSymbolTfPnl;
+
+        decimal top2SymbolTfDependencyRatio =
+            totalSymbolTfPnl == 0m ? 0m : top2SymbolTfPnl / totalSymbolTfPnl;
+
+        decimal earlyHalfReturn = 0m;
+        decimal lateHalfReturn = 0m;
+        decimal decayDelta = 0m;
+
+        if (timeline.Count &gt;= 4)
+        {
+            int half = timeline.Count / 2;
+            var early = timeline.Take(half).ToList();
+            var late = timeline.Skip(half).ToList();
+
+            earlyHalfReturn = SegmentReturn(early);
+            lateHalfReturn = SegmentReturn(late);
+            decayDelta = lateHalfReturn - earlyHalfReturn;
+        }
+
+        var strategyEarlyLate = BuildStrategyEarlyLate(
+            strategyPnl,
+            strategySymbolTfPnl);
+
+        var symbolTfEarlyLate = BuildSymbolTimeframeEarlyLate(
+            symbolTfPnl,
+            strategySymbolTfPnl);
+
+        sb.AppendLine("REPORT 20 — ALPHA DECAY / S05 DEPENDENCY AUDIT");
+        sb.AppendLine("==============================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit edge fatigue, concentration risk, and dependence on the dominant strategy sleeve.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Portfolio Timeline Points          : {timeline.Count}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarkets.Count}");
+        sb.AppendLine($"Runner Candidate Mix Count         : {runnerMix.Count}");
+        sb.AppendLine($"Canonical Deployable Count         : {canonical.Count}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("PORTFOLIO ALPHA DECAY");
+        sb.AppendLine("---------------------");
+        sb.AppendLine($"Early Half Return                  : {earlyHalfReturn:P2}");
+        sb.AppendLine($"Late Half Return                   : {lateHalfReturn:P2}");
+        sb.AppendLine($"Decay Delta                        : {decayDelta:P2}");
+        sb.AppendLine($"Alpha Decay Flag                   : {(lateHalfReturn &lt; earlyHalfReturn ? "YES" : "NO")}");
+        sb.AppendLine();
+
+        sb.AppendLine("DOMINANT STRATEGY DEPENDENCY");
+        sb.AppendLine("----------------------------");
+        if (strategyPnl.Count == 0)
+        {
+            sb.AppendLine("NO STRATEGY PNL DATA");
+        }
+        else
+        {
+            string dominantStrategyCode = ResolveStrategyCode(dominantStrategyId, fitnessSnapshots);
+            sb.AppendLine($"Dominant Strategy Id               : S{dominantStrategyId:00}");
+            sb.AppendLine($"Dominant Strategy Code             : {dominantStrategyCode}");
+            sb.AppendLine($"Dominant Strategy PnL              : {dominantStrategyPnl:F2}");
+            sb.AppendLine($"Total Strategy PnL                 : {totalStrategyPnl:F2}");
+            sb.AppendLine($"Dominant Strategy Dependency Ratio : {dominantStrategyDependencyRatio:P2}");
+            sb.AppendLine($"S05 Dependency Flag                : {(dominantStrategyCode.Contains("EmaTrendQuantStrategy", StringComparison.OrdinalIgnoreCase) ? "YES" : "NO")}");
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("SYMBOL::TF CONCENTRATION");
+        sb.AppendLine("------------------------");
+        sb.AppendLine($"Total Symbol::TF PnL               : {totalSymbolTfPnl:F2}");
+        sb.AppendLine($"Top 1 Symbol::TF Dependency Ratio  : {top1SymbolTfDependencyRatio:P2}");
+        sb.AppendLine($"Top 2 Symbol::TF Dependency Ratio  : {top2SymbolTfDependencyRatio:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("STRATEGY PNL TABLE");
+        sb.AppendLine("------------------");
+        if (strategyPnl.Count == 0)
+        {
+            sb.AppendLine("NO STRATEGY PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("StrId | StrategyCode                 | PnL        | Share");
+            sb.AppendLine("------+------------------------------+------------+------------");
+            foreach (var kv in strategyPnl.OrderByDescending(x =&gt; x.Value))
+            {
+                string code = ResolveStrategyCode(kv.Key, fitnessSnapshots);
+                decimal share = totalStrategyPnl == 0m ? 0m : kv.Value / totalStrategyPnl;
+                sb.AppendLine($"{kv.Key,5} | {TrimTo(code, 28),-28} | {kv.Value,10:F2} | {share,10:P2}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("STRATEGY EARLY/LATE SPLIT");
+        sb.AppendLine("-------------------------");
+        if (strategyEarlyLate.Count == 0)
+        {
+            sb.AppendLine("NO STRATEGY EARLY/LATE DATA");
+        }
+        else
+        {
+            sb.AppendLine("StrId | StrategyCode                 | EarlyPnL   | LatePnL    | DecayDelta | DecayFlag");
+            sb.AppendLine("------+------------------------------+------------+------------+------------+----------");
+            foreach (var row in strategyEarlyLate.OrderByDescending(x =&gt; x.TotalPnl))
+            {
+                string code = ResolveStrategyCode(row.StrategyId, fitnessSnapshots);
+                sb.AppendLine(
+                    $"{row.StrategyId,5} | {TrimTo(code, 28),-28} | " +
+                    $"{row.EarlyPnl,10:F2} | {row.LatePnl,10:F2} | {(row.LatePnl - row.EarlyPnl),10:F2} | " +
+                    $"{(row.LatePnl &lt; row.EarlyPnl ? "YES" : "NO")}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("TOP SYMBOL::TF DEPENDENCY");
+        sb.AppendLine("-------------------------");
+        if (symbolTfPnl.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL        | Share");
+            sb.AppendLine("-----+---------------------------+------------+------------");
+            int rank = 1;
+            foreach (var kv in symbolTfPnl.OrderByDescending(x =&gt; x.Value).Take(20))
+            {
+                decimal share = totalSymbolTfPnl == 0m ? 0m : kv.Value / totalSymbolTfPnl;
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2} | {share,10:P2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("SYMBOL::TF EARLY/LATE SPLIT");
+        sb.AppendLine("---------------------------");
+        if (symbolTfEarlyLate.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF EARLY/LATE DATA");
+        }
+        else
+        {
+            sb.AppendLine("Symbol::TF                | EarlyPnL   | LatePnL    | DecayDelta | DecayFlag");
+            sb.AppendLine("-------------------------+------------+------------+------------+----------");
+            foreach (var row in symbolTfEarlyLate.OrderByDescending(x =&gt; x.TotalPnl).Take(20))
+            {
+                sb.AppendLine(
+                    $"{TrimTo(row.Key, 25),-25} | {row.EarlyPnl,10:F2} | {row.LatePnl,10:F2} | {(row.LatePnl - row.EarlyPnl),10:F2} | " +
+                    $"{(row.LatePnl &lt; row.EarlyPnl ? "YES" : "NO")}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("DEPENDENCY VERDICT");
+        sb.AppendLine("------------------");
+        sb.AppendLine(BuildVerdict(
+            dominantStrategyDependencyRatio,
+            top2SymbolTfDependencyRatio,
+            earlyHalfReturn,
+            lateHalfReturn));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR INTERPRETATION");
+        sb.AppendLine("-----------------------");
+        sb.AppendLine("Use this report before adding new strategy families.");
+        sb.AppendLine("If S05 concentration is extreme and late-half weakening is visible,");
+        sb.AppendLine("the next fix should target edge durability, not cosmetic breadth.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static List&lt;StrategyEarlyLateRow&gt; BuildStrategyEarlyLate(
+        IReadOnlyDictionary&lt;int, decimal&gt; strategyPnl,
+        IReadOnlyDictionary&lt;string, decimal&gt; strategySymbolTfPnl)
+    {
+        var output = new List&lt;StrategyEarlyLateRow&gt;();
+
+        if (strategyPnl.Count == 0 || strategySymbolTfPnl.Count == 0)
+            return output;
+
+        foreach (var kv in strategyPnl)
+        {
+            int strategyId = kv.Key;
+            string prefix = $"S{strategyId:00}::";
+
+            var rows = strategySymbolTfPnl
+                .Where(x =&gt; x.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(x =&gt; x.Value)
+                .ToList();
+
+            if (rows.Count == 0)
+            {
+                output.Add(new StrategyEarlyLateRow(strategyId, 0m, 0m, kv.Value));
+                continue;
+            }
+
+            int half = Math.Max(1, rows.Count / 2);
+            decimal early = rows.Take(half).Sum(x =&gt; x.Value);
+            decimal late = rows.Skip(half).Sum(x =&gt; x.Value);
+
+            output.Add(new StrategyEarlyLateRow(strategyId, early, late, kv.Value));
+        }
+
+        return output;
+    }
+
+    private static List&lt;SymbolTfEarlyLateRow&gt; BuildSymbolTimeframeEarlyLate(
+        IReadOnlyDictionary&lt;string, decimal&gt; symbolTfPnl,
+        IReadOnlyDictionary&lt;string, decimal&gt; strategySymbolTfPnl)
+    {
+        var output = new List&lt;SymbolTfEarlyLateRow&gt;();
+
+        if (symbolTfPnl.Count == 0)
+            return output;
+
+        foreach (var kv in symbolTfPnl)
+        {
+            string key = kv.Key;
+
+            var contributingRows = strategySymbolTfPnl
+                .Where(x =&gt; x.Key.EndsWith("::" + key, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(x =&gt; x.Value)
+                .ToList();
+
+            if (contributingRows.Count == 0)
+            {
+                output.Add(new SymbolTfEarlyLateRow(key, 0m, 0m, kv.Value));
+                continue;
+            }
+
+            int half = Math.Max(1, contributingRows.Count / 2);
+            decimal early = contributingRows.Take(half).Sum(x =&gt; x.Value);
+            decimal late = contributingRows.Skip(half).Sum(x =&gt; x.Value);
+
+            output.Add(new SymbolTfEarlyLateRow(key, early, late, kv.Value));
+        }
+
+        return output;
+    }
+
+    private static decimal SegmentReturn(IReadOnlyList&lt;KeyValuePair&lt;DateTime, decimal&gt;&gt; points)
+    {
+        if (points == null || points.Count &lt; 2)
+            return 0m;
+
+        decimal start = points.First().Value;
+        decimal end = points.Last().Value;
+
+        if (start == 0m)
+            return 0m;
+
+        return (end - start) / start;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string BuildVerdict(
+        decimal dominantStrategyDependencyRatio,
+        decimal top2SymbolTfDependencyRatio,
+        decimal earlyHalfReturn,
+        decimal lateHalfReturn)
+    {
+        bool strategyConcentrated = dominantStrategyDependencyRatio &gt;= 0.60m;
+        bool symbolConcentrated = top2SymbolTfDependencyRatio &gt;= 0.80m;
+        bool decay = lateHalfReturn &lt; earlyHalfReturn;
+
+        if (strategyConcentrated &amp;&amp; symbolConcentrated &amp;&amp; decay)
+        {
+            return "High concentration + visible decay. The platform is depending too heavily on one dominant sleeve and a tiny symbol::TF cluster.";
+        }
+
+        if (strategyConcentrated &amp;&amp; decay)
+        {
+            return "Dominant strategy dependency is high and late-half performance is weaker. This is edge-fatigue risk even if current equity is still positive.";
+        }
+
+        if (symbolConcentrated &amp;&amp; decay)
+        {
+            return "The platform is overly dependent on a tiny symbol::TF set and that cluster is weakening late in the run.";
+        }
+
+        if (decay)
+        {
+            return "Alpha decay is visible, but concentration is not yet extreme. Watch durability before expanding capital confidence.";
+        }
+
+        return "No severe combined dependency-decay condition detected in this run.";
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record StrategyEarlyLateRow(
+        int StrategyId,
+        decimal EarlyPnl,
+        decimal LatePnl,
+        decimal TotalPnl);
+
+    private sealed record SymbolTfEarlyLateRow(
+        string Key,
+        decimal EarlyPnl,
+        decimal LatePnl,
+        decimal TotalPnl);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -10894,8 +11289,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 3.38 KB
-LINES: 96
+SIZE: 3.43 KB
+LINES: 100
 ==============================
 using System;
 using System.Collections.Generic;
@@ -10953,13 +11348,17 @@ public sealed class UniversalResearchReportService
             });
 
         // REPORT 19 — EDGE DEATH MAP
-        // Must be generated inside the main universal report path so FULL REPORT / REPORT ALL 31
-        // automatically includes it from DataPaths.Reports.
         new Report19EdgeDeathMapReportService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots,
             allowed);
+
+        // REPORT 20 — ALPHA DECAY / S05 DEPENDENCY AUDIT
+        new Report20AlphaDecayS05DependencyAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
 
         // A84_00
         new A84ExecutiveSummaryReportService().GenerateAndWrite(
