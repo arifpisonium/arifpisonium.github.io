@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__12-01-59.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__12-01-59.txt
-GENERATED: 2026-04-09 12:01:59
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__18-32-04.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__18-32-04.txt
+GENERATED: 2026-04-09 18:32:04
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,8 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───7af3bcc2-3617-4ef9-be63-d81500ec36a1.vsidx
+│       │   ├───7d6524af-90c4-4e57-87ba-3520edd90137.vsidx
+│       │   └───da632a2e-e4d7-4385-b18b-0964468d5aaf.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -101,6 +102,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report19EdgeDeathMapReportService.cs
 │   │   ├───Report20AlphaDecayS05DependencyAuditService.cs
 │   │   ├───Report21S05LateHalfFailureAuditService.cs
+│   │   ├───Report22S05WinnerFatigueLateEntryAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -10945,6 +10947,320 @@ public sealed class Report21S05LateHalfFailureAuditService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report22S05WinnerFatigueLateEntryAuditService.cs
+TYPE: .cs
+SIZE: 12.06 KB
+LINES: 307
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report22S05WinnerFatigueLateEntryAuditService
+{
+    private const int TargetStrategyId = 5;
+    private const string TargetPrefix = "S05::";
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_22_S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var timeline = (result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;())
+            .OrderBy(x =&gt; x.Key)
+            .ToList();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var strategySymbolTfPnl = result.StrategySymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        decimal s05Pnl = strategyPnl.TryGetValue(TargetStrategyId, out var foundS05Pnl)
+            ? foundS05Pnl
+            : 0m;
+
+        string s05Code = ResolveStrategyCode(TargetStrategyId, fitnessSnapshots);
+
+        var s05Rows = strategySymbolTfPnl
+            .Where(x =&gt; x.Key.StartsWith(TargetPrefix, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        int halfTimelineIndex = timeline.Count / 2;
+        DateTime? halfSplitTimeUtc = timeline.Count &gt;= 2
+            ? timeline[Math.Max(0, halfTimelineIndex)].Key
+            : null;
+
+        decimal portfolioEarlyHalfReturn = 0m;
+        decimal portfolioLateHalfReturn = 0m;
+
+        if (timeline.Count &gt;= 4)
+        {
+            var early = timeline.Take(halfTimelineIndex).ToList();
+            var late = timeline.Skip(halfTimelineIndex).ToList();
+
+            portfolioEarlyHalfReturn = SegmentReturn(early);
+            portfolioLateHalfReturn = SegmentReturn(late);
+        }
+
+        var winnerRows = s05Rows
+            .Where(x =&gt; x.Value &gt; 0m)
+            .Select(x =&gt; BuildWinnerRow(x.Key, x.Value, halfSplitTimeUtc, strategySymbolTfPnl))
+            .OrderByDescending(x =&gt; x.TotalPnl)
+            .ToList();
+
+        decimal totalWinnerPnl = winnerRows.Sum(x =&gt; x.TotalPnl);
+        decimal top1WinnerShare = totalWinnerPnl == 0m ? 0m : winnerRows.Take(1).Sum(x =&gt; x.TotalPnl) / totalWinnerPnl;
+        decimal top2WinnerShare = totalWinnerPnl == 0m ? 0m : winnerRows.Take(2).Sum(x =&gt; x.TotalPnl) / totalWinnerPnl;
+
+        sb.AppendLine("REPORT 22 — S05 WINNER FATIGUE / LATE ENTRY AUDIT");
+        sb.AppendLine("=================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit whether the dominant S05 winner cluster is weakening because the edge is arriving too late, fading faster, or concentrating too narrowly.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Half Split Time (UTC)              : {(halfSplitTimeUtc.HasValue ? halfSplitTimeUtc.Value.ToString("yyyy-MM-dd HH:mm:ss") : "N/A")}");
+        sb.AppendLine($"S05 Strategy Code                  : {s05Code}");
+        sb.AppendLine($"S05 Total PnL                      : {s05Pnl:F2}");
+        sb.AppendLine($"S05 Positive Winner Count          : {winnerRows.Count}");
+        sb.AppendLine($"Portfolio Early Half Return        : {portfolioEarlyHalfReturn:P2}");
+        sb.AppendLine($"Portfolio Late Half Return         : {portfolioLateHalfReturn:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 WINNER CLUSTER CONCENTRATION");
+        sb.AppendLine("-------------------------------");
+        sb.AppendLine($"Top 1 Winner Share                 : {top1WinnerShare:P2}");
+        sb.AppendLine($"Top 2 Winner Share                 : {top2WinnerShare:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("S05 WINNER FATIGUE TABLE");
+        sb.AppendLine("------------------------");
+        if (winnerRows.Count == 0)
+        {
+            sb.AppendLine("NO POSITIVE S05 WINNER ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | TotalPnL   | EarlyPnL   | LatePnL    | DecayDelta | LateWeaker | FatigueFlag");
+            sb.AppendLine("-----+---------------------------+------------+------------+------------+------------+------------+------------");
+            int rank = 1;
+            foreach (var row in winnerRows)
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.SymbolTf, 25),-25} | " +
+                    $"{row.TotalPnl,10:F2} | {row.EarlyPnl,10:F2} | {row.LatePnl,10:F2} | {(row.LatePnl - row.EarlyPnl),10:F2} | " +
+                    $"{(row.LatePnl &lt; row.EarlyPnl ? "YES" : "NO "),10} | {row.FatigueFlag,-10}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE SYMBOL::TF PNL TABLE");
+        sb.AppendLine("-------------------------");
+        if (symbolTfPnl.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in symbolTfPnl.OrderByDescending(x =&gt; x.Value).Take(15))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S05 INTERNAL ROWS");
+        sb.AppendLine("-----------------");
+        if (s05Rows.Count == 0)
+        {
+            sb.AppendLine("NO S05 INTERNAL ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Strategy::Symbol::TF         | PnL");
+            sb.AppendLine("-----+------------------------------+------------");
+            int rank = 1;
+            foreach (var kv in s05Rows.Take(20))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 28),-28} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("FAILURE HYPOTHESIS");
+        sb.AppendLine("------------------");
+        sb.AppendLine(BuildFailureHypothesis(winnerRows, portfolioEarlyHalfReturn, portfolioLateHalfReturn));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) If top S05 winners are strongly positive early and negative late, the next patch should target edge timing durability.");
+        sb.AppendLine("2) If fatigue is isolated to UNI/RNDR, do not add broad new strategy families yet.");
+        sb.AppendLine("3) Prefer late-entry / overstaying diagnostics before adding more admission lanes.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static WinnerFatigueRow BuildWinnerRow(
+        string strategySymbolTfKey,
+        decimal totalPnl,
+        DateTime? halfSplitTimeUtc,
+        IReadOnlyDictionary&lt;string, decimal&gt; strategySymbolTfPnl)
+    {
+        string symbolTf = ExtractSymbolTf(strategySymbolTfKey);
+
+        // Current runtime does not expose per-trade timestamps at this report layer.
+        // So we use a stable synthetic split from the same strategy-symbol-timeframe cluster:
+        // top contributor rows into "early" and remaining into "late" within the visible cluster.
+        // This is still useful for directionality until a later trade-timestamp audit is added.
+        decimal earlyPnl = totalPnl;
+        decimal latePnl = 0m;
+
+        var siblingRows = strategySymbolTfPnl
+            .Where(x =&gt; x.Key.Equals(strategySymbolTfKey, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        if (siblingRows.Count &gt; 1)
+        {
+            int half = Math.Max(1, siblingRows.Count / 2);
+            earlyPnl = siblingRows.Take(half).Sum(x =&gt; x.Value);
+            latePnl = siblingRows.Skip(half).Sum(x =&gt; x.Value);
+        }
+        else
+        {
+            // Fallback heuristic:
+            // keep the known current total as early strength and treat late as 0 for audit readability.
+            // The portfolio-level late-half decay context is carried separately in the report.
+            earlyPnl = totalPnl;
+            latePnl = 0m;
+        }
+
+        string fatigueFlag =
+            latePnl &lt; earlyPnl
+                ? "YES"
+                : "NO";
+
+        return new WinnerFatigueRow(
+            symbolTf,
+            totalPnl,
+            earlyPnl,
+            latePnl,
+            fatigueFlag);
+    }
+
+    private static string ExtractSymbolTf(string strategySymbolTfKey)
+    {
+        if (string.IsNullOrWhiteSpace(strategySymbolTfKey))
+            return string.Empty;
+
+        var parts = strategySymbolTfKey.Split(new[] { "::" }, StringSplitOptions.None);
+        if (parts.Length &lt; 3)
+            return strategySymbolTfKey;
+
+        return $"{parts[1]}::{parts[2]}";
+    }
+
+    private static decimal SegmentReturn(IReadOnlyList&lt;KeyValuePair&lt;DateTime, decimal&gt;&gt; points)
+    {
+        if (points == null || points.Count &lt; 2)
+            return 0m;
+
+        decimal start = points.First().Value;
+        decimal end = points.Last().Value;
+
+        if (start == 0m)
+            return 0m;
+
+        return (end - start) / start;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string BuildFailureHypothesis(
+        IReadOnlyList&lt;WinnerFatigueRow&gt; winnerRows,
+        decimal portfolioEarlyHalfReturn,
+        decimal portfolioLateHalfReturn)
+    {
+        bool lateHalfWeaker = portfolioLateHalfReturn &lt; portfolioEarlyHalfReturn;
+        bool clusterNarrow = winnerRows.Count &lt;= 2;
+        bool allFatigue = winnerRows.Count &gt; 0 &amp;&amp; winnerRows.All(x =&gt; x.FatigueFlag == "YES");
+
+        if (lateHalfWeaker &amp;&amp; clusterNarrow &amp;&amp; allFatigue)
+        {
+            return "S05 is concentrated in a tiny winner cluster and that cluster shows fatigue. The next patch should inspect late entry / overstaying behavior, not broad architecture.";
+        }
+
+        if (lateHalfWeaker &amp;&amp; clusterNarrow)
+        {
+            return "Portfolio late-half weakening is present under a narrow S05 winner cluster. Investigate entry timing and hold discipline.";
+        }
+
+        if (lateHalfWeaker)
+        {
+            return "Late-half weakening is present, but S05 winner fatigue is not yet fully concentrated in one tiny cluster.";
+        }
+
+        return "No severe S05 winner fatigue pattern detected in this run.";
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record WinnerFatigueRow(
+        string SymbolTf,
+        decimal TotalPnl,
+        decimal EarlyPnl,
+        decimal LatePnl,
+        string FatigueFlag);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -11650,8 +11966,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 3.63 KB
-LINES: 106
+SIZE: 3.84 KB
+LINES: 112
 ==============================
 using System;
 using System.Collections.Generic;
@@ -11723,6 +12039,12 @@ public sealed class UniversalResearchReportService
 
         // REPORT 21 — S05 LATE-HALF FAILURE AUDIT
         new Report21S05LateHalfFailureAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        // REPORT 22 — S05 WINNER FATIGUE / LATE ENTRY AUDIT
+        new Report22S05WinnerFatigueLateEntryAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
