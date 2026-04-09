@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__18-52-48.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__18-52-48.txt
-GENERATED: 2026-04-09 18:52:48
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__20-42-02.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__20-42-02.txt
+GENERATED: 2026-04-09 20:42:02
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -21,8 +21,9 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
 │       │   ├───02a7b9f4-95db-4b99-b53f-3554edfec94b.vsidx
-│       │   ├───7d6524af-90c4-4e57-87ba-3520edd90137.vsidx
-│       │   └───82294d57-a3db-4784-aa68-d73152b28523.vsidx
+│       │   ├───76545c7e-3439-439d-b631-bf2515616abf.vsidx
+│       │   ├───7b3115e6-6a5a-425d-bdda-dc6dc17d3ec0.vsidx
+│       │   └───7d6524af-90c4-4e57-87ba-3520edd90137.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -105,6 +106,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report21S05LateHalfFailureAuditService.cs
 │   │   ├───Report22S05WinnerFatigueLateEntryAuditService.cs
 │   │   ├───Report23S05ExitEfficiencyLateHoldBleedAuditService.cs
+│   │   ├───Report24S05CompatibleEdgeExpansionNearWinnerAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -11569,6 +11571,389 @@ public sealed class Report23S05ExitEfficiencyLateHoldBleedAuditService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report24S05CompatibleEdgeExpansionNearWinnerAuditService.cs
+TYPE: .cs
+SIZE: 15.06 KB
+LINES: 376
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report24S05CompatibleEdgeExpansionNearWinnerAuditService
+{
+    private static readonly string[] PriorityWinnerStyleSymbols =
+    [
+        "UNIUSDT",
+        "RNDRUSDT",
+        "FILUSDT",
+        "DOTUSDT",
+        "ARBUSDT",
+        "SUIUSDT",
+        "NEARUSDT",
+        "SOLUSDT",
+        "LINKUSDT"
+    ];
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_24_S05_COMPATIBLE_EDGE_EXPANSION_NEAR_WINNER_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var rejections = result.MarketSelectionRejections ?? new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = (result.SelectedMarkets ?? new List&lt;string&gt;())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var runnerMix = result.MarketAllocationWeights ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var canonical = result.CanonicalCioPostGatingWeights ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+
+        decimal s05Pnl = strategyPnl.TryGetValue(5, out var foundS05Pnl)
+            ? foundS05Pnl
+            : 0m;
+
+        string s05Code = ResolveStrategyCode(5, fitnessSnapshots);
+
+        var liveWinners = symbolTfPnl
+            .Where(x =&gt; x.Value &gt; 0m)
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        var nearWinners = rejections
+            .Select(kv =&gt; BuildNearWinnerRow(kv.Key, kv.Value, selectedMarkets))
+            .Where(x =&gt; x.IsRelevant)
+            .OrderByDescending(x =&gt; x.PriorityScore)
+            .ThenByDescending(x =&gt; x.S05CompatibilityScore)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        decimal totalWinnerPnl = liveWinners.Sum(x =&gt; x.Value);
+        decimal top2WinnerShare = totalWinnerPnl == 0m
+            ? 0m
+            : liveWinners.Take(2).Sum(x =&gt; x.Value) / totalWinnerPnl;
+
+        sb.AppendLine("REPORT 24 — S05 COMPATIBLE EDGE EXPANSION / NEAR-WINNER AUDIT");
+        sb.AppendLine("=============================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit which rejected candidates are the best next S05-compatible near-winner expansion targets.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"S05 Strategy Code                  : {s05Code}");
+        sb.AppendLine($"S05 Strategy PnL                   : {s05Pnl:F2}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarkets.Count}");
+        sb.AppendLine($"Runner Candidate Mix Count         : {runnerMix.Count}");
+        sb.AppendLine($"Canonical Deployable Count         : {canonical.Count}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine($"Positive Winner Count              : {liveWinners.Count}");
+        sb.AppendLine($"Top 2 Winner Share                 : {top2WinnerShare:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE WINNER CLUSTER");
+        sb.AppendLine("-------------------");
+        if (liveWinners.Count == 0)
+        {
+            sb.AppendLine("NO POSITIVE LIVE WINNERS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in liveWinners.Take(10))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("TOP S05-COMPATIBLE NEAR-WINNERS");
+        sb.AppendLine("-------------------------------");
+        if (nearWinners.Count == 0)
+        {
+            sb.AppendLine("NO RELEVANT NEAR-WINNER CANDIDATES FOUND");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Market                    | ReasonBucket                     | S05Compat | Priority | Expansion Verdict");
+            sb.AppendLine("-----+---------------------------+----------------------------------+-----------+----------+------------------------------");
+            int rank = 1;
+            foreach (var row in nearWinners.Take(20))
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.MarketKey, 25),-25} | {TrimTo(row.ReasonBucket, 32),-32} | " +
+                    $"{row.S05CompatibilityScore,9:F2} | {row.PriorityScore,8:F2} | {TrimTo(row.ExpansionVerdict, 28)}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("NEAR-WINNER REASON BUCKETS");
+        sb.AppendLine("--------------------------");
+        if (nearWinners.Count == 0)
+        {
+            sb.AppendLine("NO NEAR-WINNER BUCKETS");
+        }
+        else
+        {
+            foreach (var bucket in nearWinners
+                         .GroupBy(x =&gt; x.ReasonBucket)
+                         .OrderByDescending(g =&gt; g.Count())
+                         .ThenBy(g =&gt; g.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                sb.AppendLine($"{bucket.Key,-36} {bucket.Count(),6}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("PRIORITY RESEARCH TARGETS");
+        sb.AppendLine("-------------------------");
+        if (nearWinners.Count == 0)
+        {
+            sb.AppendLine("NO PRIORITY RESEARCH TARGETS");
+        }
+        else
+        {
+            foreach (var row in nearWinners.Take(8))
+            {
+                sb.AppendLine(
+                    $"{row.MarketKey,-24} " +
+                    $"bucket={row.ReasonBucket,-30} " +
+                    $"compat={row.S05CompatibilityScore:F2} " +
+                    $"priority={row.PriorityScore:F2} " +
+                    $"=&gt; {row.ExpansionVerdict}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("EXPANSION VERDICT");
+        sb.AppendLine("-----------------");
+        sb.AppendLine(BuildVerdict(nearWinners, liveWinners.Count, result.CashAllocationWeight));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) Prefer S05-compatible 4h candidates first.");
+        sb.AppendLine("2) Favor names blocked by near-miss buckets (dispersion, regime-lane overflow, liquidity-tier overflow) before inventing new strategy families.");
+        sb.AppendLine("3) If the best near-winners remain weak after repeated audits, then the next move should be a true new edge family, not more admission tuning.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static NearWinnerRow BuildNearWinnerRow(
+        string marketKey,
+        string rejectionReason,
+        IReadOnlySet&lt;string&gt; selectedMarkets)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return NearWinnerRow.Empty;
+
+        if (selectedMarkets.Contains(marketKey))
+            return NearWinnerRow.Empty;
+
+        string symbol = ExtractSymbol(marketKey);
+        string timeframe = ExtractTimeframe(marketKey);
+
+        bool is4h = timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase);
+        bool isPrioritySymbol = PriorityWinnerStyleSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase);
+
+        string reasonBucket = NormalizeReasonBucket(rejectionReason);
+
+        decimal s05CompatibilityScore = 0m;
+        if (is4h) s05CompatibilityScore += 0.40m;
+        if (isPrioritySymbol) s05CompatibilityScore += 0.30m;
+        if (reasonBucket == "WaveBRejected:DispersionGuard") s05CompatibilityScore += 0.20m;
+        if (reasonBucket == "REJECT: regime near-miss lane overflow") s05CompatibilityScore += 0.18m;
+        if (reasonBucket == "REJECT: liquidity tier-2 lane overflow") s05CompatibilityScore += 0.16m;
+        if (reasonBucket == "REJECT: outside top leadership set") s05CompatibilityScore += 0.12m;
+        if (reasonBucket == "REJECT: regime not trend/high-vol-up") s05CompatibilityScore += 0.08m;
+        if (reasonBucket == "REJECT: low liquidity") s05CompatibilityScore += 0.06m;
+
+        decimal priorityScore = s05CompatibilityScore;
+
+        if (reasonBucket == "WaveBRejected:DispersionGuard")
+            priorityScore += 0.25m;
+
+        if (reasonBucket == "REJECT: regime near-miss lane overflow")
+            priorityScore += 0.18m;
+
+        if (reasonBucket == "REJECT: liquidity tier-2 lane overflow")
+            priorityScore += 0.16m;
+
+        bool isRelevant =
+            is4h &amp;&amp;
+            (
+                reasonBucket == "WaveBRejected:DispersionGuard" ||
+                reasonBucket == "REJECT: regime near-miss lane overflow" ||
+                reasonBucket == "REJECT: liquidity tier-2 lane overflow" ||
+                reasonBucket == "REJECT: regime not trend/high-vol-up" ||
+                reasonBucket == "REJECT: low liquidity" ||
+                reasonBucket == "REJECT: outside top leadership set"
+            );
+
+        string verdict = BuildExpansionVerdict(reasonBucket, is4h, isPrioritySymbol);
+
+        return new NearWinnerRow(
+            marketKey,
+            reasonBucket,
+            s05CompatibilityScore,
+            priorityScore,
+            verdict,
+            isRelevant);
+    }
+
+    private static string BuildExpansionVerdict(string reasonBucket, bool is4h, bool isPrioritySymbol)
+    {
+        if (!is4h)
+            return "Lower priority timeframe";
+
+        if (reasonBucket == "WaveBRejected:DispersionGuard")
+            return "Best immediate expansion candidate";
+
+        if (reasonBucket == "REJECT: regime near-miss lane overflow")
+            return "Strong emerging-trend research candidate";
+
+        if (reasonBucket == "REJECT: liquidity tier-2 lane overflow")
+            return "Strong tier-2 liquidity research candidate";
+
+        if (reasonBucket == "REJECT: outside top leadership set" &amp;&amp; isPrioritySymbol)
+            return "Borderline near-winner, monitor";
+
+        if (reasonBucket == "REJECT: regime not trend/high-vol-up" &amp;&amp; isPrioritySymbol)
+            return "Watch for regime-turn upgrade";
+
+        if (reasonBucket == "REJECT: low liquidity" &amp;&amp; isPrioritySymbol)
+            return "Watch for liquidity improvement";
+
+        return "Secondary research candidate";
+    }
+
+    private static string NormalizeReasonBucket(string rejectionReason)
+    {
+        string value = rejectionReason?.Trim() ?? string.Empty;
+
+        if (value.StartsWith("WaveBRejected:DispersionGuard", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:DispersionGuard";
+
+        if (value.StartsWith("REJECT: regime near-miss lane overflow", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime near-miss lane overflow";
+
+        if (value.StartsWith("REJECT: liquidity tier-2 lane overflow", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: liquidity tier-2 lane overflow";
+
+        if (value.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: outside top leadership set";
+
+        if (value.StartsWith("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime not trend/high-vol-up";
+
+        if (value.StartsWith("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: low liquidity";
+
+        if (value.StartsWith("REJECT: dead / too low volatility", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: dead / too low volatility";
+
+        return value;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string BuildVerdict(
+        IReadOnlyList&lt;NearWinnerRow&gt; nearWinners,
+        int liveWinnerCount,
+        decimal cashWeight)
+    {
+        bool strongNearWinners =
+            nearWinners.Take(3).Any(x =&gt; x.PriorityScore &gt;= 0.75m);
+
+        if (liveWinnerCount &lt;= 2 &amp;&amp; cashWeight &gt;= 0.75m &amp;&amp; strongNearWinners)
+        {
+            return "There are still credible S05-compatible expansion targets. Next work should stay on controlled edge expansion, not exit logic.";
+        }
+
+        if (liveWinnerCount &lt;= 2 &amp;&amp; cashWeight &gt;= 0.75m)
+        {
+            return "Winner concentration remains high, but the current near-winner set is not yet strong enough. The next move may need a true new edge family rather than more admission tuning.";
+        }
+
+        return "Near-winner structure is not extreme in this run.";
+    }
+
+    private static string ExtractSymbol(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 1 ? parts[0].Trim() : string.Empty;
+    }
+
+    private static string ExtractTimeframe(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 2 ? parts[1].Trim() : string.Empty;
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record NearWinnerRow(
+        string MarketKey,
+        string ReasonBucket,
+        decimal S05CompatibilityScore,
+        decimal PriorityScore,
+        string ExpansionVerdict,
+        bool IsRelevant)
+    {
+        public static NearWinnerRow Empty =&gt;
+            new(string.Empty, string.Empty, 0m, 0m, string.Empty, false);
+    }
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -12274,8 +12659,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 4.07 KB
-LINES: 118
+SIZE: 4.3 KB
+LINES: 124
 ==============================
 using System;
 using System.Collections.Generic;
@@ -12359,6 +12744,12 @@ public sealed class UniversalResearchReportService
 
         // REPORT 23 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT
         new Report23S05ExitEfficiencyLateHoldBleedAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        // REPORT 24 — S05 COMPATIBLE EDGE EXPANSION / NEAR-WINNER AUDIT
+        new Report24S05CompatibleEdgeExpansionNearWinnerAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
