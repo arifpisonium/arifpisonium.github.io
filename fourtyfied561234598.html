@@ -9,23 +9,28 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-08__17-38-34.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-08__17-38-34.txt
-GENERATED: 2026-04-08 17:38:34
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__08-19-16.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__08-19-16.txt
+GENERATED: 2026-04-09 08:19:16
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
+│   ├───ProjectEvaluation
+│   │   ├───tqga.metadata.v10.bin
+│   │   ├───tqga.projects.v10.bin
+│   │   └───tqga.strings.v10.bin
 │   └───TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───04908e81-50fd-4601-b08f-d895a5f893b1.vsidx
-│       │   └───e8c9c40c-0749-476b-b60f-791cb569770f.vsidx
+│       │   └───c05365b0-562a-4b56-a176-6bf5cac3037c.vsidx
 │       └───v18
+│           ├───.futdcache.v2
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
-│           └───DocumentLayout.json
+│           ├───DocumentLayout.json
+│           └───HierarchyCache.v1.txt
 ├───TQGA.Application
 │   ├───Accounting
 │   │   ├───EquityCurve.cs
@@ -3466,8 +3471,8 @@ public sealed class PortfolioRiskBudgetEngine
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Portfolio\PreTradeMarketSelectionService.cs
 TYPE: .cs
-SIZE: 20.6 KB
-LINES: 506
+SIZE: 27.11 KB
+LINES: 629
 ==============================
 using System.Text;
 using TQGA.Application.Interfaces;
@@ -3482,6 +3487,19 @@ public sealed class PreTradeMarketSelectionService
     private const decimal MinAverageAbsoluteReturn = 0.006m;
     private const decimal HighVolThreshold = 0.012m;
     private const decimal MaxTrendExtension = 0.18m;
+
+    // PATCH 26 — Emerging Trend Near-Miss Regime Lane
+    // Purpose:
+    // - Do NOT globally weaken the regime gate.
+    // - Allow a tiny, high-quality lane for strong 4h Range candidates that are
+    //   close enough to institutional trend conditions to deserve research capital.
+    private const int EmergingTrendMaxMarkets = 2;
+    private const decimal EmergingTrendMinLeadershipScore = 0.015m;
+    private const decimal EmergingTrendMinAverageDollarVolume = 2_000_000m;
+    private const decimal EmergingTrendMinAverageAbsoluteReturn = 0.012m;
+    private const decimal EmergingTrendMaxTrendExtension = 0.08m;
+    private const decimal EmergingTrendRangeScoreFloor = 0.27m;
+    private const string EmergingTrendLaneLabel = "EMERGING_TREND_NEAR_MISS";
 
     public SelectionResult SelectMarkets(
         ICandleDataFeed feed,
@@ -3501,6 +3519,7 @@ public sealed class PreTradeMarketSelectionService
         var accepted = new List&lt;SelectedMarket&gt;();
         var rejected = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
         var telemetryRows = new List&lt;PreTradeTelemetryRow&gt;();
+        var emergingTrendNearMissPool = new List&lt;PreTradeTelemetryRow&gt;();
 
         foreach (var symbol in symbols)
         {
@@ -3537,6 +3556,8 @@ public sealed class PreTradeMarketSelectionService
                         PassedVolatility = false,
                         PassedRegime = false,
                         PassedExtension = false,
+                        EligibleForEmergingTrendLane = false,
+                        SelectedByEmergingTrendLane = false,
                         SelectedTopN = false
                     });
                     continue;
@@ -3558,6 +3579,15 @@ public sealed class PreTradeMarketSelectionService
                 bool passedVolatility = avgAbsReturn &gt;= MinAverageAbsoluteReturn;
                 bool passedRegime = trend is MarketTrendState.TrendUp or MarketTrendState.HighVolUp;
                 bool passedExtension = maturity &lt;= MaxTrendExtension;
+
+                bool eligibleForEmergingTrendLane =
+                    timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase) &amp;&amp;
+                    trend == MarketTrendState.Range &amp;&amp;
+                    avgDollarVolume &gt;= EmergingTrendMinAverageDollarVolume &amp;&amp;
+                    avgAbsReturn &gt;= EmergingTrendMinAverageAbsoluteReturn &amp;&amp;
+                    maturity &lt;= EmergingTrendMaxTrendExtension &amp;&amp;
+                    leadershipScore &gt;= EmergingTrendMinLeadershipScore &amp;&amp;
+                    finalScore &gt;= EmergingTrendRangeScoreFloor;
 
                 string? rejectionReason = null;
 
@@ -3588,6 +3618,8 @@ public sealed class PreTradeMarketSelectionService
                     PassedVolatility = passedVolatility,
                     PassedRegime = passedRegime,
                     PassedExtension = passedExtension,
+                    EligibleForEmergingTrendLane = eligibleForEmergingTrendLane,
+                    SelectedByEmergingTrendLane = false,
                     SelectedTopN = false
                 };
 
@@ -3595,7 +3627,16 @@ public sealed class PreTradeMarketSelectionService
 
                 if (rejectionReason != null)
                 {
-                    rejected[marketKey] = rejectionReason;
+                    if (rejectionReason.Equals("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase) &amp;&amp;
+                        eligibleForEmergingTrendLane)
+                    {
+                        emergingTrendNearMissPool.Add(row);
+                    }
+                    else
+                    {
+                        rejected[marketKey] = rejectionReason;
+                    }
+
                     continue;
                 }
 
@@ -3605,8 +3646,38 @@ public sealed class PreTradeMarketSelectionService
                     avgDollarVolume,
                     avgAbsReturn,
                     trend.ToString(),
-                    maturity));
+                    maturity,
+                    "CORE_TREND"));
             }
+        }
+
+        var emergingSelected = emergingTrendNearMissPool
+            .OrderByDescending(x =&gt; x.FinalScore)
+            .ThenByDescending(x =&gt; x.LeadershipScore)
+            .ThenByDescending(x =&gt; x.AverageDollarVolume)
+            .Take(EmergingTrendMaxMarkets)
+            .ToList();
+
+        foreach (var row in emergingSelected)
+        {
+            row.SelectedByEmergingTrendLane = true;
+            row.Decision = $"ACCEPT: {EmergingTrendLaneLabel}";
+
+            accepted.Add(new SelectedMarket(
+                row.Market,
+                row.FinalScore,
+                row.AverageDollarVolume,
+                row.AverageAbsoluteReturn,
+                $"{row.RegimeState}→{EmergingTrendLaneLabel}",
+                row.TrendExtension,
+                EmergingTrendLaneLabel));
+        }
+
+        foreach (var row in emergingTrendNearMissPool.Except(emergingSelected))
+        {
+            rejected[$"{row.Market.Symbol}::{row.Market.Timeframe}"] =
+                $"REJECT: regime near-miss lane overflow (max={EmergingTrendMaxMarkets})";
+            row.Decision = $"REJECT: regime near-miss lane overflow (max={EmergingTrendMaxMarkets})";
         }
 
         var selected = accepted
@@ -3628,10 +3699,16 @@ public sealed class PreTradeMarketSelectionService
         {
             if (selectedSet.Contains(row.Market))
             {
-                row.Decision = "SELECTED: top leadership set";
+                row.Decision = row.SelectedByEmergingTrendLane
+                    ? $"SELECTED: {EmergingTrendLaneLabel}"
+                    : "SELECTED: top leadership set";
                 row.SelectedTopN = true;
             }
             else if (row.Decision == "ACCEPT: pre-topN")
+            {
+                row.Decision = $"REJECT: outside top {topN} leadership set";
+            }
+            else if (row.Decision == $"ACCEPT: {EmergingTrendLaneLabel}")
             {
                 row.Decision = $"REJECT: outside top {topN} leadership set";
             }
@@ -3662,8 +3739,9 @@ public sealed class PreTradeMarketSelectionService
 
         int totalUniverse = telemetryRows.Count;
         int selectedCount = telemetryRows.Count(x =&gt; x.SelectedTopN);
-        int acceptedPreTopNCount = telemetryRows.Count(x =&gt; x.Decision.StartsWith("SELECTED:", StringComparison.OrdinalIgnoreCase)
-                                                          || x.Decision.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase));
+        int acceptedPreTopNCount = telemetryRows.Count(x =&gt;
+            x.Decision.StartsWith("SELECTED:", StringComparison.OrdinalIgnoreCase) ||
+            x.Decision.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase));
 
         int insufficientHistoryCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: insufficient history", StringComparison.OrdinalIgnoreCase));
         int lowLiquidityCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase));
@@ -3671,13 +3749,16 @@ public sealed class PreTradeMarketSelectionService
         int regimeRejectCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase));
         int extensionRejectCount = telemetryRows.Count(x =&gt; x.Decision.Equals("REJECT: late / overextended trend", StringComparison.OrdinalIgnoreCase));
         int outsideTopNCount = telemetryRows.Count(x =&gt; x.Decision.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase));
+        int emergingEligibleCount = telemetryRows.Count(x =&gt; x.EligibleForEmergingTrendLane);
+        int emergingSelectedCount = telemetryRows.Count(x =&gt; x.SelectedByEmergingTrendLane);
+        int emergingOverflowCount = telemetryRows.Count(x =&gt; x.Decision.StartsWith("REJECT: regime near-miss lane overflow", StringComparison.OrdinalIgnoreCase));
 
         sb.AppendLine("REPORT 17 — PRE-TRADE / REGIME GATE TELEMETRY");
         sb.AppendLine("============================================");
         sb.AppendLine();
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
-        sb.AppendLine("PATCH_25_PRETRADE_REGIME_GATE_TELEMETRY");
+        sb.AppendLine("PATCH_26_EMERGING_TREND_NEAR_MISS_REGIME_LANE");
         sb.AppendLine("SOURCE = PreTradeMarketSelectionService.SelectMarkets");
         sb.AppendLine();
 
@@ -3688,6 +3769,12 @@ public sealed class PreTradeMarketSelectionService
         sb.AppendLine($"Min Average Absolute Return         : {MinAverageAbsoluteReturn:F4}");
         sb.AppendLine($"High Vol Threshold                  : {HighVolThreshold:F4}");
         sb.AppendLine($"Max Trend Extension                 : {MaxTrendExtension:F2}");
+        sb.AppendLine($"Emerging Trend Max Markets          : {EmergingTrendMaxMarkets}");
+        sb.AppendLine($"Emerging Trend Min Leadership       : {EmergingTrendMinLeadershipScore:F4}");
+        sb.AppendLine($"Emerging Trend Min Avg $ Volume     : {EmergingTrendMinAverageDollarVolume:N0}");
+        sb.AppendLine($"Emerging Trend Min Avg Abs Return   : {EmergingTrendMinAverageAbsoluteReturn:F4}");
+        sb.AppendLine($"Emerging Trend Max Extension        : {EmergingTrendMaxTrendExtension:F4}");
+        sb.AppendLine($"Emerging Trend Range Score Floor    : {EmergingTrendRangeScoreFloor:F4}");
         sb.AppendLine();
 
         sb.AppendLine("FUNNEL TELEMETRY");
@@ -3701,6 +3788,9 @@ public sealed class PreTradeMarketSelectionService
         sb.AppendLine($"Rejected: regime                    : {regimeRejectCount}");
         sb.AppendLine($"Rejected: overextended trend        : {extensionRejectCount}");
         sb.AppendLine($"Rejected: outside topN              : {outsideTopNCount}");
+        sb.AppendLine($"Emerging Lane Eligible              : {emergingEligibleCount}");
+        sb.AppendLine($"Emerging Lane Selected              : {emergingSelectedCount}");
+        sb.AppendLine($"Emerging Lane Overflow Rejects      : {emergingOverflowCount}");
         sb.AppendLine();
 
         sb.AppendLine("REJECTION BUCKET COUNTS");
@@ -3710,7 +3800,7 @@ public sealed class PreTradeMarketSelectionService
                      .OrderByDescending(g =&gt; g.Count())
                      .ThenBy(g =&gt; g.Key, StringComparer.OrdinalIgnoreCase))
         {
-            sb.AppendLine($"{bucket.Key,-40} {bucket.Count(),6}");
+            sb.AppendLine($"{bucket.Key,-48} {bucket.Count(),6}");
         }
 
         sb.AppendLine();
@@ -3741,9 +3831,38 @@ public sealed class PreTradeMarketSelectionService
                     $"score={row.Score,8:F4} " +
                     $"liq={row.AverageDollarVolume,14:N0} " +
                     $"vol={row.AverageAbsoluteReturn,8:F4} " +
-                    $"regime={row.RegimeLabel,-10} " +
-                    $"extension={row.TrendExtension,7:F4}");
+                    $"regime={row.RegimeLabel,-24} " +
+                    $"extension={row.TrendExtension,7:F4} " +
+                    $"source={row.SourceLane}");
                 rank++;
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("EMERGING TREND LANE SELECTED");
+        sb.AppendLine("----------------------------");
+        var emergingSelectedRows = telemetryRows
+            .Where(x =&gt; x.SelectedByEmergingTrendLane)
+            .OrderByDescending(x =&gt; x.FinalScore)
+            .ThenByDescending(x =&gt; x.LeadershipScore)
+            .ToList();
+
+        if (emergingSelectedRows.Count == 0)
+        {
+            sb.AppendLine("NO EMERGING TREND LANE SELECTIONS");
+        }
+        else
+        {
+            foreach (var row in emergingSelectedRows)
+            {
+                sb.AppendLine(
+                    $"{row.Market.Symbol}::{row.Market.Timeframe,-4} " +
+                    $"regime={row.RegimeState,-12} " +
+                    $"score={row.FinalScore,8:F4} " +
+                    $"lead={row.LeadershipScore,8:F4} " +
+                    $"liq={row.AverageDollarVolume,14:N0} " +
+                    $"vol={row.AverageAbsoluteReturn,8:F4} " +
+                    $"extension={row.TrendExtension,7:F4}");
             }
         }
 
@@ -3751,7 +3870,9 @@ public sealed class PreTradeMarketSelectionService
         sb.AppendLine("TOP REGIME NEAR MISSES");
         sb.AppendLine("----------------------");
         var regimeNearMisses = telemetryRows
-            .Where(x =&gt; x.Decision.Equals("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase))
+            .Where(x =&gt; x.Decision.Equals("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase) ||
+                        x.Decision.StartsWith("REJECT: regime near-miss lane overflow", StringComparison.OrdinalIgnoreCase) ||
+                        x.Decision.StartsWith("SELECTED: " + EmergingTrendLaneLabel, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(x =&gt; x.FinalScore)
             .ThenByDescending(x =&gt; x.LeadershipScore)
             .Take(15)
@@ -3772,7 +3893,9 @@ public sealed class PreTradeMarketSelectionService
                     $"lead={row.LeadershipScore,8:F4} " +
                     $"liq={row.AverageDollarVolume,14:N0} " +
                     $"vol={row.AverageAbsoluteReturn,8:F4} " +
-                    $"extension={row.TrendExtension,7:F4}");
+                    $"extension={row.TrendExtension,7:F4} " +
+                    $"eligible={(row.EligibleForEmergingTrendLane ? "YES" : "NO ")} " +
+                    $"=&gt; {row.Decision}");
             }
         }
 
@@ -3835,8 +3958,8 @@ public sealed class PreTradeMarketSelectionService
         sb.AppendLine();
         sb.AppendLine("FULL TELEMETRY TABLE");
         sb.AppendLine("--------------------");
-        sb.AppendLine("Market               Candles  LiqPass  VolPass  RegPass  ExtPass  Regime        LeadScore  FinalScore  Avg$Vol        AvgAbsRet  Extension  Decision");
-        sb.AppendLine("-------------------  -------  -------  -------  -------  -------  ------------  ---------  ----------  -------------  ---------  ---------  ----------------------------------------");
+        sb.AppendLine("Market               Candles  LiqPass  VolPass  RegPass  ExtPass  Regime        LeadScore  FinalScore  Avg$Vol        AvgAbsRet  Extension  EmgElig  EmgSel  Decision");
+        sb.AppendLine("-------------------  -------  -------  -------  -------  -------  ------------  ---------  ----------  -------------  ---------  ---------  -------  ------  ----------------------------------------");
 
         foreach (var row in telemetryRows
                      .OrderByDescending(x =&gt; x.SelectedTopN)
@@ -3857,6 +3980,8 @@ public sealed class PreTradeMarketSelectionService
                 $"{row.AverageDollarVolume,13:N0}  " +
                 $"{row.AverageAbsoluteReturn,9:F4}  " +
                 $"{row.TrendExtension,9:F4}  " +
+                $"{(row.EligibleForEmergingTrendLane ? "YES" : "NO "),7}  " +
+                $"{(row.SelectedByEmergingTrendLane ? "YES" : "NO "),6}  " +
                 $"{row.Decision}");
         }
 
@@ -3942,7 +4067,8 @@ public sealed class PreTradeMarketSelectionService
         decimal AverageDollarVolume,
         decimal AverageAbsoluteReturn,
         string RegimeLabel,
-        decimal TrendExtension);
+        decimal TrendExtension,
+        string SourceLane);
 
     private sealed class PreTradeTelemetryRow
     {
@@ -3962,6 +4088,8 @@ public sealed class PreTradeMarketSelectionService
         public bool PassedVolatility { get; init; }
         public bool PassedRegime { get; init; }
         public bool PassedExtension { get; init; }
+        public bool EligibleForEmergingTrendLane { get; init; }
+        public bool SelectedByEmergingTrendLane { get; set; }
         public bool SelectedTopN { get; set; }
     }
 
