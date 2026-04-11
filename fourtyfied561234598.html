@@ -9,17 +9,18 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__11-37-47.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__11-37-47.txt
-GENERATED: 2026-04-11 11:37:47
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__11-45-37.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__11-45-37.txt
+GENERATED: 2026-04-11 11:45:37
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
 │       ├───FileContentIndex
+│       │   ├───0c6866ee-1f28-480e-87f0-e0f2efc9386d.vsidx
 │       │   ├───904bcc11-c2a0-4dc5-a902-be68267f22de.vsidx
-│       │   └───985741ee-6df7-444c-bfa6-0f01952e320a.vsidx
+│       │   └───9fe27563-8833-4d07-bc96-b3aebbc664b0.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -104,6 +105,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report23S05ExitEfficiencyLateHoldBleedAuditService.cs
 │   │   ├───Report24S05CompatibleEdgeExpansionNearWinnerAuditService.cs
 │   │   ├───Report25DispersionGuardNearWinnerPromotionAuditService.cs
+│   │   ├───Report26TrueNewEdgeFamilyOpportunityAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -12274,6 +12276,402 @@ public sealed class Report25DispersionGuardNearWinnerPromotionAuditService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report26TrueNewEdgeFamilyOpportunityAuditService.cs
+TYPE: .cs
+SIZE: 14.04 KB
+LINES: 389
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report26TrueNewEdgeFamilyOpportunityAuditService
+{
+    private static readonly string[] EarlyTrendContinuationSymbols =
+    [
+        "FILUSDT",
+        "DOTUSDT",
+        "LINKUSDT",
+        "NEARUSDT",
+        "SOLUSDT",
+        "ARBUSDT",
+        "SUIUSDT"
+    ];
+
+    private static readonly string[] EmergingBreakoutSymbols =
+    [
+        "ARBUSDT",
+        "SUIUSDT",
+        "SEIUSDT",
+        "JUPUSDT",
+        "WIFUSDT",
+        "INJUSDT",
+        "TIAUSDT",
+        "ORDIUSDT"
+    ];
+
+    private static readonly string[] LowerLiquidityContinuationSymbols =
+    [
+        "FETUSDT",
+        "INJUSDT",
+        "TIAUSDT",
+        "ORDIUSDT",
+        "SEIUSDT",
+        "JUPUSDT",
+        "WIFUSDT"
+    ];
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_26_TRUE_NEW_EDGE_FAMILY_OPPORTUNITY_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var rejections = result.MarketSelectionRejections ?? new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = (result.SelectedMarkets ?? new List&lt;string&gt;())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        decimal s05Pnl = strategyPnl.TryGetValue(5, out var foundS05Pnl)
+            ? foundS05Pnl
+            : 0m;
+
+        string s05Code = ResolveStrategyCode(5, fitnessSnapshots);
+
+        var liveWinners = symbolTfPnl
+            .Where(x =&gt; x.Value &gt; 0m)
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        var allRejected4h = rejections
+            .Where(x =&gt; ExtractTimeframe(x.Key).Equals("4h", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var familyRows = new List&lt;EdgeFamilyRow&gt;
+        {
+            BuildFamilyRow(
+                "4H_EARLY_TREND_CONTINUATION",
+                allRejected4h,
+                EarlyTrendContinuationSymbols,
+                selectedMarkets),
+
+            BuildFamilyRow(
+                "4H_EMERGING_BREAKOUT",
+                allRejected4h,
+                EmergingBreakoutSymbols,
+                selectedMarkets),
+
+            BuildFamilyRow(
+                "4H_LOWER_LIQUIDITY_CONTINUATION",
+                allRejected4h,
+                LowerLiquidityContinuationSymbols,
+                selectedMarkets)
+        };
+
+        var rankedFamilies = familyRows
+            .OrderByDescending(x =&gt; x.OpportunityScore)
+            .ThenByDescending(x =&gt; x.CandidateCount)
+            .ThenBy(x =&gt; x.FamilyName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        sb.AppendLine("REPORT 26 — TRUE NEW EDGE FAMILY OPPORTUNITY AUDIT");
+        sb.AppendLine("==================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit whether TQGA should continue admission tuning or move to a truly new edge family research direction.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"S05 Strategy Code                  : {s05Code}");
+        sb.AppendLine($"S05 Strategy PnL                   : {s05Pnl:F2}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarkets.Count}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine($"Positive Live Winner Count         : {liveWinners.Count}");
+        sb.AppendLine($"Rejected 4h Candidate Count        : {allRejected4h.Count}");
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE WINNER CLUSTER");
+        sb.AppendLine("-------------------");
+        if (liveWinners.Count == 0)
+        {
+            sb.AppendLine("NO POSITIVE LIVE WINNERS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in liveWinners.Take(10))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("EDGE FAMILY OPPORTUNITY TABLE");
+        sb.AppendLine("-----------------------------");
+        sb.AppendLine("Rank | Edge Family                    | Candidates | Reason Mix Summary                    | Opportunity | Verdict");
+        sb.AppendLine("-----+--------------------------------+------------+---------------------------------------+-------------+------------------------------");
+        int familyRank = 1;
+        foreach (var row in rankedFamilies)
+        {
+            sb.AppendLine(
+                $"{familyRank,4} | {TrimTo(row.FamilyName, 30),-30} | {row.CandidateCount,10} | " +
+                $"{TrimTo(row.ReasonMixSummary, 37),-37} | {row.OpportunityScore,11:F2} | {TrimTo(row.Verdict, 28)}");
+            familyRank++;
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("TOP CANDIDATES BY FAMILY");
+        sb.AppendLine("------------------------");
+        foreach (var family in rankedFamilies)
+        {
+            sb.AppendLine($"FAMILY: {family.FamilyName}");
+            if (family.TopCandidates.Count == 0)
+            {
+                sb.AppendLine("  NO TOP CANDIDATES");
+                sb.AppendLine();
+                continue;
+            }
+
+            int rank = 1;
+            foreach (var candidate in family.TopCandidates.Take(8))
+            {
+                sb.AppendLine(
+                    $"  {rank,2}. {candidate.MarketKey,-22} " +
+                    $"bucket={candidate.ReasonBucket,-32} " +
+                    $"score={candidate.CandidateScore:F2}");
+                rank++;
+            }
+
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("FINAL VERDICT");
+        sb.AppendLine("-------------");
+        sb.AppendLine(BuildVerdict(rankedFamilies, liveWinners.Count, result.CashAllocationWeight));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) If one family clearly dominates here, next work should target that family specifically.");
+        sb.AppendLine("2) If no family is compelling, stop admission tuning and consider a truly different alpha archetype.");
+        sb.AppendLine("3) Prefer 4h-compatible families first because live winners remain concentrated in 4h.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static EdgeFamilyRow BuildFamilyRow(
+        string familyName,
+        IReadOnlyList&lt;KeyValuePair&lt;string, string&gt;&gt; rejected4h,
+        IReadOnlyList&lt;string&gt; familySymbols,
+        IReadOnlySet&lt;string&gt; selectedMarkets)
+    {
+        var candidates = rejected4h
+            .Where(x =&gt;
+            {
+                string symbol = ExtractSymbol(x.Key);
+                return familySymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase)
+                       &amp;&amp; !selectedMarkets.Contains(x.Key);
+            })
+            .Select(x =&gt; BuildCandidateRow(x.Key, x.Value))
+            .OrderByDescending(x =&gt; x.CandidateScore)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        string reasonMix = BuildReasonMixSummary(candidates);
+        decimal opportunityScore = candidates.Count == 0
+            ? 0m
+            : candidates.Take(5).Sum(x =&gt; x.CandidateScore) / Math.Min(5, candidates.Count);
+
+        string verdict = BuildFamilyVerdict(familyName, opportunityScore, candidates.Count);
+
+        return new EdgeFamilyRow(
+            familyName,
+            candidates.Count,
+            reasonMix,
+            opportunityScore,
+            verdict,
+            candidates);
+    }
+
+    private static CandidateRow BuildCandidateRow(string marketKey, string rejectionReason)
+    {
+        string bucket = NormalizeReasonBucket(rejectionReason);
+        decimal score = 0m;
+
+        if (bucket == "WaveBRejected:DispersionGuard") score += 1.00m;
+        else if (bucket == "REJECT: regime near-miss lane overflow") score += 0.85m;
+        else if (bucket == "REJECT: liquidity tier-2 lane overflow") score += 0.80m;
+        else if (bucket == "REJECT: regime not trend/high-vol-up") score += 0.60m;
+        else if (bucket == "REJECT: low liquidity") score += 0.50m;
+        else if (bucket == "REJECT: outside top leadership set") score += 0.45m;
+        else score += 0.30m;
+
+        return new CandidateRow(marketKey, bucket, score);
+    }
+
+    private static string NormalizeReasonBucket(string rejectionReason)
+    {
+        string value = rejectionReason?.Trim() ?? string.Empty;
+
+        if (value.StartsWith("WaveBRejected:DispersionGuard", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:DispersionGuard";
+
+        if (value.StartsWith("REJECT: regime near-miss lane overflow", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime near-miss lane overflow";
+
+        if (value.StartsWith("REJECT: liquidity tier-2 lane overflow", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: liquidity tier-2 lane overflow";
+
+        if (value.StartsWith("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime not trend/high-vol-up";
+
+        if (value.StartsWith("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: low liquidity";
+
+        if (value.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: outside top leadership set";
+
+        return value;
+    }
+
+    private static string BuildReasonMixSummary(IReadOnlyList&lt;CandidateRow&gt; candidates)
+    {
+        if (candidates.Count == 0)
+            return "NO CANDIDATES";
+
+        var parts = candidates
+            .GroupBy(x =&gt; x.ReasonBucket)
+            .OrderByDescending(g =&gt; g.Count())
+            .ThenBy(g =&gt; g.Key, StringComparer.OrdinalIgnoreCase)
+            .Take(3)
+            .Select(g =&gt; $"{g.Key}={g.Count()}")
+            .ToList();
+
+        return string.Join(" | ", parts);
+    }
+
+    private static string BuildFamilyVerdict(
+        string familyName,
+        decimal opportunityScore,
+        int candidateCount)
+    {
+        if (candidateCount == 0)
+            return "No opportunity";
+
+        if (opportunityScore &gt;= 0.90m)
+            return "Best new-edge family";
+
+        if (opportunityScore &gt;= 0.75m)
+            return "Strong research family";
+
+        if (opportunityScore &gt;= 0.60m)
+            return "Secondary research family";
+
+        return "Low-priority family";
+    }
+
+    private static string BuildVerdict(
+        IReadOnlyList&lt;EdgeFamilyRow&gt; rankedFamilies,
+        int liveWinnerCount,
+        decimal cashWeight)
+    {
+        var best = rankedFamilies.FirstOrDefault();
+
+        if (best == null)
+            return "No new-edge family opportunity was identified in this run.";
+
+        if (liveWinnerCount &lt;= 1 &amp;&amp; cashWeight &gt;= 0.90m &amp;&amp; best.OpportunityScore &gt;= 0.75m)
+        {
+            return $"True new-edge research is now justified. The leading family is {best.FamilyName}.";
+        }
+
+        if (liveWinnerCount &lt;= 2 &amp;&amp; cashWeight &gt;= 0.75m &amp;&amp; best.OpportunityScore &gt;= 0.60m)
+        {
+            return $"Controlled new-edge research is justified. Start with {best.FamilyName}.";
+        }
+
+        return "New-edge family opportunity is present but not decisive yet.";
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string ExtractSymbol(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 1 ? parts[0].Trim() : string.Empty;
+    }
+
+    private static string ExtractTimeframe(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 2 ? parts[1].Trim() : string.Empty;
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record CandidateRow(
+        string MarketKey,
+        string ReasonBucket,
+        decimal CandidateScore);
+
+    private sealed record EdgeFamilyRow(
+        string FamilyName,
+        int CandidateCount,
+        string ReasonMixSummary,
+        decimal OpportunityScore,
+        string Verdict,
+        IReadOnlyList&lt;CandidateRow&gt; TopCandidates);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -12979,8 +13377,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 4.53 KB
-LINES: 130
+SIZE: 4.75 KB
+LINES: 136
 ==============================
 using System;
 using System.Collections.Generic;
@@ -13076,6 +13474,12 @@ public sealed class UniversalResearchReportService
 
         // REPORT 25 — DISPERSION-GUARD NEAR-WINNER PROMOTION AUDIT
         new Report25DispersionGuardNearWinnerPromotionAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        // REPORT 26 — TRUE NEW EDGE FAMILY OPPORTUNITY AUDIT
+        new Report26TrueNewEdgeFamilyOpportunityAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
