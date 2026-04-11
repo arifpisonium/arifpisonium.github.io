@@ -9,20 +9,19 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__20-06-30.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__20-06-30.txt
-GENERATED: 2026-04-11 20:06:30
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-12__00-31-01.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-12__00-31-01.txt
+GENERATED: 2026-04-12 00:31:01
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
-│       ├───DesignTimeBuild
-│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───7b1e996f-fc8e-496f-83b1-1efb10526d90.vsidx
-│       │   ├───a5f4f1d0-eefa-48ae-964f-83f4ff705265.vsidx
-│       │   └───b207020e-6924-4ab9-b54b-9ab0ba931db2.vsidx
+│       │   ├───217a5f3f-e38c-4ee1-a39b-1eca701f9c55.vsidx
+│       │   ├───c5dc3dd4-2e9b-479b-a2ba-7c6c0763f142.vsidx
+│       │   ├───cd64878e-4eb3-49b9-9a55-7da111279994.vsidx
+│       │   └───fa1734d4-9702-4e6d-b5e7-39c30cc0495d.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -126,6 +125,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───IIndicator.cs
 │   │   ├───ISignal.cs
 │   │   ├───IStrategy.cs
+│   │   ├───ITradePlanStrategy.cs
 │   │   ├───QuantStrategy.cs
 │   │   ├───StrategyContext.cs
 │   │   └───StrategyFactory.cs
@@ -153,8 +153,10 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───TQGA.Domain.csproj.nuget.g.props
 │   │   └───TQGA.Domain.csproj.nuget.g.targets
 │   ├───Trading
+│   │   ├───ITradePlan.cs
 │   │   ├───Position.cs
 │   │   ├───Signal.cs
+│   │   ├───StrategyTradePlan.cs
 │   │   ├───Trade.cs
 │   │   └───TradeSide.cs
 │   ├───Entity.cs
@@ -14289,8 +14291,8 @@ public sealed class Report30S06Phase1RefinementEntryTighteningAuditService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report32TradeBlotterEntryExitReasonJournalService.cs
 TYPE: .cs
-SIZE: 10.3 KB
-LINES: 240
+SIZE: 10.39 KB
+LINES: 241
 ==============================
 using System.Globalization;
 using System.Text;
@@ -14418,7 +14420,8 @@ public sealed class Report32TradeBlotterEntryExitReasonJournalService
 
         sb.AppendLine("FIELD NOTES");
         sb.AppendLine("-----------");
-        sb.AppendLine("Report 32 now prints true runtime-captured order type, entry reason, exit reason, SL, TP, and expected price where present.");
+        sb.AppendLine("Report 32 now prints strategy-native trade-plan fields when the strategy implements ITradePlanStrategy.");
+        sb.AppendLine("If a strategy has not been migrated yet, engine fallback values will still appear.");
         sb.AppendLine();
 
         sb.AppendLine("TRADE JOURNAL");
@@ -15705,6 +15708,32 @@ public interface IStrategy
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Strategy\ITradePlanStrategy.cs
+TYPE: .cs
+SIZE: 0.42 KB
+LINES: 19
+==============================
+using TQGA.Domain.Trading;
+
+namespace TQGA.Application.Strategy;
+
+public interface ITradePlanStrategy
+{
+    ITradePlan BuildEntryTradePlan(
+        string symbol,
+        TradeSignal signal,
+        decimal entryPrice,
+        DateTime entryTime);
+
+    string BuildExitReason(
+        Trade openTrade,
+        TradeSignal signal,
+        string symbol,
+        decimal exitPrice,
+        DateTime exitTime);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Strategy\QuantStrategy.cs
 TYPE: .cs
 SIZE: 0.77 KB
@@ -16009,8 +16038,8 @@ public sealed record TradeResult(
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Trading\TradingEngine.cs
 TYPE: .cs
-SIZE: 7.33 KB
-LINES: 249
+SIZE: 8.39 KB
+LINES: 295
 ==============================
 using TQGA.Application.Accounting;
 using TQGA.Application.Risk;
@@ -16108,17 +16137,24 @@ public sealed class TradingEngine : ITradingEngine
 
             var fillPrice = _executor.GetFillPrice();
 
+            var plan = BuildEntryTradePlan(
+                symbol,
+                signal,
+                fillPrice,
+                time,
+                TradeSide.Buy);
+
             _openTrade = new Trade(
                 symbol: symbol,
                 side: TradeSide.Buy,
                 quantity: size,
                 entryPrice: fillPrice,
                 entryTime: time,
-                trueOrderType: BuildTrueOrderType(),
-                entryReason: BuildEntryReason(signal, symbol, fillPrice),
-                stopLossAtEntry: BuildStopLossAtEntry(TradeSide.Buy, fillPrice),
-                takeProfitAtEntry: BuildTakeProfitAtEntry(TradeSide.Buy, fillPrice),
-                expectedPrice: BuildExpectedPrice(TradeSide.Buy, fillPrice));
+                trueOrderType: plan.TrueOrderType,
+                entryReason: plan.EntryReason,
+                stopLossAtEntry: plan.StopLossAtEntry,
+                takeProfitAtEntry: plan.TakeProfitAtEntry,
+                expectedPrice: plan.ExpectedPrice);
 
             _diag.OnEntryExecuted();
             return;
@@ -16151,17 +16187,24 @@ public sealed class TradingEngine : ITradingEngine
 
             var fillPrice = _executor.GetFillPrice();
 
+            var plan = BuildEntryTradePlan(
+                symbol,
+                signal,
+                fillPrice,
+                time,
+                TradeSide.Sell);
+
             _openTrade = new Trade(
                 symbol: symbol,
                 side: TradeSide.Sell,
                 quantity: size,
                 entryPrice: fillPrice,
                 entryTime: time,
-                trueOrderType: BuildTrueOrderType(),
-                entryReason: BuildEntryReason(signal, symbol, fillPrice),
-                stopLossAtEntry: BuildStopLossAtEntry(TradeSide.Sell, fillPrice),
-                takeProfitAtEntry: BuildTakeProfitAtEntry(TradeSide.Sell, fillPrice),
-                expectedPrice: BuildExpectedPrice(TradeSide.Sell, fillPrice));
+                trueOrderType: plan.TrueOrderType,
+                entryReason: plan.EntryReason,
+                stopLossAtEntry: plan.StopLossAtEntry,
+                takeProfitAtEntry: plan.TakeProfitAtEntry,
+                expectedPrice: plan.ExpectedPrice);
 
             _diag.OnEntryExecuted();
             return;
@@ -16181,7 +16224,7 @@ public sealed class TradingEngine : ITradingEngine
             _openTrade.Close(
                 exitPrice: fillPrice,
                 exitTime: time,
-                exitReason: BuildExitReason(signal, symbol, fillPrice, _openTrade));
+                exitReason: BuildExitReason(signal, symbol, fillPrice, _openTrade, time));
 
             _ledger.Record(_openTrade);
             _capital.OnTradeClosed(_openTrade.RealizedPnL);
@@ -16194,22 +16237,86 @@ public sealed class TradingEngine : ITradingEngine
         }
     }
 
-    private string BuildTrueOrderType()
+    private ITradePlan BuildEntryTradePlan(
+        string symbol,
+        TradeSignal signal,
+        decimal entryPrice,
+        DateTime entryTime,
+        TradeSide side)
     {
-        // Current live backtest executor is market-fill style.
-        return "Market";
+        if (_strategy is ITradePlanStrategy tradePlanStrategy)
+        {
+            return tradePlanStrategy.BuildEntryTradePlan(
+                symbol,
+                signal,
+                entryPrice,
+                entryTime);
+        }
+
+        return BuildFallbackEntryTradePlan(symbol, signal, entryPrice, entryTime, side);
     }
 
-    private string BuildEntryReason(TradeSignal signal, string symbol, decimal fillPrice)
+    private string BuildExitReason(
+        TradeSignal signal,
+        string symbol,
+        decimal exitPrice,
+        Trade openTrade,
+        DateTime exitTime)
+    {
+        if (_strategy is ITradePlanStrategy tradePlanStrategy)
+        {
+            return tradePlanStrategy.BuildExitReason(
+                openTrade,
+                signal,
+                symbol,
+                exitPrice,
+                exitTime);
+        }
+
+        return BuildFallbackExitReason(signal, symbol, exitPrice, openTrade);
+    }
+
+    private ITradePlan BuildFallbackEntryTradePlan(
+        string symbol,
+        TradeSignal signal,
+        decimal entryPrice,
+        DateTime entryTime,
+        TradeSide side)
     {
         string strategyName = string.IsNullOrWhiteSpace(_strategy.Name)
             ? _strategy.GetType().Name
             : _strategy.Name;
 
-        return $"{strategyName}|Signal={signal}|Symbol={symbol}|EntryFill={fillPrice:F8}";
+        string entryReason =
+            $"{strategyName}|Signal={signal}|Symbol={symbol}|Time={entryTime:yyyy-MM-dd HH:mm:ss}|PlanSource=EngineFallback";
+
+        decimal? stopLoss = entryPrice &lt;= 0m
+            ? null
+            : side == TradeSide.Buy
+                ? entryPrice * 0.96m
+                : entryPrice * 1.04m;
+
+        decimal? takeProfit = entryPrice &lt;= 0m
+            ? null
+            : side == TradeSide.Buy
+                ? entryPrice * 1.08m
+                : entryPrice * 0.92m;
+
+        decimal? expectedPrice = entryPrice &lt;= 0m
+            ? null
+            : side == TradeSide.Buy
+                ? entryPrice * 1.03m
+                : entryPrice * 0.97m;
+
+        return new StrategyTradePlan(
+            TrueOrderType: "Market",
+            EntryReason: entryReason,
+            StopLossAtEntry: stopLoss,
+            TakeProfitAtEntry: takeProfit,
+            ExpectedPrice: expectedPrice);
     }
 
-    private string BuildExitReason(
+    private string BuildFallbackExitReason(
         TradeSignal signal,
         string symbol,
         decimal exitPrice,
@@ -16226,39 +16333,7 @@ public sealed class TradingEngine : ITradingEngine
         else
             pnlState = exitPrice &lt;= openTrade.EntryPrice ? "NonNegativeExit" : "LossExit";
 
-        return $"{strategyName}|Signal={signal}|Symbol={symbol}|{pnlState}|ExitFill={exitPrice:F8}";
-    }
-
-    private static decimal? BuildStopLossAtEntry(TradeSide side, decimal entryPrice)
-    {
-        if (entryPrice &lt;= 0m)
-            return null;
-
-        // Engine-native placeholder until each strategy supplies its own trade plan.
-        return side == TradeSide.Buy
-            ? entryPrice * 0.96m
-            : entryPrice * 1.04m;
-    }
-
-    private static decimal? BuildTakeProfitAtEntry(TradeSide side, decimal entryPrice)
-    {
-        if (entryPrice &lt;= 0m)
-            return null;
-
-        // Engine-native placeholder until each strategy supplies its own trade plan.
-        return side == TradeSide.Buy
-            ? entryPrice * 1.08m
-            : entryPrice * 0.92m;
-    }
-
-    private static decimal? BuildExpectedPrice(TradeSide side, decimal entryPrice)
-    {
-        if (entryPrice &lt;= 0m)
-            return null;
-
-        return side == TradeSide.Buy
-            ? entryPrice * 1.03m
-            : entryPrice * 0.97m;
+        return $"{strategyName}|Signal={signal}|Symbol={symbol}|{pnlState}|PlanSource=EngineFallback";
     }
 }
 
@@ -16452,6 +16527,23 @@ public sealed class Candle
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Domain\Trading\ITradePlan.cs
+TYPE: .cs
+SIZE: 0.25 KB
+LINES: 10
+==============================
+namespace TQGA.Domain.Trading;
+
+public interface ITradePlan
+{
+    string TrueOrderType { get; }
+    string EntryReason { get; }
+    decimal? StopLossAtEntry { get; }
+    decimal? TakeProfitAtEntry { get; }
+    decimal? ExpectedPrice { get; }
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Domain\Trading\Position.cs
 TYPE: .cs
 SIZE: 0.49 KB
@@ -16494,9 +16586,24 @@ public enum Signal
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Domain\Trading\StrategyTradePlan.cs
+TYPE: .cs
+SIZE: 0.23 KB
+LINES: 8
+==============================
+namespace TQGA.Domain.Trading;
+
+public sealed record StrategyTradePlan(
+    string TrueOrderType,
+    string EntryReason,
+    decimal? StopLossAtEntry,
+    decimal? TakeProfitAtEntry,
+    decimal? ExpectedPrice) : ITradePlan;
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Domain\Trading\Trade.cs
 TYPE: .cs
-SIZE: 1.98 KB
+SIZE: 1.97 KB
 LINES: 70
 ==============================
 namespace TQGA.Domain.Trading;
@@ -16509,7 +16616,7 @@ public sealed class Trade
     public decimal EntryPrice { get; }
     public DateTime EntryTime { get; }
 
-    // PATCH 33 — TRUE RUNTIME TRADE PLAN FIELDS
+    // TRUE RUNTIME TRADE PLAN FIELDS
     public string TrueOrderType { get; }
     public string EntryReason { get; }
     public decimal? StopLossAtEntry { get; }
@@ -17793,20 +17900,65 @@ public sealed class EmaTrendSignal : ISignal
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Infrastructure\Strategies\FourHourEarlyTrendContinuationQuantStrategy.cs
 TYPE: .cs
-SIZE: 0.36 KB
-LINES: 13
+SIZE: 1.82 KB
+LINES: 58
 ==============================
 using TQGA.Application.Strategy;
+using TQGA.Domain.Trading;
 
 namespace TQGA.Infrastructure.Strategies;
 
-public sealed class FourHourEarlyTrendContinuationQuantStrategy : QuantStrategy
+public sealed class FourHourEarlyTrendContinuationQuantStrategy : QuantStrategy, ITradePlanStrategy
 {
     public override string Name =&gt; "4H Early Trend Continuation";
 
     public FourHourEarlyTrendContinuationQuantStrategy()
     {
         Signals.Add(new EarlyTrendContinuationSignal());
+    }
+
+    public ITradePlan BuildEntryTradePlan(
+        string symbol,
+        TradeSignal signal,
+        decimal entryPrice,
+        DateTime entryTime)
+    {
+        decimal? stopLoss = entryPrice &gt; 0m ? entryPrice * 0.965m : null;
+        decimal? takeProfit = entryPrice &gt; 0m ? entryPrice * 1.085m : null;
+        decimal? expectedPrice = entryPrice &gt; 0m ? entryPrice * 1.030m : null;
+
+        string entryReason =
+            $"S06_4H_EARLY_TREND_CONTINUATION|" +
+            $"Signal={signal}|" +
+            $"Symbol={symbol}|" +
+            $"Time={entryTime:yyyy-MM-dd HH:mm:ss}|" +
+            $"Thesis=EarlyTrendContinuation";
+
+        return new StrategyTradePlan(
+            TrueOrderType: "Market",
+            EntryReason: entryReason,
+            StopLossAtEntry: stopLoss,
+            TakeProfitAtEntry: takeProfit,
+            ExpectedPrice: expectedPrice);
+    }
+
+    public string BuildExitReason(
+        Trade openTrade,
+        TradeSignal signal,
+        string symbol,
+        decimal exitPrice,
+        DateTime exitTime)
+    {
+        string pnlState = exitPrice &gt;= openTrade.EntryPrice
+            ? "NonNegativeExit"
+            : "LossExit";
+
+        return
+            $"S06_4H_EARLY_TREND_CONTINUATION_EXIT|" +
+            $"Signal={signal}|" +
+            $"Symbol={symbol}|" +
+            $"Time={exitTime:yyyy-MM-dd HH:mm:ss}|" +
+            $"State={pnlState}";
     }
 }
 
