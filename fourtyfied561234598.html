@@ -9,19 +9,23 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__18-06-07.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__18-06-07.txt
-GENERATED: 2026-04-11 18:06:07
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__18-37-54.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__18-37-54.txt
+GENERATED: 2026-04-11 18:37:54
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
+│       ├───DesignTimeBuild
+│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───70911145-e9d1-48ba-8c2e-58232e9621de.vsidx
-│       │   └───7b1e996f-fc8e-496f-83b1-1efb10526d90.vsidx
+│       │   ├───7b1e996f-fc8e-496f-83b1-1efb10526d90.vsidx
+│       │   ├───c704ff40-1c5b-4a4b-8393-81c642949f9a.vsidx
+│       │   └───f1e8401e-be4d-4fc9-9c83-9e98233b5414.vsidx
 │       └───v18
 │           ├───.suo
+│           ├───DocumentLayout.backup.json
 │           └───DocumentLayout.json
 ├───TQGA.Application
 │   ├───Accounting
@@ -108,6 +112,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report28FourHourEarlyTrendContinuationImplementationReadinessAuditService.cs
 │   │   ├───Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService.cs
 │   │   ├───Report30S06Phase1RefinementEntryTighteningAuditService.cs
+│   │   ├───Report32TradeBlotterEntryExitReasonJournalService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -654,8 +659,8 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 63.6 KB
-LINES: 1641
+SIZE: 65.32 KB
+LINES: 1684
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
@@ -663,6 +668,7 @@ using TQGA.Application.Interfaces;
 using TQGA.Application.Paths;
 using TQGA.Application.Portfolio;
 using TQGA.Application.Risk;
+using TQGA.Application.Services;
 using TQGA.Application.Strategy;
 using TQGA.Application.Trading;
 using TQGA.Domain.Market;
@@ -700,6 +706,17 @@ public sealed class PortfolioBacktestRunner
     private const decimal WaveBScarcityRelaxedMinRelativeToLeaderFinalScore = 0.88m;
     private const decimal WaveBScarcityRelaxedMinRelativeToLeaderPreTradeScore = 0.82m;
     private const int WaveBScarcityRelaxedTargetMinMarkets = 3;
+
+    // PATCH 31A — S06 family-universe entry gate
+    // Keep S06 restricted to validated phase-1 family symbols on 4h only
+    // until the family proves broader deployable breadth.
+    private static readonly HashSet&lt;string&gt; S06Phase1FamilySymbols =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "FILUSDT",
+            "LINKUSDT",
+            "NEARUSDT"
+        };
 
     public PortfolioBacktestRunner(
         IServiceProvider root,
@@ -885,6 +902,15 @@ public sealed class PortfolioBacktestRunner
 
             foreach (var m in selectedMarkets)
             {
+                // PATCH 31A — S06 family-universe entry gate
+                // Hard-gate S06 to phase-1 starter symbols only.
+                if (IsS06FamilyStrategy(type, strategy.Name) &amp;&amp; !IsS06Phase1AllowedMarket(m))
+                {
+                    string familyGateKey = $"{m.Symbol}::{m.Timeframe}";
+                    combinedRejections[familyGateKey] = "S06FamilyGate:OutsidePhase1StarterSet";
+                    continue;
+                }
+
                 var marketWeight = marketAllocationWeights.TryGetValue(m, out var resolvedMarketWeight)
                     ? resolvedMarketWeight
                     : 0m;
@@ -1016,6 +1042,11 @@ public sealed class PortfolioBacktestRunner
 
             id++;
         }
+
+        new Report32TradeBlotterEntryExitReasonJournalService().GenerateAndWrite(
+            nodes,
+            selectedMarkets.Select(x =&gt; $"{x.Symbol}::{x.Timeframe}").ToList(),
+            DateTime.UtcNow);
 
         var compositeMarketScore = BuildCompositeMarketScores(
             selectedMarkets,
@@ -1176,6 +1207,20 @@ public sealed class PortfolioBacktestRunner
     {
         return typeName.Contains(token, StringComparison.OrdinalIgnoreCase)
             || strategyName.Contains(token, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsS06FamilyStrategy(Type type, string strategyName)
+    {
+        string typeName = type.Name;
+        string name = strategyName ?? string.Empty;
+
+        return ContainsAny(typeName, name, "FourHourEarlyTrendContinuation");
+    }
+
+    private static bool IsS06Phase1AllowedMarket(MarketKey market)
+    {
+        return market.Timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase)
+            &amp;&amp; S06Phase1FamilySymbols.Contains(market.Symbol);
     }
 
     private static WaveBSelectionSnapshot ApplyWaveBSelection(
@@ -1629,6 +1674,9 @@ public sealed class PortfolioBacktestRunner
 
                     if (value.StartsWith("WaveBRejected:TopNOverflow", StringComparison.OrdinalIgnoreCase))
                         return "WaveBRejected:TopNOverflow";
+
+                    if (value.StartsWith("S06FamilyGate:", StringComparison.OrdinalIgnoreCase))
+                        return "S06FamilyGate";
 
                     return value;
                 })
@@ -14236,6 +14284,248 @@ public sealed class Report30S06Phase1RefinementEntryTighteningAuditService
         string FamilyTier,
         decimal EntryTighteningPriority,
         string EntryTighteningVerdict);
+}
+
+==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report32TradeBlotterEntryExitReasonJournalService.cs
+TYPE: .cs
+SIZE: 9.76 KB
+LINES: 235
+==============================
+using System.Globalization;
+using System.Text;
+using TQGA.Application.Paths;
+using TQGA.Application.Portfolio;
+using TQGA.Domain.Trading;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report32TradeBlotterEntryExitReasonJournalService
+{
+    public void GenerateAndWrite(
+        IReadOnlyList&lt;StrategyBacktestNode&gt; nodes,
+        IReadOnlyList&lt;string&gt; selectedMarkets,
+        DateTime runUtc)
+    {
+        ArgumentNullException.ThrowIfNull(nodes);
+        ArgumentNullException.ThrowIfNull(selectedMarkets);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+
+        string txtPath = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_32_TRADE_BLOTTER_ENTRY_EXIT_REASON_JOURNAL_{stamp}.txt");
+
+        string csvPath = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_32_TRADE_BLOTTER_ENTRY_EXIT_REASON_JOURNAL_{stamp}.csv");
+
+        var symbolToTimeframe = BuildSymbolToTimeframeMap(selectedMarkets);
+
+        var rows = nodes
+            .SelectMany(node =&gt; node.Ledger.Trades.Select(trade =&gt; BuildRow(node, trade, symbolToTimeframe)))
+            .OrderBy(x =&gt; x.EntryTimeUtc)
+            .ThenBy(x =&gt; x.StrategyId)
+            .ThenBy(x =&gt; x.Symbol, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        WriteTxt(txtPath, rows, runUtc);
+        WriteCsv(csvPath, rows);
+    }
+
+    private static Dictionary&lt;string, string&gt; BuildSymbolToTimeframeMap(IReadOnlyList&lt;string&gt; selectedMarkets)
+    {
+        var output = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string market in selectedMarkets)
+        {
+            if (string.IsNullOrWhiteSpace(market))
+                continue;
+
+            var parts = market.Split(new[] { "::" }, StringSplitOptions.None);
+            if (parts.Length &lt; 2)
+                continue;
+
+            string symbol = parts[0].Trim();
+            string timeframe = parts[1].Trim();
+
+            if (!string.IsNullOrWhiteSpace(symbol) &amp;&amp; !string.IsNullOrWhiteSpace(timeframe))
+                output[symbol] = timeframe;
+        }
+
+        return output;
+    }
+
+    private static TradeJournalRow BuildRow(
+        StrategyBacktestNode node,
+        Trade trade,
+        IReadOnlyDictionary&lt;string, string&gt; symbolToTimeframe)
+    {
+        string timeframe = symbolToTimeframe.TryGetValue(trade.Symbol, out var resolvedTf)
+            ? resolvedTf
+            : "UNKNOWN_TF";
+
+        decimal holdingMinutes = trade.ExitTime.HasValue
+            ? (decimal)(trade.ExitTime.Value - trade.EntryTime).TotalMinutes
+            : 0m;
+
+        return new TradeJournalRow(
+            StrategyId: node.StrategyId,
+            StrategyName: node.StrategyName,
+            Symbol: trade.Symbol,
+            Timeframe: timeframe,
+            Side: trade.Side.ToString(),
+            Quantity: trade.Quantity,
+            EntryTimeUtc: trade.EntryTime,
+            EntryPrice: trade.EntryPrice,
+            ExitTimeUtc: trade.ExitTime,
+            ExitPrice: trade.ExitPrice,
+            IsClosed: trade.IsClosed,
+            RealizedPnl: trade.RealizedPnL,
+            HoldingMinutes: holdingMinutes,
+            OrderType: "BACKTEST_MARKET_ASSUMED",
+            EntryReason: "NOT_CAPTURED_RUNTIME",
+            ExitReason: "NOT_CAPTURED_RUNTIME",
+            StopLoss: "NOT_CAPTURED_RUNTIME",
+            TakeProfit: "NOT_CAPTURED_RUNTIME",
+            ExpectedPrice: "NOT_CAPTURED_RUNTIME");
+    }
+
+    private static void WriteTxt(
+        string path,
+        IReadOnlyList&lt;TradeJournalRow&gt; rows,
+        DateTime runUtc)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("REPORT 32 — TRADE BLOTTER / ENTRY-EXIT REASON JOURNAL");
+        sb.AppendLine("=====================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Provide a trade-by-trade operator journal for every recorded trade in the run.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Total Trade Rows                   : {rows.Count}");
+        sb.AppendLine($"Closed Trades                      : {rows.Count(x =&gt; x.IsClosed)}");
+        sb.AppendLine($"Open Trades                        : {rows.Count(x =&gt; !x.IsClosed)}");
+        sb.AppendLine();
+
+        sb.AppendLine("FIELD NOTES");
+        sb.AppendLine("-----------");
+        sb.AppendLine("OrderType is reported as BACKTEST_MARKET_ASSUMED.");
+        sb.AppendLine("EntryReason / ExitReason / SL / TP / ExpectedPrice are marked NOT_CAPTURED_RUNTIME where the current engine does not persist those fields yet.");
+        sb.AppendLine();
+
+        sb.AppendLine("TRADE JOURNAL");
+        sb.AppendLine("-------------");
+        if (rows.Count == 0)
+        {
+            sb.AppendLine("NO TRADES RECORDED.");
+        }
+        else
+        {
+            int rank = 1;
+            foreach (var row in rows)
+            {
+                sb.AppendLine($"TRADE #{rank:0000}");
+                sb.AppendLine($"Strategy Id                        : S{row.StrategyId:00}");
+                sb.AppendLine($"Strategy Name                      : {row.StrategyName}");
+                sb.AppendLine($"Symbol                             : {row.Symbol}");
+                sb.AppendLine($"Timeframe                          : {row.Timeframe}");
+                sb.AppendLine($"Side                               : {row.Side}");
+                sb.AppendLine($"Quantity                           : {row.Quantity:F8}");
+                sb.AppendLine($"Entry Time (UTC)                   : {row.EntryTimeUtc:yyyy-MM-dd HH:mm:ss}");
+                sb.AppendLine($"Entry Price                        : {row.EntryPrice:F8}");
+                sb.AppendLine($"Exit Time (UTC)                    : {(row.ExitTimeUtc.HasValue ? row.ExitTimeUtc.Value.ToString("yyyy-MM-dd HH:mm:ss") : "OPEN")}");
+                sb.AppendLine($"Exit Price                         : {(row.ExitPrice.HasValue ? row.ExitPrice.Value.ToString("F8", CultureInfo.InvariantCulture) : "OPEN")}");
+                sb.AppendLine($"Closed                             : {(row.IsClosed ? "YES" : "NO")}");
+                sb.AppendLine($"Realized PnL                       : {row.RealizedPnl:F8}");
+                sb.AppendLine($"Holding Minutes                    : {row.HoldingMinutes:F2}");
+                sb.AppendLine($"Order Type                         : {row.OrderType}");
+                sb.AppendLine($"Entry Reason                       : {row.EntryReason}");
+                sb.AppendLine($"Exit Reason                        : {row.ExitReason}");
+                sb.AppendLine($"Stop Loss                          : {row.StopLoss}");
+                sb.AppendLine($"Take Profit                        : {row.TakeProfit}");
+                sb.AppendLine($"Expected Price                     : {row.ExpectedPrice}");
+                sb.AppendLine();
+                rank++;
+            }
+        }
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static void WriteCsv(
+        string path,
+        IReadOnlyList&lt;TradeJournalRow&gt; rows)
+    {
+        using var writer = new StreamWriter(path, false, Encoding.UTF8);
+
+        writer.WriteLine(
+            "StrategyId,StrategyName,Symbol,Timeframe,Side,Quantity,EntryTimeUtc,EntryPrice,ExitTimeUtc,ExitPrice,IsClosed,RealizedPnl,HoldingMinutes,OrderType,EntryReason,ExitReason,StopLoss,TakeProfit,ExpectedPrice");
+
+        foreach (var row in rows)
+        {
+            writer.WriteLine(string.Join(",",
+                Csv(row.StrategyId.ToString(CultureInfo.InvariantCulture)),
+                Csv(row.StrategyName),
+                Csv(row.Symbol),
+                Csv(row.Timeframe),
+                Csv(row.Side),
+                Csv(row.Quantity.ToString("F8", CultureInfo.InvariantCulture)),
+                Csv(row.EntryTimeUtc.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)),
+                Csv(row.EntryPrice.ToString("F8", CultureInfo.InvariantCulture)),
+                Csv(row.ExitTimeUtc.HasValue
+                    ? row.ExitTimeUtc.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+                    : "OPEN"),
+                Csv(row.ExitPrice.HasValue
+                    ? row.ExitPrice.Value.ToString("F8", CultureInfo.InvariantCulture)
+                    : "OPEN"),
+                Csv(row.IsClosed ? "YES" : "NO"),
+                Csv(row.RealizedPnl.ToString("F8", CultureInfo.InvariantCulture)),
+                Csv(row.HoldingMinutes.ToString("F2", CultureInfo.InvariantCulture)),
+                Csv(row.OrderType),
+                Csv(row.EntryReason),
+                Csv(row.ExitReason),
+                Csv(row.StopLoss),
+                Csv(row.TakeProfit),
+                Csv(row.ExpectedPrice)));
+        }
+    }
+
+    private static string Csv(string value)
+    {
+        string safe = value ?? string.Empty;
+        safe = safe.Replace("\"", "\"\"");
+        return $"\"{safe}\"";
+    }
+
+    private sealed record TradeJournalRow(
+        int StrategyId,
+        string StrategyName,
+        string Symbol,
+        string Timeframe,
+        string Side,
+        decimal Quantity,
+        DateTime EntryTimeUtc,
+        decimal EntryPrice,
+        DateTime? ExitTimeUtc,
+        decimal? ExitPrice,
+        bool IsClosed,
+        decimal RealizedPnl,
+        decimal HoldingMinutes,
+        string OrderType,
+        string EntryReason,
+        string ExitReason,
+        string StopLoss,
+        string TakeProfit,
+        string ExpectedPrice);
 }
 
 ==============================
