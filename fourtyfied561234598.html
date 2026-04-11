@@ -9,21 +9,17 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-09__20-42-02.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-09__20-42-02.txt
-GENERATED: 2026-04-09 20:42:02
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__11-37-47.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__11-37-47.txt
+GENERATED: 2026-04-11 11:37:47
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
-│       ├───DesignTimeBuild
-│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───02a7b9f4-95db-4b99-b53f-3554edfec94b.vsidx
-│       │   ├───76545c7e-3439-439d-b631-bf2515616abf.vsidx
-│       │   ├───7b3115e6-6a5a-425d-bdda-dc6dc17d3ec0.vsidx
-│       │   └───7d6524af-90c4-4e57-87ba-3520edd90137.vsidx
+│       │   ├───904bcc11-c2a0-4dc5-a902-be68267f22de.vsidx
+│       │   └───985741ee-6df7-444c-bfa6-0f01952e320a.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -107,6 +103,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report22S05WinnerFatigueLateEntryAuditService.cs
 │   │   ├───Report23S05ExitEfficiencyLateHoldBleedAuditService.cs
 │   │   ├───Report24S05CompatibleEdgeExpansionNearWinnerAuditService.cs
+│   │   ├───Report25DispersionGuardNearWinnerPromotionAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -11954,6 +11951,329 @@ public sealed class Report24S05CompatibleEdgeExpansionNearWinnerAuditService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report25DispersionGuardNearWinnerPromotionAuditService.cs
+TYPE: .cs
+SIZE: 11.94 KB
+LINES: 316
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report25DispersionGuardNearWinnerPromotionAuditService
+{
+    private static readonly string[] PromotionPrioritySymbols =
+    [
+        "DOTUSDT",
+        "FILUSDT",
+        "LINKUSDT",
+        "NEARUSDT",
+        "SOLUSDT",
+        "UNIUSDT",
+        "RNDRUSDT"
+    ];
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_25_DISPERSION_GUARD_NEAR_WINNER_PROMOTION_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var rejections = result.MarketSelectionRejections ?? new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = (result.SelectedMarkets ?? new List&lt;string&gt;())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var liveWinners = symbolTfPnl
+            .Where(x =&gt; x.Value &gt; 0m)
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        var dispersionNearWinners = rejections
+            .Where(x =&gt; x.Value.StartsWith("WaveBRejected:DispersionGuard", StringComparison.OrdinalIgnoreCase))
+            .Select(x =&gt; BuildPromotionRow(x.Key, x.Value, selectedMarkets))
+            .Where(x =&gt; x.IsRelevant)
+            .OrderByDescending(x =&gt; x.PromotionScore)
+            .ThenByDescending(x =&gt; x.WinnerSimilarityScore)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        decimal totalWinnerPnl = liveWinners.Sum(x =&gt; x.Value);
+        decimal top2WinnerShare = totalWinnerPnl == 0m
+            ? 0m
+            : liveWinners.Take(2).Sum(x =&gt; x.Value) / totalWinnerPnl;
+
+        sb.AppendLine("REPORT 25 — DISPERSION-GUARD NEAR-WINNER PROMOTION AUDIT");
+        sb.AppendLine("========================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit which Wave-B dispersion-guard rejects are the strongest immediate promotion candidates for controlled S05-compatible edge expansion.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarkets.Count}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine($"Positive Live Winner Count         : {liveWinners.Count}");
+        sb.AppendLine($"Top 2 Winner Share                 : {top2WinnerShare:P2}");
+        sb.AppendLine($"Dispersion Near-Winner Count       : {dispersionNearWinners.Count}");
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE WINNER CLUSTER");
+        sb.AppendLine("-------------------");
+        if (liveWinners.Count == 0)
+        {
+            sb.AppendLine("NO POSITIVE LIVE WINNERS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in liveWinners.Take(10))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("DISPERSION-GUARD PROMOTION TABLE");
+        sb.AppendLine("-------------------------------");
+        if (dispersionNearWinners.Count == 0)
+        {
+            sb.AppendLine("NO DISPERSION-GUARD NEAR-WINNERS FOUND");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Market                    | WinnerSim | Promotion | RelFinalGap | RelPreGap | Promotion Verdict");
+            sb.AppendLine("-----+---------------------------+-----------+-----------+-------------+-----------+------------------------------");
+            int rank = 1;
+            foreach (var row in dispersionNearWinners.Take(20))
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.MarketKey, 25),-25} | " +
+                    $"{row.WinnerSimilarityScore,9:F2} | {row.PromotionScore,9:F2} | " +
+                    $"{row.RelFinalGap,11:F4} | {row.RelPreGap,9:F4} | {TrimTo(row.PromotionVerdict, 28)}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("TOP PROMOTION TARGETS");
+        sb.AppendLine("---------------------");
+        if (dispersionNearWinners.Count == 0)
+        {
+            sb.AppendLine("NO TOP PROMOTION TARGETS");
+        }
+        else
+        {
+            foreach (var row in dispersionNearWinners.Take(8))
+            {
+                sb.AppendLine(
+                    $"{row.MarketKey,-24} " +
+                    $"winnerSim={row.WinnerSimilarityScore:F2} " +
+                    $"promotion={row.PromotionScore:F2} " +
+                    $"relFinalGap={row.RelFinalGap:F4} " +
+                    $"relPreGap={row.RelPreGap:F4} " +
+                    $"=&gt; {row.PromotionVerdict}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("PROMOTION DECISION RULE");
+        sb.AppendLine("-----------------------");
+        sb.AppendLine("Promote only candidates that are:");
+        sb.AppendLine("1) 4h");
+        sb.AppendLine("2) blocked specifically by WaveB dispersion guard");
+        sb.AppendLine("3) highly similar to current winner-style names");
+        sb.AppendLine("4) very close on relative final/pre thresholds");
+        sb.AppendLine();
+
+        sb.AppendLine("FINAL VERDICT");
+        sb.AppendLine("-------------");
+        sb.AppendLine(BuildVerdict(dispersionNearWinners, liveWinners.Count, result.CashAllocationWeight));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) If the top candidates score strongly here, next work should be a controlled promotion experiment.");
+        sb.AppendLine("2) Promote dispersion near-winners before inventing a brand-new strategy family.");
+        sb.AppendLine("3) If even the best dispersion rejects are weak, then move to true new-edge research.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static PromotionRow BuildPromotionRow(
+        string marketKey,
+        string rejectionReason,
+        IReadOnlySet&lt;string&gt; selectedMarkets)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return PromotionRow.Empty;
+
+        if (selectedMarkets.Contains(marketKey))
+            return PromotionRow.Empty;
+
+        string symbol = ExtractSymbol(marketKey);
+        string timeframe = ExtractTimeframe(marketKey);
+
+        bool is4h = timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase);
+        bool isPrioritySymbol = PromotionPrioritySymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase);
+
+        decimal relFinalGap = ExtractMetricGap(rejectionReason, "relFinal=", "minFinal=");
+        decimal relPreGap = ExtractMetricGap(rejectionReason, "relPre=", "minPre=");
+
+        decimal winnerSimilarityScore = 0m;
+        if (is4h) winnerSimilarityScore += 0.40m;
+        if (isPrioritySymbol) winnerSimilarityScore += 0.30m;
+
+        decimal closenessScore = 0m;
+        closenessScore += Math.Max(0m, 0.20m - relFinalGap);
+        closenessScore += Math.Max(0m, 0.20m - relPreGap);
+
+        decimal promotionScore = winnerSimilarityScore + closenessScore;
+
+        bool isRelevant = is4h;
+
+        string verdict = BuildPromotionVerdict(relFinalGap, relPreGap, isPrioritySymbol);
+
+        return new PromotionRow(
+            marketKey,
+            winnerSimilarityScore,
+            promotionScore,
+            relFinalGap,
+            relPreGap,
+            verdict,
+            isRelevant);
+    }
+
+    private static string BuildPromotionVerdict(
+        decimal relFinalGap,
+        decimal relPreGap,
+        bool isPrioritySymbol)
+    {
+        if (relFinalGap &lt;= 0.03m &amp;&amp; relPreGap &lt;= 0.02m &amp;&amp; isPrioritySymbol)
+            return "Best immediate promotion candidate";
+
+        if (relFinalGap &lt;= 0.05m &amp;&amp; relPreGap &lt;= 0.03m)
+            return "Strong controlled promotion candidate";
+
+        if (relFinalGap &lt;= 0.08m &amp;&amp; relPreGap &lt;= 0.05m)
+            return "Secondary promotion candidate";
+
+        return "Monitor only";
+    }
+
+    private static decimal ExtractMetricGap(
+        string rejectionReason,
+        string actualKey,
+        string minKey)
+    {
+        decimal actual = ExtractMetric(rejectionReason, actualKey);
+        decimal minimum = ExtractMetric(rejectionReason, minKey);
+
+        if (minimum &lt;= 0m)
+            return 0m;
+
+        return Math.Max(0m, minimum - actual);
+    }
+
+    private static decimal ExtractMetric(string text, string key)
+    {
+        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(key))
+            return 0m;
+
+        int start = text.IndexOf(key, StringComparison.OrdinalIgnoreCase);
+        if (start &lt; 0)
+            return 0m;
+
+        start += key.Length;
+        int end = text.IndexOfAny([',', ')'], start);
+        if (end &lt; 0)
+            end = text.Length;
+
+        string raw = text[start..end].Trim();
+        return decimal.TryParse(raw, out var value) ? value : 0m;
+    }
+
+    private static string BuildVerdict(
+        IReadOnlyList&lt;PromotionRow&gt; rows,
+        int liveWinnerCount,
+        decimal cashWeight)
+    {
+        bool strongTargets = rows.Take(3).Any(x =&gt; x.PromotionScore &gt;= 0.85m);
+
+        if (liveWinnerCount &lt;= 2 &amp;&amp; cashWeight &gt;= 0.75m &amp;&amp; strongTargets)
+            return "Dispersion-guard promotion is the next patch. The platform still has credible near-winners that should be tested before a brand-new edge family.";
+
+        if (liveWinnerCount &lt;= 2 &amp;&amp; cashWeight &gt;= 0.75m)
+            return "Dispersion rejects exist, but not strongly enough. The next move may require true new-edge research.";
+
+        return "Dispersion promotion is not the dominant next move in this run.";
+    }
+
+    private static string ExtractSymbol(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 1 ? parts[0].Trim() : string.Empty;
+    }
+
+    private static string ExtractTimeframe(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 2 ? parts[1].Trim() : string.Empty;
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record PromotionRow(
+        string MarketKey,
+        decimal WinnerSimilarityScore,
+        decimal PromotionScore,
+        decimal RelFinalGap,
+        decimal RelPreGap,
+        string PromotionVerdict,
+        bool IsRelevant)
+    {
+        public static PromotionRow Empty =&gt;
+            new(string.Empty, 0m, 0m, 0m, 0m, string.Empty, false);
+    }
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -12659,8 +12979,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 4.3 KB
-LINES: 124
+SIZE: 4.53 KB
+LINES: 130
 ==============================
 using System;
 using System.Collections.Generic;
@@ -12750,6 +13070,12 @@ public sealed class UniversalResearchReportService
 
         // REPORT 24 — S05 COMPATIBLE EDGE EXPANSION / NEAR-WINNER AUDIT
         new Report24S05CompatibleEdgeExpansionNearWinnerAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        // REPORT 25 — DISPERSION-GUARD NEAR-WINNER PROMOTION AUDIT
+        new Report25DispersionGuardNearWinnerPromotionAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
