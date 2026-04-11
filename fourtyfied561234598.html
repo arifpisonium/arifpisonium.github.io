@@ -9,24 +9,19 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__15-52-41.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__15-52-41.txt
-GENERATED: 2026-04-11 15:52:41
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__18-06-07.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__18-06-07.txt
+GENERATED: 2026-04-11 18:06:07
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
-│       ├───DesignTimeBuild
-│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───91c2c238-c6fa-4888-89f7-b3dce5269946.vsidx
-│       │   ├───b0c9a717-f76c-481a-b9b0-dffece72ab82.vsidx
-│       │   ├───c502a686-0e7c-4676-a02f-3737564864f6.vsidx
-│       │   └───e59c2d3e-84ab-4a17-bafc-e1f2f7187f07.vsidx
+│       │   ├───70911145-e9d1-48ba-8c2e-58232e9621de.vsidx
+│       │   └───7b1e996f-fc8e-496f-83b1-1efb10526d90.vsidx
 │       └───v18
 │           ├───.suo
-│           ├───DocumentLayout.backup.json
 │           └───DocumentLayout.json
 ├───TQGA.Application
 │   ├───Accounting
@@ -112,6 +107,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report27FourHourEarlyTrendContinuationFamilyDesignAuditService.cs
 │   │   ├───Report28FourHourEarlyTrendContinuationImplementationReadinessAuditService.cs
 │   │   ├───Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService.cs
+│   │   ├───Report30S06Phase1RefinementEntryTighteningAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -13830,6 +13826,419 @@ public sealed class Report29S06EarlyTrendFamilyContributionNearSurvivorAuditServ
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report30S06Phase1RefinementEntryTighteningAuditService.cs
+TYPE: .cs
+SIZE: 17.03 KB
+LINES: 406
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report30S06Phase1RefinementEntryTighteningAuditService
+{
+    private const int TargetStrategyId = 6;
+    private const string TargetPrefix = "S06::";
+
+    private static readonly string[] Phase1StarterSymbols =
+    [
+        "FILUSDT",
+        "LINKUSDT",
+        "NEARUSDT"
+    ];
+
+    private static readonly string[] Phase2WatchlistSymbols =
+    [
+        "SOLUSDT",
+        "SUIUSDT",
+        "ARBUSDT",
+        "DOTUSDT"
+    ];
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_30_S06_PHASE1_REFINEMENT_ENTRY_TIGHTENING_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var strategyDiagnostics = result.StrategyDiagnostics ?? new Dictionary&lt;int, TradeDecisionDiagnosticsSnapshot&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var strategySymbolTfPnl = result.StrategySymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var rejections = result.MarketSelectionRejections ?? new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = (result.SelectedMarkets ?? new List&lt;string&gt;())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        decimal s06Pnl = strategyPnl.TryGetValue(TargetStrategyId, out var foundS06Pnl)
+            ? foundS06Pnl
+            : 0m;
+
+        string s06Code = ResolveStrategyCode(TargetStrategyId, fitnessSnapshots);
+
+        var s06Rows = strategySymbolTfPnl
+            .Where(x =&gt; x.Key.StartsWith(TargetPrefix, StringComparison.OrdinalIgnoreCase))
+            .Select(x =&gt; BuildRow(x.Key, x.Value, rejections, selectedMarkets))
+            .OrderByDescending(x =&gt; x.NetPnl)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var phase1Rows = s06Rows
+            .Where(x =&gt; x.FamilyTier == "PHASE_1")
+            .OrderByDescending(x =&gt; x.EntryTighteningPriority)
+            .ThenByDescending(x =&gt; x.NetPnl)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var phase2Rows = s06Rows
+            .Where(x =&gt; x.FamilyTier == "PHASE_2")
+            .OrderByDescending(x =&gt; x.EntryTighteningPriority)
+            .ThenByDescending(x =&gt; x.NetPnl)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var nearMissRows = s06Rows
+            .Where(x =&gt; !x.IsSelectedNow)
+            .OrderByDescending(x =&gt; x.EntryTighteningPriority)
+            .ThenByDescending(x =&gt; x.NetPnl)
+            .ToList();
+
+        int ticksProcessed = strategyDiagnostics.TryGetValue(TargetStrategyId, out var diag) ? diag.TicksProcessed : 0;
+        int signalLong = strategyDiagnostics.TryGetValue(TargetStrategyId, out diag) ? diag.SignalLong : 0;
+        int signalExit = strategyDiagnostics.TryGetValue(TargetStrategyId, out diag) ? diag.SignalExit : 0;
+        int entryAttempts = strategyDiagnostics.TryGetValue(TargetStrategyId, out diag) ? diag.EntryAttempts : 0;
+        int executedEntries = strategyDiagnostics.TryGetValue(TargetStrategyId, out diag) ? diag.ExecutedEntries : 0;
+        int executedExits = strategyDiagnostics.TryGetValue(TargetStrategyId, out diag) ? diag.ExecutedExits : 0;
+
+        decimal conversionRate = entryAttempts &lt;= 0 ? 0m : (decimal)executedEntries / entryAttempts;
+        decimal selectedMarketCount = selectedMarkets.Count;
+
+        sb.AppendLine("REPORT 30 — S06 PHASE-1 REFINEMENT / ENTRY-TIGHTENING AUDIT");
+        sb.AppendLine("===========================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit whether S06 should be refined inside the current phase-1 family by tightening entry quality, rather than expanded into phase-2 or broader universe coverage.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Target Strategy Id                 : S{TargetStrategyId:00}");
+        sb.AppendLine($"Target Strategy Code               : {s06Code}");
+        sb.AppendLine($"S06 Total PnL                      : {s06Pnl:F2}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarketCount:F0}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("S06 STRATEGY TELEMETRY");
+        sb.AppendLine("----------------------");
+        sb.AppendLine($"Ticks Processed                    : {ticksProcessed}");
+        sb.AppendLine($"Signal Long                        : {signalLong}");
+        sb.AppendLine($"Signal Exit                        : {signalExit}");
+        sb.AppendLine($"Entry Attempts                     : {entryAttempts}");
+        sb.AppendLine($"Executed Entries                   : {executedEntries}");
+        sb.AppendLine($"Executed Exits                     : {executedExits}");
+        sb.AppendLine($"Entry Conversion Rate              : {conversionRate:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE TOP SYMBOL::TF PNL");
+        sb.AppendLine("-----------------------");
+        if (symbolTfPnl.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in symbolTfPnl.OrderByDescending(x =&gt; x.Value).Take(12))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S06 PHASE-1 CONTRIBUTION TABLE");
+        sb.AppendLine("------------------------------");
+        if (phase1Rows.Count == 0)
+        {
+            sb.AppendLine("NO PHASE-1 S06 ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Market                    | NetPnL     | Bucket                           | SelectedNow | TightenPriority | Verdict");
+            sb.AppendLine("-----+---------------------------+------------+----------------------------------+-------------+-----------------+------------------------------");
+            int rank = 1;
+            foreach (var row in phase1Rows)
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.MarketKey, 25),-25} | {row.NetPnl,10:F2} | " +
+                    $"{TrimTo(row.ReasonBucket, 32),-32} | {(row.IsSelectedNow ? "YES" : "NO "),11} | " +
+                    $"{row.EntryTighteningPriority,15:F2} | {TrimTo(row.EntryTighteningVerdict, 28)}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S06 PHASE-2 WATCHLIST TABLE");
+        sb.AppendLine("---------------------------");
+        if (phase2Rows.Count == 0)
+        {
+            sb.AppendLine("NO PHASE-2 S06 ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Market                    | NetPnL     | Bucket                           | TightenPriority | Verdict");
+            sb.AppendLine("-----+---------------------------+------------+----------------------------------+-----------------+------------------------------");
+            int rank = 1;
+            foreach (var row in phase2Rows)
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.MarketKey, 25),-25} | {row.NetPnl,10:F2} | " +
+                    $"{TrimTo(row.ReasonBucket, 32),-32} | {row.EntryTighteningPriority,15:F2} | {TrimTo(row.EntryTighteningVerdict, 28)}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("TOP ENTRY-TIGHTENING TARGETS");
+        sb.AppendLine("----------------------------");
+        if (nearMissRows.Count == 0)
+        {
+            sb.AppendLine("NO ENTRY-TIGHTENING TARGETS");
+        }
+        else
+        {
+            foreach (var row in nearMissRows.Take(8))
+            {
+                sb.AppendLine(
+                    $"{row.MarketKey,-24} tier={row.FamilyTier,-8} pnl={row.NetPnl,10:F2} " +
+                    $"bucket={row.ReasonBucket,-32} priority={row.EntryTighteningPriority:F2} =&gt; {row.EntryTighteningVerdict}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("ENTRY-TIGHTENING HYPOTHESIS");
+        sb.AppendLine("---------------------------");
+        sb.AppendLine(BuildHypothesis(s06Pnl, conversionRate, phase1Rows, selectedMarketCount, result.CashAllocationWeight));
+        sb.AppendLine();
+
+        sb.AppendLine("OPERATOR GUIDANCE");
+        sb.AppendLine("-----------------");
+        sb.AppendLine("1) Keep S06 on phase-1 only while total contribution is still small.");
+        sb.AppendLine("2) Tighten entry quality on the highest-priority phase-1 names before adding phase-2 watchlist symbols.");
+        sb.AppendLine("3) Do not broaden the family until S06 materially improves deployable breadth or reduces cash held.");
+        sb.AppendLine("4) If phase-1 refinement works, only then test phase-2 expansion.");
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static AuditRow BuildRow(
+        string strategySymbolTfKey,
+        decimal netPnl,
+        IReadOnlyDictionary&lt;string, string&gt; rejections,
+        IReadOnlySet&lt;string&gt; selectedMarkets)
+    {
+        string marketKey = ExtractMarketKey(strategySymbolTfKey);
+        bool isSelectedNow = selectedMarkets.Contains(marketKey);
+
+        string familyTier = ResolveFamilyTier(marketKey);
+
+        string reasonBucket = "NOT_REJECTED";
+        if (!isSelectedNow &amp;&amp; rejections.TryGetValue(marketKey, out var rejection))
+            reasonBucket = NormalizeReasonBucket(rejection);
+
+        decimal priority = 0m;
+
+        if (familyTier == "PHASE_1") priority += 0.40m;
+        if (familyTier == "PHASE_2") priority += 0.18m;
+
+        if (netPnl &gt; 0m) priority += 0.25m;
+        if (netPnl &lt;= 0m) priority += 0.05m;
+
+        if (reasonBucket == "WaveBRejected:DispersionGuard") priority += 0.30m;
+        else if (reasonBucket == "REJECT: regime near-miss lane overflow") priority += 0.22m;
+        else if (reasonBucket == "REJECT: outside top leadership set") priority += 0.18m;
+        else if (reasonBucket == "REJECT: regime not trend/high-vol-up") priority += 0.14m;
+        else if (reasonBucket == "REJECT: low liquidity") priority += 0.08m;
+
+        string verdict = BuildVerdict(familyTier, isSelectedNow, netPnl, reasonBucket, priority);
+
+        return new AuditRow(
+            marketKey,
+            netPnl,
+            reasonBucket,
+            isSelectedNow,
+            familyTier,
+            priority,
+            verdict);
+    }
+
+    private static string BuildVerdict(
+        string familyTier,
+        bool isSelectedNow,
+        decimal netPnl,
+        string reasonBucket,
+        decimal priority)
+    {
+        if (isSelectedNow)
+            return "Already selected now";
+
+        if (familyTier == "PHASE_1" &amp;&amp; netPnl &gt; 0m &amp;&amp; reasonBucket == "WaveBRejected:DispersionGuard" &amp;&amp; priority &gt;= 0.90m)
+            return "Best phase-1 tightening target";
+
+        if (familyTier == "PHASE_1" &amp;&amp; netPnl &gt; 0m &amp;&amp; priority &gt;= 0.75m)
+            return "Strong phase-1 refinement target";
+
+        if (familyTier == "PHASE_2" &amp;&amp; netPnl &gt; 0m &amp;&amp; priority &gt;= 0.55m)
+            return "Watch only, not ready";
+
+        if (familyTier == "PHASE_1" &amp;&amp; priority &gt;= 0.55m)
+            return "Refine before expansion";
+
+        return "Not ready for expansion";
+    }
+
+    private static string BuildHypothesis(
+        decimal s06Pnl,
+        decimal conversionRate,
+        IReadOnlyList&lt;AuditRow&gt; phase1Rows,
+        decimal selectedMarketCount,
+        decimal cashWeight)
+    {
+        bool positivePhase1Exists = phase1Rows.Any(x =&gt; x.NetPnl &gt; 0m);
+        bool strongPhase1NearMiss = phase1Rows.Any(x =&gt; x.EntryTighteningPriority &gt;= 0.85m &amp;&amp; !x.IsSelectedNow);
+        bool veryDefensive = selectedMarketCount &lt;= 1m &amp;&amp; cashWeight &gt;= 0.90m;
+
+        if (veryDefensive &amp;&amp; s06Pnl &gt; 0m &amp;&amp; strongPhase1NearMiss)
+            return "S06 is alive but too weak for family expansion. Tighten entry quality inside phase-1 first, especially around the best near-miss name(s).";
+
+        if (veryDefensive &amp;&amp; s06Pnl &gt; 0m &amp;&amp; positivePhase1Exists)
+            return "S06 shows early life, but the portfolio is still too defensive for phase-2 expansion. Refine phase-1 entry quality before widening the family.";
+
+        if (conversionRate &lt; 0.10m)
+            return "S06 may be too restrictive or poorly aligned. Review phase-1 entry timing before adding more symbols.";
+
+        return "S06 still needs phase-1 refinement before broader expansion decisions.";
+    }
+
+    private static string ResolveFamilyTier(string marketKey)
+    {
+        string symbol = ExtractSymbol(marketKey);
+
+        if (Phase1StarterSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))
+            return "PHASE_1";
+
+        if (Phase2WatchlistSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))
+            return "PHASE_2";
+
+        return "OUTSIDE_FAMILY";
+    }
+
+    private static string NormalizeReasonBucket(string rejectionReason)
+    {
+        string value = rejectionReason?.Trim() ?? string.Empty;
+
+        if (value.StartsWith("WaveBRejected:DispersionGuard", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:DispersionGuard";
+
+        if (value.StartsWith("WaveBRejected:BelowThreshold", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:BelowThreshold";
+
+        if (value.StartsWith("WaveBRejected:PerSymbolCap", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:PerSymbolCap";
+
+        if (value.StartsWith("WaveBRejected:TopNOverflow", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:TopNOverflow";
+
+        if (value.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: outside top leadership set";
+
+        if (value.StartsWith("REJECT: regime near-miss lane overflow", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime near-miss lane overflow";
+
+        if (value.StartsWith("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime not trend/high-vol-up";
+
+        if (value.StartsWith("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: low liquidity";
+
+        return value;
+    }
+
+    private static string ExtractMarketKey(string strategySymbolTfKey)
+    {
+        if (string.IsNullOrWhiteSpace(strategySymbolTfKey))
+            return string.Empty;
+
+        var parts = strategySymbolTfKey.Split(new[] { "::" }, StringSplitOptions.None);
+        if (parts.Length &lt; 3)
+            return strategySymbolTfKey;
+
+        return $"{parts[1]}::{parts[2]}";
+    }
+
+    private static string ExtractSymbol(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 1 ? parts[0].Trim() : string.Empty;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return $"S{strategyId:00}";
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record AuditRow(
+        string MarketKey,
+        decimal NetPnl,
+        string ReasonBucket,
+        bool IsSelectedNow,
+        string FamilyTier,
+        decimal EntryTighteningPriority,
+        string EntryTighteningVerdict);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -14535,8 +14944,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 4.38 KB
-LINES: 134
+SIZE: 4.54 KB
+LINES: 139
 ==============================
 using System;
 using System.Collections.Generic;
@@ -14638,6 +15047,11 @@ public sealed class UniversalResearchReportService
             fitnessSnapshots);
 
         new Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
+        new Report30S06Phase1RefinementEntryTighteningAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
