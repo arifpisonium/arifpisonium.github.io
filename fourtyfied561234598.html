@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__19-58-37.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__19-58-37.txt
-GENERATED: 2026-04-11 19:58:37
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__20-06-30.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__20-06-30.txt
+GENERATED: 2026-04-11 20:06:30
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,9 +20,9 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───516b0346-e483-438e-bfac-e337ec028cfd.vsidx
 │       │   ├───7b1e996f-fc8e-496f-83b1-1efb10526d90.vsidx
-│       │   └───e7b53fa6-6795-4b7e-ae37-8ec6e56913e4.vsidx
+│       │   ├───a5f4f1d0-eefa-48ae-964f-83f4ff705265.vsidx
+│       │   └───b207020e-6924-4ab9-b54b-9ab0ba931db2.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -16009,8 +16009,8 @@ public sealed record TradeResult(
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Trading\TradingEngine.cs
 TYPE: .cs
-SIZE: 7.16 KB
-LINES: 242
+SIZE: 7.33 KB
+LINES: 249
 ==============================
 using TQGA.Application.Accounting;
 using TQGA.Application.Risk;
@@ -16055,11 +16055,9 @@ public sealed class TradingEngine : ITradingEngine
         DateTime time,
         CancellationToken ct)
     {
-        // Market sync (executor uses last price as fill in backtests)
         _executor.UpdateMarketPrice(price);
         _diag.OnTickProcessed();
 
-        // Mark-to-market equity update
         if (_openTrade != null)
         {
             var unrealized =
@@ -16075,7 +16073,6 @@ public sealed class TradingEngine : ITradingEngine
             _equity.Update(time, _capital.CurrentEquity);
         }
 
-        // Strategy decision
         var context = new StrategyContext(
             price,
             time,
@@ -16084,7 +16081,6 @@ public sealed class TradingEngine : ITradingEngine
 
         var signal = _strategy.OnTick(context);
 
-        // ========= ENTRY (LONG) =========
         if (signal == TradeSignal.Long)
         {
             _diag.OnSignalLong();
@@ -16118,8 +16114,8 @@ public sealed class TradingEngine : ITradingEngine
                 quantity: size,
                 entryPrice: fillPrice,
                 entryTime: time,
-                trueOrderType: "Market",
-                entryReason: BuildEntryReason(signal, symbol),
+                trueOrderType: BuildTrueOrderType(),
+                entryReason: BuildEntryReason(signal, symbol, fillPrice),
                 stopLossAtEntry: BuildStopLossAtEntry(TradeSide.Buy, fillPrice),
                 takeProfitAtEntry: BuildTakeProfitAtEntry(TradeSide.Buy, fillPrice),
                 expectedPrice: BuildExpectedPrice(TradeSide.Buy, fillPrice));
@@ -16128,7 +16124,6 @@ public sealed class TradingEngine : ITradingEngine
             return;
         }
 
-        // ========= ENTRY (SHORT) =========
         if (signal == TradeSignal.Short)
         {
             _diag.OnSignalShort();
@@ -16162,8 +16157,8 @@ public sealed class TradingEngine : ITradingEngine
                 quantity: size,
                 entryPrice: fillPrice,
                 entryTime: time,
-                trueOrderType: "Market",
-                entryReason: BuildEntryReason(signal, symbol),
+                trueOrderType: BuildTrueOrderType(),
+                entryReason: BuildEntryReason(signal, symbol, fillPrice),
                 stopLossAtEntry: BuildStopLossAtEntry(TradeSide.Sell, fillPrice),
                 takeProfitAtEntry: BuildTakeProfitAtEntry(TradeSide.Sell, fillPrice),
                 expectedPrice: BuildExpectedPrice(TradeSide.Sell, fillPrice));
@@ -16172,7 +16167,6 @@ public sealed class TradingEngine : ITradingEngine
             return;
         }
 
-        // ========= EXIT =========
         if (signal == TradeSignal.Exit)
         {
             _diag.OnSignalExit();
@@ -16189,7 +16183,6 @@ public sealed class TradingEngine : ITradingEngine
                 exitTime: time,
                 exitReason: BuildExitReason(signal, symbol, fillPrice, _openTrade));
 
-            // Bookkeeping
             _ledger.Record(_openTrade);
             _capital.OnTradeClosed(_openTrade.RealizedPnL);
             _risk.OnTradeClosed(_openTrade.RealizedPnL);
@@ -16201,9 +16194,19 @@ public sealed class TradingEngine : ITradingEngine
         }
     }
 
-    private string BuildEntryReason(TradeSignal signal, string symbol)
+    private string BuildTrueOrderType()
     {
-        return $"{_strategy.Name}|Signal={signal}|Symbol={symbol}|RuntimeCapture=TRUE";
+        // Current live backtest executor is market-fill style.
+        return "Market";
+    }
+
+    private string BuildEntryReason(TradeSignal signal, string symbol, decimal fillPrice)
+    {
+        string strategyName = string.IsNullOrWhiteSpace(_strategy.Name)
+            ? _strategy.GetType().Name
+            : _strategy.Name;
+
+        return $"{strategyName}|Signal={signal}|Symbol={symbol}|EntryFill={fillPrice:F8}";
     }
 
     private string BuildExitReason(
@@ -16212,6 +16215,10 @@ public sealed class TradingEngine : ITradingEngine
         decimal exitPrice,
         Trade openTrade)
     {
+        string strategyName = string.IsNullOrWhiteSpace(_strategy.Name)
+            ? _strategy.GetType().Name
+            : _strategy.Name;
+
         string pnlState;
 
         if (openTrade.Side == TradeSide.Buy)
@@ -16219,7 +16226,7 @@ public sealed class TradingEngine : ITradingEngine
         else
             pnlState = exitPrice &lt;= openTrade.EntryPrice ? "NonNegativeExit" : "LossExit";
 
-        return $"{_strategy.Name}|Signal={signal}|Symbol={symbol}|{pnlState}|RuntimeCapture=TRUE";
+        return $"{strategyName}|Signal={signal}|Symbol={symbol}|{pnlState}|ExitFill={exitPrice:F8}";
     }
 
     private static decimal? BuildStopLossAtEntry(TradeSide side, decimal entryPrice)
@@ -16227,7 +16234,7 @@ public sealed class TradingEngine : ITradingEngine
         if (entryPrice &lt;= 0m)
             return null;
 
-        // Conservative placeholder runtime capture until per-strategy SL logic is explicitly modeled.
+        // Engine-native placeholder until each strategy supplies its own trade plan.
         return side == TradeSide.Buy
             ? entryPrice * 0.96m
             : entryPrice * 1.04m;
@@ -16238,7 +16245,7 @@ public sealed class TradingEngine : ITradingEngine
         if (entryPrice &lt;= 0m)
             return null;
 
-        // Conservative placeholder runtime capture until per-strategy TP logic is explicitly modeled.
+        // Engine-native placeholder until each strategy supplies its own trade plan.
         return side == TradeSide.Buy
             ? entryPrice * 1.08m
             : entryPrice * 0.92m;
@@ -16502,7 +16509,7 @@ public sealed class Trade
     public decimal EntryPrice { get; }
     public DateTime EntryTime { get; }
 
-    // NEW — true runtime trade metadata
+    // PATCH 33 — TRUE RUNTIME TRADE PLAN FIELDS
     public string TrueOrderType { get; }
     public string EntryReason { get; }
     public decimal? StopLossAtEntry { get; }
