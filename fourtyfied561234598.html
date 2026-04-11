@@ -9,18 +9,21 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__15-32-59.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__15-32-59.txt
-GENERATED: 2026-04-11 15:32:59
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-11__15-52-41.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-11__15-52-41.txt
+GENERATED: 2026-04-11 15:52:41
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
+│       ├───DesignTimeBuild
+│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───298f8393-4e66-496e-ac5f-b92c4d3e3349.vsidx
+│       │   ├───91c2c238-c6fa-4888-89f7-b3dce5269946.vsidx
 │       │   ├───b0c9a717-f76c-481a-b9b0-dffece72ab82.vsidx
-│       │   └───c502a686-0e7c-4676-a02f-3737564864f6.vsidx
+│       │   ├───c502a686-0e7c-4676-a02f-3737564864f6.vsidx
+│       │   └───e59c2d3e-84ab-4a17-bafc-e1f2f7187f07.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -108,6 +111,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report26TrueNewEdgeFamilyOpportunityAuditService.cs
 │   │   ├───Report27FourHourEarlyTrendContinuationFamilyDesignAuditService.cs
 │   │   ├───Report28FourHourEarlyTrendContinuationImplementationReadinessAuditService.cs
+│   │   ├───Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -13393,6 +13397,439 @@ public sealed class Report28FourHourEarlyTrendContinuationImplementationReadines
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService.cs
+TYPE: .cs
+SIZE: 17.38 KB
+LINES: 426
+==============================
+using System.Text;
+using TQGA.Application.Backtesting;
+using TQGA.Application.Paths;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService
+{
+    private const int TargetStrategyId = 6;
+    private const string TargetStrategyCodeFallback = "FourHourEarlyTrendContinuationQuantStrategy";
+    private const string TargetPrefix = "S06::";
+
+    private static readonly string[] Phase1StarterSymbols =
+    [
+        "FILUSDT",
+        "LINKUSDT",
+        "NEARUSDT"
+    ];
+
+    private static readonly string[] Phase2WatchlistSymbols =
+    [
+        "SOLUSDT",
+        "SUIUSDT",
+        "ARBUSDT",
+        "DOTUSDT"
+    ];
+
+    public void GenerateAndWrite(
+        PortfolioBacktestResult result,
+        DateTime runUtc,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_29_S06_EARLY_TREND_FAMILY_CONTRIBUTION_NEAR_SURVIVOR_AUDIT_{stamp}.txt");
+
+        var sb = new StringBuilder();
+
+        var strategyPnl = result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;();
+        var symbolTfPnl = result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var strategySymbolTfPnl = result.StrategySymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+        var rejections = result.MarketSelectionRejections ?? new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+        var selectedMarkets = (result.SelectedMarkets ?? new List&lt;string&gt;())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        decimal s06Pnl = strategyPnl.TryGetValue(TargetStrategyId, out var foundS06Pnl)
+            ? foundS06Pnl
+            : 0m;
+
+        string s06Code = ResolveStrategyCode(TargetStrategyId, fitnessSnapshots);
+
+        var s06Rows = strategySymbolTfPnl
+            .Where(x =&gt; x.Key.StartsWith(TargetPrefix, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x =&gt; x.Value)
+            .ToList();
+
+        var s06ContributionRows = s06Rows
+            .Select(x =&gt; BuildContributionRow(x.Key, x.Value, selectedMarkets, rejections))
+            .OrderByDescending(x =&gt; x.NetPnl)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var positiveS06Rows = s06ContributionRows
+            .Where(x =&gt; x.NetPnl &gt; 0m)
+            .ToList();
+
+        var nearSurvivorRows = s06ContributionRows
+            .Where(x =&gt; x.IsPhase1OrPhase2 &amp;&amp; !x.IsSelectedNow)
+            .OrderByDescending(x =&gt; x.NearSurvivorScore)
+            .ThenByDescending(x =&gt; x.NetPnl)
+            .ThenBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        decimal totalPositiveS06Pnl = positiveS06Rows.Sum(x =&gt; x.NetPnl);
+        decimal top1PositiveShare = totalPositiveS06Pnl == 0m
+            ? 0m
+            : positiveS06Rows.Take(1).Sum(x =&gt; x.NetPnl) / totalPositiveS06Pnl;
+
+        decimal top2PositiveShare = totalPositiveS06Pnl == 0m
+            ? 0m
+            : positiveS06Rows.Take(2).Sum(x =&gt; x.NetPnl) / totalPositiveS06Pnl;
+
+        sb.AppendLine("REPORT 29 — S06 EARLY-TREND FAMILY CONTRIBUTION / NEAR-SURVIVOR AUDIT");
+        sb.AppendLine("=====================================================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Audit how the new S06 early-trend family actually contributed in the first live run, and determine whether any phase-1 or phase-2 family symbols are close to becoming true deployable survivors.");
+        sb.AppendLine();
+
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Target Strategy Id                 : S{TargetStrategyId:00}");
+        sb.AppendLine($"Target Strategy Code               : {s06Code}");
+        sb.AppendLine($"S06 Total PnL                      : {s06Pnl:F2}");
+        sb.AppendLine($"Selected Markets Count             : {selectedMarkets.Count}");
+        sb.AppendLine($"Cash Allocation Weight             : {result.CashAllocationWeight:P2}");
+        sb.AppendLine($"S06 Contribution Rows              : {s06ContributionRows.Count}");
+        sb.AppendLine($"S06 Positive Contribution Rows     : {positiveS06Rows.Count}");
+        sb.AppendLine();
+
+        sb.AppendLine("LIVE TOP SYMBOL::TF PNL");
+        sb.AppendLine("-----------------------");
+        if (symbolTfPnl.Count == 0)
+        {
+            sb.AppendLine("NO SYMBOL::TF PNL DATA");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Symbol::TF                | PnL");
+            sb.AppendLine("-----+---------------------------+------------");
+            int rank = 1;
+            foreach (var kv in symbolTfPnl.OrderByDescending(x =&gt; x.Value).Take(12))
+            {
+                sb.AppendLine($"{rank,4} | {TrimTo(kv.Key, 25),-25} | {kv.Value,10:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S06 FAMILY CONTRIBUTION TABLE");
+        sb.AppendLine("-----------------------------");
+        if (s06ContributionRows.Count == 0)
+        {
+            sb.AppendLine("NO S06 CONTRIBUTION ROWS");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Market                    | NetPnL     | Bucket                           | SelectedNow | FamilyTier | NearSurvivor");
+            sb.AppendLine("-----+---------------------------+------------+----------------------------------+-------------+-----------+-------------");
+            int rank = 1;
+            foreach (var row in s06ContributionRows)
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.MarketKey, 25),-25} | {row.NetPnl,10:F2} | " +
+                    $"{TrimTo(row.ReasonBucket, 32),-32} | {(row.IsSelectedNow ? "YES" : "NO "),11} | " +
+                    $"{row.FamilyTier,-9} | {row.NearSurvivorScore,11:F2}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S06 POSITIVE CONTRIBUTION CONCENTRATION");
+        sb.AppendLine("---------------------------------------");
+        sb.AppendLine($"Top 1 Positive Share                  : {top1PositiveShare:P2}");
+        sb.AppendLine($"Top 2 Positive Share                  : {top2PositiveShare:P2}");
+        sb.AppendLine();
+
+        sb.AppendLine("PHASE-1 STARTER SYMBOLS");
+        sb.AppendLine("-----------------------");
+        foreach (string symbol in Phase1StarterSymbols)
+        {
+            string marketKey = $"{symbol}::4h";
+            var row = s06ContributionRows.FirstOrDefault(x =&gt; x.MarketKey.Equals(marketKey, StringComparison.OrdinalIgnoreCase));
+            if (row == null)
+            {
+                sb.AppendLine($"{marketKey,-20} NO S06 CONTRIBUTION ROW");
+            }
+            else
+            {
+                sb.AppendLine($"{marketKey,-20} pnl={row.NetPnl,10:F2} bucket={row.ReasonBucket,-32} selected={(row.IsSelectedNow ? "YES" : "NO")}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("PHASE-2 WATCHLIST SYMBOLS");
+        sb.AppendLine("-------------------------");
+        foreach (string symbol in Phase2WatchlistSymbols)
+        {
+            string marketKey = $"{symbol}::4h";
+            var row = s06ContributionRows.FirstOrDefault(x =&gt; x.MarketKey.Equals(marketKey, StringComparison.OrdinalIgnoreCase));
+            if (row == null)
+            {
+                sb.AppendLine($"{marketKey,-20} NO S06 CONTRIBUTION ROW");
+            }
+            else
+            {
+                sb.AppendLine($"{marketKey,-20} pnl={row.NetPnl,10:F2} bucket={row.ReasonBucket,-32} selected={(row.IsSelectedNow ? "YES" : "NO")}");
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("TOP S06 NEAR-SURVIVORS");
+        sb.AppendLine("----------------------");
+        if (nearSurvivorRows.Count == 0)
+        {
+            sb.AppendLine("NO S06 NEAR-SURVIVORS FOUND");
+        }
+        else
+        {
+            sb.AppendLine("Rank | Market                    | NetPnL     | FamilyTier | Bucket                           | NearSurvivor Verdict");
+            sb.AppendLine("-----+---------------------------+------------+-----------+----------------------------------+------------------------------");
+            int rank = 1;
+            foreach (var row in nearSurvivorRows.Take(10))
+            {
+                sb.AppendLine(
+                    $"{rank,4} | {TrimTo(row.MarketKey, 25),-25} | {row.NetPnl,10:F2} | " +
+                    $"{row.FamilyTier,-9} | {TrimTo(row.ReasonBucket, 32),-32} | {TrimTo(row.NearSurvivorVerdict, 28)}");
+                rank++;
+            }
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("S06 OPERATOR INTERPRETATION");
+        sb.AppendLine("---------------------------");
+        sb.AppendLine("1) If S06 is positive but still tiny, the family is alive but not yet validated for broader universe expansion.");
+        sb.AppendLine("2) If one of the phase-1 names shows the best near-survivor score, keep the universe narrow and refine there first.");
+        sb.AppendLine("3) Only broaden the universe after S06 produces a credible second deployable survivor or materially reduces cash held.");
+        sb.AppendLine();
+
+        sb.AppendLine("FINAL VERDICT");
+        sb.AppendLine("-------------");
+        sb.AppendLine(BuildVerdict(
+            s06Pnl,
+            nearSurvivorRows,
+            selectedMarkets.Count,
+            result.CashAllocationWeight));
+        sb.AppendLine();
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static ContributionRow BuildContributionRow(
+        string strategySymbolTfKey,
+        decimal netPnl,
+        IReadOnlySet&lt;string&gt; selectedMarkets,
+        IReadOnlyDictionary&lt;string, string&gt; rejections)
+    {
+        string marketKey = ExtractMarketKey(strategySymbolTfKey);
+        bool isSelectedNow = selectedMarkets.Contains(marketKey);
+
+        string reasonBucket = "NOT_REJECTED";
+        if (!isSelectedNow &amp;&amp; rejections.TryGetValue(marketKey, out var rejectReason))
+            reasonBucket = NormalizeReasonBucket(rejectReason);
+
+        string familyTier = ResolveFamilyTier(marketKey);
+
+        decimal nearSurvivorScore = 0m;
+
+        if (netPnl &gt; 0m)
+            nearSurvivorScore += 0.50m;
+
+        if (familyTier == "PHASE_1")
+            nearSurvivorScore += 0.30m;
+        else if (familyTier == "PHASE_2")
+            nearSurvivorScore += 0.15m;
+
+        if (reasonBucket == "NOT_REJECTED" &amp;&amp; isSelectedNow)
+            nearSurvivorScore += 0.50m;
+        else if (reasonBucket == "WaveBRejected:DispersionGuard")
+            nearSurvivorScore += 0.28m;
+        else if (reasonBucket == "REJECT: outside top leadership set")
+            nearSurvivorScore += 0.20m;
+        else if (reasonBucket == "REJECT: regime near-miss lane overflow")
+            nearSurvivorScore += 0.18m;
+        else if (reasonBucket == "REJECT: regime not trend/high-vol-up")
+            nearSurvivorScore += 0.12m;
+        else if (reasonBucket == "REJECT: low liquidity")
+            nearSurvivorScore += 0.08m;
+
+        bool isPhase1OrPhase2 = familyTier != "OUTSIDE_FAMILY";
+        string verdict = BuildNearSurvivorVerdict(isSelectedNow, familyTier, reasonBucket, netPnl, nearSurvivorScore);
+
+        return new ContributionRow(
+            marketKey,
+            netPnl,
+            reasonBucket,
+            isSelectedNow,
+            familyTier,
+            nearSurvivorScore,
+            verdict,
+            isPhase1OrPhase2);
+    }
+
+    private static string BuildNearSurvivorVerdict(
+        bool isSelectedNow,
+        string familyTier,
+        string reasonBucket,
+        decimal netPnl,
+        decimal nearSurvivorScore)
+    {
+        if (isSelectedNow)
+            return "Already deployable survivor";
+
+        if (familyTier == "PHASE_1" &amp;&amp; netPnl &gt; 0m &amp;&amp; reasonBucket == "WaveBRejected:DispersionGuard" &amp;&amp; nearSurvivorScore &gt;= 1.00m)
+            return "Best phase-1 near-survivor";
+
+        if (familyTier == "PHASE_1" &amp;&amp; netPnl &gt; 0m &amp;&amp; nearSurvivorScore &gt;= 0.85m)
+            return "Strong phase-1 near-survivor";
+
+        if (familyTier == "PHASE_2" &amp;&amp; netPnl &gt; 0m &amp;&amp; nearSurvivorScore &gt;= 0.70m)
+            return "Phase-2 watchlist near-survivor";
+
+        if (netPnl &gt; 0m)
+            return "Positive but not close enough";
+
+        return "Not yet a credible survivor";
+    }
+
+    private static string ResolveFamilyTier(string marketKey)
+    {
+        string symbol = ExtractSymbol(marketKey);
+
+        if (Phase1StarterSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))
+            return "PHASE_1";
+
+        if (Phase2WatchlistSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))
+            return "PHASE_2";
+
+        return "OUTSIDE_FAMILY";
+    }
+
+    private static string NormalizeReasonBucket(string rejectionReason)
+    {
+        string value = rejectionReason?.Trim() ?? string.Empty;
+
+        if (value.StartsWith("WaveBRejected:DispersionGuard", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:DispersionGuard";
+
+        if (value.StartsWith("WaveBRejected:BelowThreshold", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:BelowThreshold";
+
+        if (value.StartsWith("WaveBRejected:PerSymbolCap", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:PerSymbolCap";
+
+        if (value.StartsWith("WaveBRejected:TopNOverflow", StringComparison.OrdinalIgnoreCase))
+            return "WaveBRejected:TopNOverflow";
+
+        if (value.StartsWith("REJECT: outside top", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: outside top leadership set";
+
+        if (value.StartsWith("REJECT: regime near-miss lane overflow", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime near-miss lane overflow";
+
+        if (value.StartsWith("REJECT: regime not trend/high-vol-up", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: regime not trend/high-vol-up";
+
+        if (value.StartsWith("REJECT: low liquidity", StringComparison.OrdinalIgnoreCase))
+            return "REJECT: low liquidity";
+
+        return value;
+    }
+
+    private static string ExtractMarketKey(string strategySymbolTfKey)
+    {
+        if (string.IsNullOrWhiteSpace(strategySymbolTfKey))
+            return string.Empty;
+
+        var parts = strategySymbolTfKey.Split(new[] { "::" }, StringSplitOptions.None);
+        if (parts.Length &lt; 3)
+            return strategySymbolTfKey;
+
+        return $"{parts[1]}::{parts[2]}";
+    }
+
+    private static string ExtractSymbol(string marketKey)
+    {
+        if (string.IsNullOrWhiteSpace(marketKey))
+            return string.Empty;
+
+        var parts = marketKey.Split(new[] { "::" }, StringSplitOptions.None);
+        return parts.Length &gt;= 1 ? parts[0].Trim() : string.Empty;
+    }
+
+    private static string ResolveStrategyCode(
+        int strategyId,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snap) &amp;&amp;
+            !string.IsNullOrWhiteSpace(snap.StrategyCode))
+        {
+            return snap.StrategyCode;
+        }
+
+        return TargetStrategyCodeFallback;
+    }
+
+    private static string BuildVerdict(
+        decimal s06Pnl,
+        IReadOnlyList&lt;ContributionRow&gt; nearSurvivorRows,
+        int selectedMarketCount,
+        decimal cashWeight)
+    {
+        bool strongNearSurvivor = nearSurvivorRows.Take(3).Any(x =&gt; x.NearSurvivorScore &gt;= 0.90m &amp;&amp; x.NetPnl &gt; 0m);
+
+        if (selectedMarketCount &lt;= 1 &amp;&amp; cashWeight &gt;= 0.90m &amp;&amp; s06Pnl &gt; 0m &amp;&amp; strongNearSurvivor)
+            return "S06 is alive and has a credible near-survivor candidate, but broader universe expansion is still premature. Refine inside the current family first.";
+
+        if (selectedMarketCount &lt;= 1 &amp;&amp; cashWeight &gt;= 0.90m &amp;&amp; s06Pnl &gt; 0m)
+            return "S06 is positive but still too weak to justify broader universe expansion. Keep the family narrow and refine contribution quality first.";
+
+        if (s06Pnl &lt;= 0m)
+            return "S06 has not yet proven contribution quality. Broader universe expansion is not justified.";
+
+        return "S06 contribution is improving, but broader universe expansion still requires a clearer second deployable survivor.";
+    }
+
+    private static string TrimTo(string? text, int maxLen)
+    {
+        string value = text ?? string.Empty;
+        if (value.Length &lt;= maxLen)
+            return value;
+
+        if (maxLen &lt;= 3)
+            return value[..maxLen];
+
+        return value[..(maxLen - 3)] + "...";
+    }
+
+    private sealed record ContributionRow(
+        string MarketKey,
+        decimal NetPnl,
+        string ReasonBucket,
+        bool IsSelectedNow,
+        string FamilyTier,
+        decimal NearSurvivorScore,
+        string NearSurvivorVerdict,
+        bool IsPhase1OrPhase2);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -14098,8 +14535,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 5.25 KB
-LINES: 148
+SIZE: 4.38 KB
+LINES: 134
 ==============================
 using System;
 using System.Collections.Generic;
@@ -14118,9 +14555,6 @@ public sealed class UniversalResearchReportService
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(selectedStrategies);
 
-        // PATCH 12 / PATCH 15:
-        // One single stored canonical dictionary instance is the source of truth.
-        // No fallback recompute path is allowed here.
         var canonicalCio = GetStoredCanonicalCioOrThrow(result);
 
         new A84MarketRegimeDetectionReportService().Generate(result);
@@ -14131,14 +14565,10 @@ public sealed class UniversalResearchReportService
 
         var (fitnessRows, allowed) = fitnessSvc.ComputeFitness(result, cfg);
 
-        // PATCH 15:
-        // A84_04 scenario mode now needs full portfolio context:
-        // equity timeline, canonical CIO concentration, and current run outcome.
         new A84_RegimeResearchService().Generate(
             result,
             canonicalCio);
 
-        // A84_05
         result.CanonicalCioPostGatingWeights = canonicalCio;
         fitnessSvc.GenerateAndWrite(result, runUtc, cfg);
 
@@ -14156,68 +14586,62 @@ public sealed class UniversalResearchReportService
                 GateReason = kv.Value.GateReason
             });
 
-        // REPORT 19 — EDGE DEATH MAP
         new Report19EdgeDeathMapReportService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots,
             allowed);
 
-        // REPORT 20 — ALPHA DECAY / S05 DEPENDENCY AUDIT
         new Report20AlphaDecayS05DependencyAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 21 — S05 LATE-HALF FAILURE AUDIT
         new Report21S05LateHalfFailureAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 22 — S05 WINNER FATIGUE / LATE ENTRY AUDIT
         new Report22S05WinnerFatigueLateEntryAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 23 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT
         new Report23S05ExitEfficiencyLateHoldBleedAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 24 — S05 COMPATIBLE EDGE EXPANSION / NEAR-WINNER AUDIT
         new Report24S05CompatibleEdgeExpansionNearWinnerAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 25 — DISPERSION-GUARD NEAR-WINNER PROMOTION AUDIT
         new Report25DispersionGuardNearWinnerPromotionAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 26 — TRUE NEW EDGE FAMILY OPPORTUNITY AUDIT
         new Report26TrueNewEdgeFamilyOpportunityAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 27 — 4H EARLY-TREND CONTINUATION FAMILY DESIGN AUDIT
         new Report27FourHourEarlyTrendContinuationFamilyDesignAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // REPORT 28 — 4H EARLY-TREND CONTINUATION IMPLEMENTATION READINESS AUDIT
         new Report28FourHourEarlyTrendContinuationImplementationReadinessAuditService().GenerateAndWrite(
             result,
             runUtc,
             fitnessSnapshots);
 
-        // A84_00
+        new Report29S06EarlyTrendFamilyContributionNearSurvivorAuditService().GenerateAndWrite(
+            result,
+            runUtc,
+            fitnessSnapshots);
+
         new A84ExecutiveSummaryReportService().GenerateAndWrite(
             result,
             runUtc,
@@ -14225,7 +14649,6 @@ public sealed class UniversalResearchReportService
             canonicalCio,
             recentMinutesWindow: 10);
 
-        // A84_06
         new A84ChatGptUploadReportService().GenerateAndWrite(
             result,
             runUtc,
