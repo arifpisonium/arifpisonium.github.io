@@ -9,16 +9,18 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-12__21-33-00.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-12__21-33-00.txt
-GENERATED: 2026-04-12 21:33:00
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-12__22-15-31.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-12__22-15-31.txt
+GENERATED: 2026-04-12 22:15:31
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
+│       ├───DesignTimeBuild
+│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───62af8408-7ee1-4edf-8789-c8c60ae480b3.vsidx
+│       │   └───24ddb32e-7833-4ba8-97af-fad218ef15f9.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -660,8 +662,8 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 62.33 KB
-LINES: 1629
+SIZE: 60.61 KB
+LINES: 1580
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
@@ -792,36 +794,21 @@ public sealed class PortfolioBacktestRunner
         if (activeTimeframes.Count == 0)
             throw new InvalidOperationException("No valid timeframes selected.");
 
-        var selection = new PreTradeMarketSelectionService()
-            .SelectMarkets(
-                _feed,
-                activeSymbols,
-                activeTimeframes,
-                topN: 12);
-
-        var rankedSelectedMarkets = selection.SelectedMarkets.ToList();
-
-        if (rankedSelectedMarkets.Count == 0)
-            throw new InvalidOperationException("No markets passed pre-trade selection.");
-
-        var combinedRejections = new Dictionary&lt;string, string&gt;(
-            selection.RejectedMarkets,
-            StringComparer.OrdinalIgnoreCase);
-
-        var waveBSelection = ApplyWaveBSelection(rankedSelectedMarkets, combinedRejections);
-        var selectedMarkets = waveBSelection.SelectedMarkets;
+        // MASTER RESET MODE
+        // No pre-trade narrowing, no Wave B narrowing, no CIO narrowing before trade generation.
+        // Capital is distributed equally across all validated symbols and timeframes selected by the user.
+        var selectedMarkets = activeSymbols
+            .SelectMany(symbol =&gt; activeTimeframes.Select(tf =&gt; new MarketKey(symbol, tf)))
+            .ToList();
 
         if (selectedMarkets.Count == 0)
-            throw new InvalidOperationException("No markets passed Wave B signal ranking and Top-N execution.");
+            throw new InvalidOperationException("No markets available after symbol/timeframe expansion.");
 
-        var marketAllocationWeights = waveBSelection.AllocationWeights;
-        var unallocatedCashWeight = waveBSelection.CashWeight;
+        var combinedRejections = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
 
-        WriteWaveBDiagnosticReport(
-            selection,
-            waveBSelection,
-            combinedRejections,
-            unallocatedCashWeight);
+        decimal equalMarketWeight = 1m / selectedMarkets.Count;
+        var marketAllocationWeights = selectedMarkets.ToDictionary(m =&gt; m, _ =&gt; equalMarketWeight);
+        decimal unallocatedCashWeight = 0m;
 
         var leadershipRank = new Dictionary&lt;MarketKey, int&gt;();
         for (int i = 0; i &lt; selectedMarkets.Count; i++)
@@ -904,15 +891,6 @@ public sealed class PortfolioBacktestRunner
 
             foreach (var m in selectedMarkets)
             {
-                // PATCH 31A — S06 family-universe entry gate
-                // Hard-gate S06 to phase-1 starter symbols only.
-                if (IsS06FamilyStrategy(type, strategy.Name) &amp;&amp; !IsS06Phase1AllowedMarket(m))
-                {
-                    string familyGateKey = $"{m.Symbol}::{m.Timeframe}";
-                    combinedRejections[familyGateKey] = "S06FamilyGate:OutsidePhase1StarterSet";
-                    continue;
-                }
-
                 var marketWeight = marketAllocationWeights.TryGetValue(m, out var resolvedMarketWeight)
                     ? resolvedMarketWeight
                     : 0m;
@@ -930,33 +908,7 @@ public sealed class PortfolioBacktestRunner
                 var currentEquity = System.Math.Max(1m, allocatedCapital + ledger.TotalPnL);
                 peakEquity = System.Math.Max(peakEquity, currentEquity);
 
-                var drawdownPct = peakEquity &lt;= 0m
-                    ? 0m
-                    : ((peakEquity - currentEquity) / peakEquity) * 100m;
-
-                var budget = riskBudget.Evaluate(
-                    m.Symbol,
-                    m.Timeframe,
-                    candles,
-                    currentEquity,
-                    drawdownPct,
-                    openRiskBySymbol,
-                    openRiskByCluster,
-                    totalOpenRiskPct);
-
-                if (!budget.IsAllowed)
-                    continue;
-
-                openRiskBySymbol[m.Symbol] =
-                    (openRiskBySymbol.TryGetValue(m.Symbol, out var sRisk) ? sRisk : 0m)
-                    + budget.AllowedRiskPct;
-
-                var cluster = budget.Cluster;
-                openRiskByCluster[cluster] =
-                    (openRiskByCluster.TryGetValue(cluster, out var cRisk) ? cRisk : 0m)
-                    + budget.AllowedRiskPct;
-
-                totalOpenRiskPct += budget.AllowedRiskPct;
+                decimal effectiveScale = marketWeight;
 
                 var beforePnl = GetSymbolPnL(ledger, m.Symbol);
                 var beforeTradeCount = GetTradeCount(ledger);
@@ -980,15 +932,15 @@ public sealed class PortfolioBacktestRunner
                 var grossDelta = afterPnl - beforePnl;
                 var marketTradeCount = System.Math.Max(0, afterTradeCount - beforeTradeCount);
 
-                var budgetScale = budget.AllowedRiskPct &lt;= 0m
-                    ? 0m
-                    : budget.AllowedRiskPct / 0.50m;
-
-                var effectiveScale = budgetScale * marketWeight;
                 var scaledGrossDelta = grossDelta * effectiveScale;
 
+                var averageClose = candles.Count == 0 ? 0m : candles.Average(c =&gt; c.Close);
+                var approxPositionValue = averageClose &lt;= 0m
+                    ? allocatedCapital * marketWeight
+                    : averageClose * Math.Max(0m, allocatedCapital * marketWeight / Math.Max(averageClose, 0.00000001m));
+
                 var frictionCost = EstimateFrictionCost(
-                    budget.PositionValue * marketWeight,
+                    approxPositionValue,
                     marketTradeCount,
                     friction,
                     candles);
@@ -1020,9 +972,6 @@ public sealed class PortfolioBacktestRunner
                 if (netDelta &gt; 0m)
                     positiveStrategyHitsByMarket[m] += 1;
 
-                openRiskBySymbol[m.Symbol] = System.Math.Max(0m, openRiskBySymbol[m.Symbol] - budget.AllowedRiskPct);
-                openRiskByCluster[cluster] = System.Math.Max(0m, openRiskByCluster[cluster] - budget.AllowedRiskPct);
-                totalOpenRiskPct = System.Math.Max(0m, totalOpenRiskPct - budget.AllowedRiskPct);
             }
 
             strategyDiagnostics[id] = new TradeDecisionDiagnosticsSnapshot
@@ -1045,22 +994,6 @@ public sealed class PortfolioBacktestRunner
             id++;
         }
 
-        var compositeMarketScore = BuildCompositeMarketScores(
-            selectedMarkets,
-            rawNetPnlByMarket,
-            tradeCountByMarket,
-            positiveStrategyHitsByMarket,
-            strategyParticipationByMarket,
-            leadershipRank);
-
-        var cio = new CioDynamicReallocationEngine(
-            topK: 6,
-            minWeight: 0.00m,
-            maxWeight: 0.35m,
-            maxWeightPerSymbol: 0.45m);
-
-        var cioWeights = cio.ComputeWeights(compositeMarketScore);
-
         var adjustedSymbolPnL = AggregateAdjustedSymbolPnL(symbolTfPnL);
         var adjustedStrategyPnL = AggregateAdjustedStrategyPnL(strategySymbolTfPnL);
 
@@ -1078,6 +1011,13 @@ public sealed class PortfolioBacktestRunner
             trustWeightsByType,
             ct);
 
+        var equalCioWeights = selectedMarkets.Count == 0
+            ? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase)
+            : selectedMarkets.ToDictionary(
+                x =&gt; $"CIO::{x.Symbol}::{x.Timeframe}",
+                x =&gt; 1m / selectedMarkets.Count,
+                StringComparer.OrdinalIgnoreCase);
+
         var result = new PortfolioBacktestResult
         {
             StrategyPnL = baseResult.StrategyPnL,
@@ -1090,20 +1030,33 @@ public sealed class PortfolioBacktestRunner
             MarketSelectionRejections = combinedRejections,
             SelectedMarkets = selectedMarkets.Select(x =&gt; $"{x.Symbol}::{x.Timeframe}").ToList(),
             WalkForwardFolds = walkForwardFolds,
-            CioSymbolTimeframeWeights = new Dictionary&lt;string, decimal&gt;(
-                cioWeights.ToDictionary(
-                    w =&gt; $"CIO::{w.Key.Symbol}::{w.Key.Timeframe}",
-                    w =&gt; w.Value),
-                StringComparer.OrdinalIgnoreCase),
-
+            CioSymbolTimeframeWeights = equalCioWeights,
             MarketAllocationWeights = new Dictionary&lt;string, decimal&gt;(
                 marketAllocationWeights.ToDictionary(
                     x =&gt; $"{x.Key.Symbol}::{x.Key.Timeframe}",
                     x =&gt; x.Value),
                 StringComparer.OrdinalIgnoreCase),
-
             CashAllocationWeight = unallocatedCashWeight
         };
+
+        var reportingRunUtc = DateTime.UtcNow;
+
+        new Report32TradeBlotterEntryExitReasonJournalService().GenerateAndWrite(
+            nodes,
+            result.SelectedMarkets,
+            reportingRunUtc);
+
+        var benchmark = ResolveBenchmarkSnapshot(selectedMarkets);
+
+        new Report33TradeIntelligenceMasterReportService().GenerateAndWrite(
+            nodes,
+            result,
+            PortfolioCapital,
+            reportingRunUtc,
+            benchmark.Symbol,
+            benchmark.Timeframe,
+            benchmark.StartPrice,
+            benchmark.EndPrice);
 
         return result;
     }
@@ -14528,7 +14481,7 @@ public sealed class Report32TradeBlotterEntryExitReasonJournalService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report33TradeIntelligenceMasterReportService.cs
 TYPE: .cs
-SIZE: 32.5 KB
+SIZE: 32.51 KB
 LINES: 683
 ==============================
 using System.Globalization;
