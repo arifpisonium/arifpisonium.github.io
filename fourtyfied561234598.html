@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__10-48-37.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__10-48-37.txt
-GENERATED: 2026-04-13 10:48:37
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__12-35-16.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__12-35-16.txt
+GENERATED: 2026-04-13 12:35:16
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -24,9 +24,10 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
+│       │   ├───361aee29-d6b9-4007-98e5-e2a9ba31082d.vsidx
+│       │   ├───37664347-72be-4f14-9c89-981f9f698e7c.vsidx
 │       │   ├───7ad619e9-3817-460b-9c15-835554c0d697.vsidx
-│       │   ├───bb45ff7d-ddcb-417e-9e60-ce8b36dfb671.vsidx
-│       │   └───e2449668-b370-45fd-a653-33a257c39d10.vsidx
+│       │   └───bb45ff7d-ddcb-417e-9e60-ce8b36dfb671.vsidx
 │       └───v18
 │           ├───.futdcache.v2
 │           ├───.suo
@@ -123,6 +124,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report33TradeIntelligenceMasterReportService.cs
 │   │   ├───Report34TradeBlotterCompactService.cs
 │   │   ├───Report35TradeIntelligenceCompactService.cs
+│   │   ├───Report36SoloStrategyScoreSummaryService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -672,8 +674,8 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 60.9 KB
-LINES: 1589
+SIZE: 61.06 KB
+LINES: 1596
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
@@ -1075,6 +1077,11 @@ public sealed class PortfolioBacktestRunner
         new Report35TradeIntelligenceCompactService().GenerateAndWrite(
             nodes,
             result,
+            reportingRunUtc);
+
+        new Report36SoloStrategyScoreSummaryService().GenerateAndWrite(
+            nodes,
+            result.SelectedMarkets,
             reportingRunUtc);
 
         return result;
@@ -2264,6 +2271,8 @@ public sealed class PortfolioBacktestRunner
         public decimal EffectiveMinRelativeToLeaderPreTradeScore { get; init; }
     }
 }
+
+
 
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\GlobalUsings.cs
@@ -15673,6 +15682,309 @@ public sealed class Report35TradeIntelligenceCompactService
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report36SoloStrategyScoreSummaryService.cs
+TYPE: .cs
+SIZE: 11.57 KB
+LINES: 296
+==============================
+using System.Globalization;
+using System.Text;
+using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
+using TQGA.Application.Portfolio;
+using TQGA.Domain.Trading;
+
+namespace TQGA.Application.Services;
+
+public sealed class Report36SoloStrategyScoreSummaryService
+{
+    public void GenerateAndWrite(
+        IReadOnlyList&lt;StrategyBacktestNode&gt; nodes,
+        IReadOnlyList&lt;string&gt; selectedMarkets,
+        DateTime runUtc)
+    {
+        ArgumentNullException.ThrowIfNull(nodes);
+        ArgumentNullException.ThrowIfNull(selectedMarkets);
+
+        // Solo report only makes sense when exactly one strategy node exists.
+        if (nodes.Count != 1)
+            return;
+
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        StrategyBacktestNode node = nodes[0];
+
+        string stamp = PakistanTime.Stamp(runUtc);
+        string path = Path.Combine(
+            DataPaths.Reports,
+            $"REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_{stamp}.txt");
+
+        var symbolToTimeframe = BuildSymbolToTimeframeMap(selectedMarkets);
+
+        var trades = node.Ledger.Trades
+            .Select((trade, idx) =&gt; BuildRow(node, trade, idx + 1, symbolToTimeframe))
+            .OrderBy(x =&gt; x.EntryTimeUtc)
+            .ToList();
+
+        var closedTrades = trades.Where(x =&gt; x.IsClosed).ToList();
+        var positiveTrades = closedTrades.Where(x =&gt; x.NetPnl &gt; 0m).ToList();
+        var negativeTrades = closedTrades.Where(x =&gt; x.NetPnl &lt; 0m).ToList();
+        var rTrades = closedTrades.Where(x =&gt; x.RMultiple.HasValue).ToList();
+
+        decimal netPnl = closedTrades.Sum(x =&gt; x.NetPnl);
+        decimal expectancy = closedTrades.Count == 0 ? 0m : netPnl / closedTrades.Count;
+        decimal avgR = rTrades.Count == 0 ? 0m : rTrades.Sum(x =&gt; x.RMultiple!.Value) / rTrades.Count;
+        decimal worstR = rTrades.Count == 0 ? 0m : rTrades.Min(x =&gt; x.RMultiple!.Value);
+        decimal bestR = rTrades.Count == 0 ? 0m : rTrades.Max(x =&gt; x.RMultiple!.Value);
+
+        int breadthMarketsTraded = closedTrades
+            .Select(x =&gt; x.MarketKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        int breadthMarketsPositive = closedTrades
+            .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .Count(g =&gt; g.Sum(x =&gt; x.NetPnl) &gt; 0m);
+
+        int breadthMarketsNegative = closedTrades
+            .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+            .Count(g =&gt; g.Sum(x =&gt; x.NetPnl) &lt; 0m);
+
+        int severeLossCount = rTrades.Count(x =&gt; x.RMultiple!.Value &lt;= -2.0m);
+        int catastrophicLossCount = rTrades.Count(x =&gt; x.RMultiple!.Value &lt;= -3.0m);
+
+        int tpMissLikeCount = closedTrades.Count(x =&gt;
+            x.FavorableExcursion &gt; 0m &amp;&amp;
+            x.FavorableExcursion &gt; Math.Max(0m, x.NetPnl) * 1.50m);
+
+        int lateHoldBleedLikeCount = closedTrades.Count(x =&gt;
+            x.FavorableExcursion &gt; 0m &amp;&amp;
+            x.NetPnl &lt; x.FavorableExcursion * 0.35m);
+
+        string slHitPattern = BuildSlHitPattern(
+            severeLossCount,
+            catastrophicLossCount,
+            negativeTrades);
+
+        string tpMissPattern = BuildTpMissPattern(
+            tpMissLikeCount,
+            lateHoldBleedLikeCount,
+            positiveTrades,
+            closedTrades);
+
+        string decision = BuildDecision(
+            expectancy,
+            avgR,
+            worstR,
+            breadthMarketsPositive,
+            breadthMarketsTraded);
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine("REPORT 36 — SOLO STRATEGY SCORE SUMMARY");
+        sb.AppendLine("=======================================");
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine("Compact solo-strategy score summary derived from REPORT 34 / REPORT 35 trade-level data.");
+        sb.AppendLine();
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Run Timestamp (PKT)                : {PakistanTime.FormatLabel(runUtc)}");
+        sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine($"Strategy Id                        : S{node.StrategyId:00}");
+        sb.AppendLine($"Strategy Name                      : {node.StrategyName}");
+        sb.AppendLine($"Closed Trades                      : {closedTrades.Count}");
+        sb.AppendLine($"Winning Trades                     : {positiveTrades.Count}");
+        sb.AppendLine($"Losing Trades                      : {negativeTrades.Count}");
+        sb.AppendLine();
+        sb.AppendLine("FINAL SCORECARD");
+        sb.AppendLine("---------------");
+        sb.AppendLine($"Net P&amp;L                            : {netPnl:F4}");
+        sb.AppendLine($"Expectancy                         : {expectancy:F6}");
+        sb.AppendLine($"Avg R                              : {avgR:F4}");
+        sb.AppendLine($"Worst R                            : {worstR:F4}");
+        sb.AppendLine($"Best R                             : {bestR:F4}");
+        sb.AppendLine($"Symbol Breadth Traded              : {breadthMarketsTraded}");
+        sb.AppendLine($"Symbol Breadth Positive            : {breadthMarketsPositive}");
+        sb.AppendLine($"Symbol Breadth Negative            : {breadthMarketsNegative}");
+        sb.AppendLine($"Likely SL-Hit Pattern              : {slHitPattern}");
+        sb.AppendLine($"Likely TP-Miss Pattern             : {tpMissPattern}");
+        sb.AppendLine($"Decision                           : {decision}");
+        sb.AppendLine();
+        sb.AppendLine("RISK / EXPECTANCY FLAGS");
+        sb.AppendLine("-----------------------");
+        sb.AppendLine($"Severe Loss Count (R &lt;= -2)        : {severeLossCount}");
+        sb.AppendLine($"Catastrophic Loss Count (R &lt;= -3)  : {catastrophicLossCount}");
+        sb.AppendLine($"TP-Miss-Like Count                 : {tpMissLikeCount}");
+        sb.AppendLine($"Late-Hold-Bleed-Like Count         : {lateHoldBleedLikeCount}");
+        sb.AppendLine();
+        sb.AppendLine("TOP POSITIVE MARKETS");
+        sb.AppendLine("--------------------");
+        foreach (var item in closedTrades
+                     .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+                     .Select(g =&gt; new { MarketKey = g.Key, NetPnl = g.Sum(x =&gt; x.NetPnl) })
+                     .OrderByDescending(x =&gt; x.NetPnl)
+                     .Take(10))
+        {
+            sb.AppendLine($"{item.MarketKey,-24} {item.NetPnl,14:F4}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("TOP NEGATIVE MARKETS");
+        sb.AppendLine("--------------------");
+        foreach (var item in closedTrades
+                     .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
+                     .Select(g =&gt; new { MarketKey = g.Key, NetPnl = g.Sum(x =&gt; x.NetPnl) })
+                     .OrderBy(x =&gt; x.NetPnl)
+                     .Take(10))
+        {
+            sb.AppendLine($"{item.MarketKey,-24} {item.NetPnl,14:F4}");
+        }
+
+        File.WriteAllText(path, sb.ToString());
+    }
+
+    private static Dictionary&lt;string, string&gt; BuildSymbolToTimeframeMap(IReadOnlyList&lt;string&gt; selectedMarkets)
+    {
+        var output = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string market in selectedMarkets)
+        {
+            if (string.IsNullOrWhiteSpace(market))
+                continue;
+
+            string[] parts = market.Split(new[] { "::" }, StringSplitOptions.None);
+            if (parts.Length &lt; 2)
+                continue;
+
+            output[parts[0].Trim()] = parts[1].Trim();
+        }
+
+        return output;
+    }
+
+    private static Row BuildRow(
+        StrategyBacktestNode node,
+        Trade trade,
+        int tradeId,
+        IReadOnlyDictionary&lt;string, string&gt; symbolToTimeframe)
+    {
+        string timeframe = symbolToTimeframe.TryGetValue(trade.Symbol, out var tf)
+            ? tf
+            : "UNKNOWN_TF";
+
+        decimal holdingMinutes = trade.ExitTime.HasValue
+            ? (decimal)(trade.ExitTime.Value - trade.EntryTime).TotalMinutes
+            : 0m;
+
+        decimal grossPnl = trade.RealizedPnL;
+        decimal commission = 0m;
+        decimal netPnl = grossPnl - commission;
+
+        decimal? rMoney = null;
+        decimal? rMultiple = null;
+
+        if (trade.StopLossAtEntry.HasValue)
+        {
+            decimal riskPerUnit = Math.Abs(trade.EntryPrice - trade.StopLossAtEntry.Value);
+            if (riskPerUnit &gt; 0m)
+            {
+                rMoney = riskPerUnit * trade.Quantity;
+                if (rMoney.Value &gt; 0m)
+                    rMultiple = netPnl / rMoney.Value;
+            }
+        }
+
+        return new Row(
+            TradeId: tradeId,
+            StrategyId: node.StrategyId,
+            StrategyName: node.StrategyName ?? $"S{node.StrategyId:00}",
+            MarketKey: $"{trade.Symbol}::{timeframe}",
+            EntryTimeUtc: trade.EntryTime,
+            IsClosed: trade.IsClosed,
+            NetPnl: netPnl,
+            FavorableExcursion: trade.FavorableExcursion * trade.Quantity,
+            AdverseExcursion: trade.AdverseExcursion * trade.Quantity,
+            RMultiple: rMultiple,
+            HoldingMinutes: holdingMinutes);
+    }
+
+    private static string BuildSlHitPattern(
+        int severeLossCount,
+        int catastrophicLossCount,
+        IReadOnlyList&lt;Row&gt; negativeTrades)
+    {
+        decimal avgNegativeHold = negativeTrades.Count == 0
+            ? 0m
+            : negativeTrades.Sum(x =&gt; x.HoldingMinutes) / negativeTrades.Count;
+
+        if (catastrophicLossCount &gt; 0)
+            return $"CAT_TAILS_PRESENT (catR={catastrophicLossCount}, avgNegHoldMin={avgNegativeHold:F0})";
+
+        if (severeLossCount &gt; 0)
+            return $"SEVERE_R_TAILS (sevR={severeLossCount}, avgNegHoldMin={avgNegativeHold:F0})";
+
+        return $"CONTROLLED_NEGATIVE_R (avgNegHoldMin={avgNegativeHold:F0})";
+    }
+
+    private static string BuildTpMissPattern(
+        int tpMissLikeCount,
+        int lateHoldBleedLikeCount,
+        IReadOnlyList&lt;Row&gt; positiveTrades,
+        IReadOnlyList&lt;Row&gt; closedTrades)
+    {
+        if (closedTrades.Count == 0)
+            return "NO_TRADES";
+
+        decimal tpMissRate = (decimal)tpMissLikeCount / closedTrades.Count;
+        decimal bleedRate = (decimal)lateHoldBleedLikeCount / closedTrades.Count;
+
+        if (bleedRate &gt;= 0.20m)
+            return $"LATE_HOLD_BLEED (rate={bleedRate:P2})";
+
+        if (tpMissRate &gt;= 0.20m)
+            return $"UNDERMONETIZED_WINNERS (rate={tpMissRate:P2})";
+
+        return "TP_CAPTURE_ACCEPTABLE";
+    }
+
+    private static string BuildDecision(
+        decimal expectancy,
+        decimal avgR,
+        decimal worstR,
+        int breadthMarketsPositive,
+        int breadthMarketsTraded)
+    {
+        bool positive = expectancy &gt; 0m;
+        bool avgRPositive = avgR &gt; 0m;
+        bool tailControlled = worstR &gt; -3m;
+        bool breadthOk = breadthMarketsPositive &gt;= 2 &amp;&amp; breadthMarketsTraded &gt;= 2;
+
+        if (positive &amp;&amp; avgRPositive &amp;&amp; tailControlled &amp;&amp; breadthOk)
+            return "PROMOTE";
+
+        if (positive)
+            return "REFINE";
+
+        return "QUARANTINE";
+    }
+
+    private sealed record Row(
+        int TradeId,
+        int StrategyId,
+        string StrategyName,
+        string MarketKey,
+        DateTime EntryTimeUtc,
+        bool IsClosed,
+        decimal NetPnl,
+        decimal FavorableExcursion,
+        decimal AdverseExcursion,
+        decimal? RMultiple,
+        decimal HoldingMinutes);
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
 TYPE: .cs
 SIZE: 16.04 KB
@@ -19658,8 +19970,8 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 28.92 KB
-LINES: 811
+SIZE: 33.16 KB
+LINES: 944
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -19719,6 +20031,12 @@ public sealed class MainForm : Form
     private CheckedListBox? _coinNameList;
     private Button? _btnCoinAll;
     private Button? _btnCoinNone;
+
+    private Label? _lblSoloResearch;
+    private CheckBox? _chkSoloResearchMode;
+    private ComboBox? _cmbSoloStrategy;
+    private bool _suppressSoloResearchSync;
+    private const string DefaultSoloStrategyTypeName = "EmaTrendQuantStrategy";
 
     private static readonly Dictionary&lt;string, IReadOnlyList&lt;string&gt;&gt; CoinCategories =
         new(StringComparer.OrdinalIgnoreCase)
@@ -19841,6 +20159,44 @@ public sealed class MainForm : Form
         _btnCoinAll.Click += (_, _) =&gt; SetAllChecked(_coinNameList, true);
         _btnCoinNone.Click += (_, _) =&gt; SetAllChecked(_coinNameList, false);
 
+        _lblSoloResearch = new Label { Text = "Solo Research Mode:", Left = 300, Top = 665, Width = 220 };
+        _chkSoloResearchMode = new CheckBox
+        {
+            Text = "AUTO-CHECK ONLY ACTIVE STRATEGY",
+            Left = 300,
+            Top = 690,
+            Width = 280,
+            Checked = false
+        };
+        _cmbSoloStrategy = new ComboBox
+        {
+            Left = 300,
+            Top = 720,
+            Width = 330,
+            DropDownStyle = ComboBoxStyle.DropDownList
+        };
+
+        _chkSoloResearchMode.CheckedChanged += (_, _) =&gt; ApplySoloResearchSelectionFromUi();
+        _cmbSoloStrategy.SelectedIndexChanged += (_, _) =&gt;
+        {
+            if (_chkSoloResearchMode?.Checked == true)
+                ApplySoloResearchSelectionFromUi();
+        };
+
+        _strategyList.ItemCheck += (_, _) =&gt;
+        {
+            if (_suppressSoloResearchSync)
+                return;
+
+            BeginInvoke((Action)(() =&gt;
+            {
+                if (_chkSoloResearchMode?.Checked == true)
+                    ApplySoloResearchSelectionFromUi();
+                else
+                    SyncSoloComboFromCheckedStrategy();
+            }));
+        };
+
         _coinCategoryList.ItemCheck += (_, _) =&gt; BeginInvoke(new Action(RefreshCoinNames));
 
         Controls.AddRange(
@@ -19850,7 +20206,8 @@ public sealed class MainForm : Form
             _lblStrategies, _strategyList, _btnSelectAll, _btnSelectNone,
             _lblTimeframes, _timeframeList, _btnTfAll, _btnTfNone,
             _lblCoinCategories, _coinCategoryList, _btnCatAll, _btnCatNone,
-            _lblCoinNames, _coinNameList, _btnCoinAll, _btnCoinNone
+            _lblCoinNames, _coinNameList, _btnCoinAll, _btnCoinNone,
+            _lblSoloResearch, _chkSoloResearchMode, _cmbSoloStrategy
         ]);
     }
 
@@ -19862,6 +20219,7 @@ public sealed class MainForm : Form
         LoadTimeframeList();
         LoadCoinCategories();
         RefreshCoinNames();
+        ApplySoloResearchSelectionFromUi();
         MessageBox.Show("TQGA READY", "BOOT");
     }
 
@@ -19871,12 +20229,97 @@ public sealed class MainForm : Form
             return;
 
         _strategyList.Items.Clear();
+        _cmbSoloStrategy?.Items.Clear();
 
         using var scope = _sp.CreateScope();
         var orchestrator = scope.ServiceProvider.GetRequiredService&lt;PortfolioBacktestOrchestrator&gt;();
 
-        foreach (Type t in orchestrator.GetRegisteredStrategies())
-            _strategyList.Items.Add(new StrategyListItem(t), true);
+        List&lt;StrategyListItem&gt; strategyItems = orchestrator
+            .GetRegisteredStrategies()
+            .Select(t =&gt; new StrategyListItem(t))
+            .ToList();
+
+        foreach (StrategyListItem item in strategyItems)
+        {
+            _strategyList.Items.Add(item, true);
+            _cmbSoloStrategy?.Items.Add(item);
+        }
+
+        if (_cmbSoloStrategy != null &amp;&amp; _cmbSoloStrategy.Items.Count &gt; 0)
+        {
+            int preferredIndex = -1;
+
+            for (int i = 0; i &lt; _cmbSoloStrategy.Items.Count; i++)
+            {
+                if (_cmbSoloStrategy.Items[i] is StrategyListItem sli &amp;&amp;
+                    sli.Type.Name.Equals(DefaultSoloStrategyTypeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    preferredIndex = i;
+                    break;
+                }
+            }
+
+            _cmbSoloStrategy.SelectedIndex = preferredIndex &gt;= 0 ? preferredIndex : 0;
+        }
+
+        SyncSoloComboFromCheckedStrategy();
+    }
+
+    private void ApplySoloResearchSelectionFromUi()
+    {
+        if (_strategyList == null || _cmbSoloStrategy == null || _chkSoloResearchMode == null)
+            return;
+
+        if (!_chkSoloResearchMode.Checked)
+        {
+            SyncSoloComboFromCheckedStrategy();
+            return;
+        }
+
+        if (_cmbSoloStrategy.SelectedItem is not StrategyListItem activeItem)
+            return;
+
+        _suppressSoloResearchSync = true;
+        try
+        {
+            for (int i = 0; i &lt; _strategyList.Items.Count; i++)
+            {
+                if (_strategyList.Items[i] is StrategyListItem item)
+                {
+                    bool shouldBeChecked = item.Type == activeItem.Type;
+                    _strategyList.SetItemChecked(i, shouldBeChecked);
+                }
+            }
+        }
+        finally
+        {
+            _suppressSoloResearchSync = false;
+        }
+    }
+
+    private void SyncSoloComboFromCheckedStrategy()
+    {
+        if (_strategyList == null || _cmbSoloStrategy == null)
+            return;
+
+        List&lt;StrategyListItem&gt; checkedItems = _strategyList.CheckedItems
+            .OfType&lt;StrategyListItem&gt;()
+            .ToList();
+
+        if (checkedItems.Count != 1)
+            return;
+
+        StrategyListItem active = checkedItems[0];
+
+        for (int i = 0; i &lt; _cmbSoloStrategy.Items.Count; i++)
+        {
+            if (_cmbSoloStrategy.Items[i] is StrategyListItem item &amp;&amp;
+                item.Type == active.Type)
+            {
+                _cmbSoloStrategy.SelectedIndex = i;
+                break;
+            }
+        }
     }
 
     private void LoadTimeframeList()
@@ -20465,6 +20908,8 @@ $@"&lt;!DOCTYPE html&gt;
         if (_btnCatNone != null) _btnCatNone.Enabled = enabled;
         if (_btnCoinAll != null) _btnCoinAll.Enabled = enabled;
         if (_btnCoinNone != null) _btnCoinNone.Enabled = enabled;
+        if (_chkSoloResearchMode != null) _chkSoloResearchMode.Enabled = enabled;
+        if (_cmbSoloStrategy != null) _cmbSoloStrategy.Enabled = enabled;
     }
 
     private sealed record StrategyListItem(Type Type)
