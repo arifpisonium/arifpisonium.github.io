@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__12-35-16.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__12-35-16.txt
-GENERATED: 2026-04-13 12:35:16
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__13-39-06.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__13-39-06.txt
+GENERATED: 2026-04-13 13:39:06
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -25,7 +25,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
 │       │   ├───361aee29-d6b9-4007-98e5-e2a9ba31082d.vsidx
-│       │   ├───37664347-72be-4f14-9c89-981f9f698e7c.vsidx
+│       │   ├───3dcc8ccd-0d98-4754-963b-d6c127399715.vsidx
 │       │   ├───7ad619e9-3817-460b-9c15-835554c0d697.vsidx
 │       │   └───bb45ff7d-ddcb-417e-9e60-ce8b36dfb671.vsidx
 │       └───v18
@@ -5178,8 +5178,8 @@ public sealed class A84ChatGptUploadReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\A84ExecutiveSummaryReportService.cs
 TYPE: .cs
-SIZE: 7.76 KB
-LINES: 241
+SIZE: 9.17 KB
+LINES: 275
 ==============================
 using System;
 using System.Collections.Generic;
@@ -5188,6 +5188,7 @@ using System.Linq;
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -5206,11 +5207,14 @@ public sealed class A84ExecutiveSummaryReportService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        var outFile = Path.Combine(
-            DataPaths.Reports,
-            $"A84_00_EXECUTIVE_SUMMARY_{runUtc:yyyyMMdd_HHmmss}.txt");
+        // Use PKT stamp for the file name so the visible file chronology matches your local review clock.
+        string pktStamp = PakistanTime.Stamp(runUtc);
 
-        // PATCH 14C:
+        string outFile = Path.Combine(
+            DataPaths.Reports,
+            $"A84_00_EXECUTIVE_SUMMARY_{pktStamp}.txt");
+
+        // PATCH 14C preserved:
         // Use ONLY real equity timestamps for Start/End time.
         // Never allow DateTime.MinValue to be published.
         var eq = result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;();
@@ -5230,8 +5234,8 @@ public sealed class A84ExecutiveSummaryReportService
 
         if (realPoints.Count &gt; 0)
         {
-            startTimeUtc = realPoints.First().Key;
-            endTimeUtc = realPoints.Last().Key;
+            startTimeUtc = NormalizeUtc(realPoints.First().Key);
+            endTimeUtc = NormalizeUtc(realPoints.Last().Key);
             startEquity = realPoints.First().Value;
             endEquity = realPoints.Last().Value;
         }
@@ -5245,7 +5249,7 @@ public sealed class A84ExecutiveSummaryReportService
             endEquity = ordered.Last().Value;
         }
 
-        var totalReturnPct = startEquity &lt;= 0m
+        decimal totalReturnPct = startEquity &lt;= 0m
             ? 0m
             : ((endEquity / startEquity) - 1m) * 100m;
 
@@ -5253,14 +5257,14 @@ public sealed class A84ExecutiveSummaryReportService
             .Select((t, idx) =&gt; $"  S{idx + 1:00}  {t.Name}")
             .ToList();
 
-        var topStrategies = result.StrategyPnL
+        var topStrategies = (result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;())
             .OrderByDescending(x =&gt; x.Value)
             .Take(30)
             .Select(x =&gt;
                 $"S{x.Key:00}  {PadRightSafe(StrategyNameFromSelection(selectedStrategies, x.Key), 28)}  PnL  {x.Value,14:0.00}")
             .ToList();
 
-        var topMarkets = result.SymbolTimeframePnL
+        var topMarkets = (result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase))
             .OrderByDescending(x =&gt; x.Value)
             .Take(30)
             .Select(x =&gt;
@@ -5272,7 +5276,7 @@ public sealed class A84ExecutiveSummaryReportService
         {
             if (Directory.Exists(DataPaths.Reports))
             {
-                var cutoff = runUtc.AddMinutes(-recentMinutesWindow);
+                DateTime cutoff = runUtc.AddMinutes(-recentMinutesWindow);
 
                 recentFiles = Directory
                     .GetFiles(DataPaths.Reports)
@@ -5280,7 +5284,8 @@ public sealed class A84ExecutiveSummaryReportService
                     .Where(fi =&gt; fi.LastWriteTimeUtc &gt;= cutoff &amp;&amp; fi.LastWriteTimeUtc &lt;= runUtc.AddMinutes(1))
                     .OrderByDescending(fi =&gt; fi.LastWriteTimeUtc)
                     .Take(50)
-                    .Select(fi =&gt; $"{fi.LastWriteTimeUtc:yyyy-MM-dd HH:mm:ss}  {fi.Name}")
+                    .Select(fi =&gt;
+                        $"{PakistanTime.FormatLabel(fi.LastWriteTimeUtc)}  |  {fi.LastWriteTimeUtc:yyyy-MM-dd HH:mm:ss} UTC  |  {fi.Name}")
                     .ToList();
             }
         }
@@ -5294,21 +5299,26 @@ public sealed class A84ExecutiveSummaryReportService
         sb.AppendLine("A84_00 — EXECUTIVE SUMMARY");
         sb.AppendLine("==========================");
         sb.AppendLine();
+
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
-        sb.AppendLine("PATCH_14C_A84_00_REAL_FIRST_TIMESTAMP_ONLY");
+        sb.AppendLine("PATCH_14D_A84_00_PKT_ABOVE_UTC");
         sb.AppendLine("WRITER = A84ExecutiveSummaryReportService.GenerateAndWrite");
+        sb.AppendLine("RULE   = PKT is printed first, UTC printed immediately below");
         sb.AppendLine("RULE   = DateTime.MinValue is never published");
         sb.AppendLine();
 
-        sb.AppendLine($"Run Timestamp (UTC): {runUtc:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"Strategies Selected: {selectedStrategies.Count}");
-        sb.AppendLine($"Equity Points      : {eq.Count}");
-        sb.AppendLine($"Start Time (UTC)   : {FormatUtc(startTimeUtc)}");
-        sb.AppendLine($"End Time (UTC)     : {FormatUtc(endTimeUtc)}");
-        sb.AppendLine($"Start Equity       : {startEquity:0.00}");
-        sb.AppendLine($"End Equity         : {endEquity:0.00}");
-        sb.AppendLine($"Total Return       : {totalReturnPct:0.00}%");
+        sb.AppendLine($"Run Timestamp (PKT)   : {PakistanTime.FormatLabel(runUtc)}");
+        sb.AppendLine($"Run Timestamp (UTC)   : {FormatUtc(runUtc)}");
+        sb.AppendLine($"Strategies Selected   : {selectedStrategies.Count}");
+        sb.AppendLine($"Equity Points         : {eq.Count}");
+        sb.AppendLine($"Start Time (PKT)      : {FormatPkt(startTimeUtc)}");
+        sb.AppendLine($"Start Time (UTC)      : {FormatUtc(startTimeUtc)}");
+        sb.AppendLine($"End Time (PKT)        : {FormatPkt(endTimeUtc)}");
+        sb.AppendLine($"End Time (UTC)        : {FormatUtc(endTimeUtc)}");
+        sb.AppendLine($"Start Equity          : {startEquity:0.00}");
+        sb.AppendLine($"End Equity            : {endEquity:0.00}");
+        sb.AppendLine($"Total Return          : {totalReturnPct:0.00}%");
         sb.AppendLine();
 
         sb.AppendLine("POST-GATING CIO SUMMARY");
@@ -5319,8 +5329,8 @@ public sealed class A84ExecutiveSummaryReportService
         }
         else
         {
-            sb.AppendLine($"Markets Allocated : {cioWeightsFinal.Count}");
-            sb.AppendLine($"Top Weight        : {cioWeightsFinal.Values.Max():P2}");
+            sb.AppendLine($"Markets Allocated     : {cioWeightsFinal.Count}");
+            sb.AppendLine($"Top Weight            : {cioWeightsFinal.Values.Max():P2}");
             sb.AppendLine();
 
             foreach (var kv in cioWeightsFinal
@@ -5340,7 +5350,7 @@ public sealed class A84ExecutiveSummaryReportService
         }
         else
         {
-            foreach (var line in strategyLines)
+            foreach (string line in strategyLines)
                 sb.AppendLine(line);
         }
 
@@ -5353,7 +5363,7 @@ public sealed class A84ExecutiveSummaryReportService
         }
         else
         {
-            foreach (var line in topStrategies)
+            foreach (string line in topStrategies)
                 sb.AppendLine(line);
         }
 
@@ -5366,7 +5376,7 @@ public sealed class A84ExecutiveSummaryReportService
         }
         else
         {
-            foreach (var line in topMarkets)
+            foreach (string line in topMarkets)
                 sb.AppendLine(line);
         }
 
@@ -5379,18 +5389,18 @@ public sealed class A84ExecutiveSummaryReportService
         }
         else
         {
-            foreach (var line in recentFiles)
+            foreach (string line in recentFiles)
                 sb.AppendLine(line);
         }
 
-        File.WriteAllText(outFile, sb.ToString());
+        File.WriteAllText(outFile, sb.ToString(), Encoding.UTF8);
     }
 
     private static string StrategyNameFromSelection(
         IReadOnlyList&lt;Type&gt; selectedStrategies,
         int strategyId)
     {
-        var idx = strategyId - 1;
+        int idx = strategyId - 1;
 
         if (idx &lt; 0 || idx &gt;= selectedStrategies.Count)
             return $"Strategy_{strategyId:00}";
@@ -5414,12 +5424,36 @@ public sealed class A84ExecutiveSummaryReportService
         return value[..(totalWidth - 3)] + "...";
     }
 
+    private static DateTime NormalizeUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc =&gt; value,
+            DateTimeKind.Local =&gt; value.ToUniversalTime(),
+            _ =&gt; DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
+    }
+
+    private static string FormatPkt(DateTime? value)
+    {
+        if (!value.HasValue)
+            return "N/A";
+
+        return PakistanTime.FormatLabel(NormalizeUtc(value.Value));
+    }
+
+    private static string FormatUtc(DateTime value)
+    {
+        DateTime normalized = NormalizeUtc(value);
+        return $"{normalized:yyyy-MM-dd HH:mm:ss} UTC";
+    }
+
     private static string FormatUtc(DateTime? value)
     {
         if (!value.HasValue)
             return "N/A";
 
-        return value.Value.ToString("yyyy-MM-dd HH:mm:ss");
+        return FormatUtc(value.Value);
     }
 }
 
