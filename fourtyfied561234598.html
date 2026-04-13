@@ -9,31 +9,22 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__13-39-06.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__13-39-06.txt
-GENERATED: 2026-04-13 13:39:06
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__15-24-19.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__15-24-19.txt
+GENERATED: 2026-04-13 15:24:19
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
-│   ├───ProjectEvaluation
-│   │   ├───tqga.metadata.v10.bin
-│   │   ├───tqga.projects.v10.bin
-│   │   └───tqga.strings.v10.bin
 │   └───TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   ├───361aee29-d6b9-4007-98e5-e2a9ba31082d.vsidx
-│       │   ├───3dcc8ccd-0d98-4754-963b-d6c127399715.vsidx
-│       │   ├───7ad619e9-3817-460b-9c15-835554c0d697.vsidx
-│       │   └───bb45ff7d-ddcb-417e-9e60-ce8b36dfb671.vsidx
+│       │   └───867ac56f-f99c-4318-a8a6-446e82f4ef02.vsidx
 │       └───v18
-│           ├───.futdcache.v2
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
-│           ├───DocumentLayout.json
-│           └───HierarchyCache.v1.txt
+│           └───DocumentLayout.json
 ├───TQGA.Application
 │   ├───Accounting
 │   │   ├───EquityCurve.cs
@@ -674,22 +665,20 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 61.06 KB
-LINES: 1596
+SIZE: 62.4 KB
+LINES: 1630
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
+using TQGA.Application.Backtesting;
 using TQGA.Application.Interfaces;
 using TQGA.Application.Paths;
 using TQGA.Application.Portfolio;
 using TQGA.Application.Risk;
-using TQGA.Application.Reporting;
 using TQGA.Application.Services;
 using TQGA.Application.Strategy;
 using TQGA.Application.Trading;
 using TQGA.Domain.Market;
-
-namespace TQGA.Application.Backtesting;
 
 public sealed class PortfolioBacktestRunner
 {
@@ -844,11 +833,14 @@ public sealed class PortfolioBacktestRunner
 
         // Institutional trust-weighted capital map
         var trustWeightsByType = BuildStrategyTrustWeights(types);
-
-        int id = 1;
+        var stableStrategyIds = BuildStableStrategyIdMap(types);
 
         foreach (var type in types)
         {
+            if (!stableStrategyIds.TryGetValue(type, out int strategyId))
+                throw new InvalidOperationException(
+                    $"Stable strategy ID could not be resolved for type '{type.FullName}'.");
+
             using var scope = _root.CreateScope();
 
             var strategy = _factory.Create(type);
@@ -871,11 +863,11 @@ public sealed class PortfolioBacktestRunner
             decimal allocatedCapital = PortfolioCapital * strategyWeight;
             equity.Seed(allocatedCapital);
 
-            capitalWeights[id] = strategyWeight;
+            capitalWeights[strategyId] = strategyWeight;
 
             if (strategyWeight &lt;= 0m)
             {
-                strategyDiagnostics[id] = new TradeDecisionDiagnosticsSnapshot
+                strategyDiagnostics[strategyId] = new TradeDecisionDiagnosticsSnapshot
                 {
                     TicksProcessed = 0,
                     SignalLong = 0,
@@ -887,12 +879,11 @@ public sealed class PortfolioBacktestRunner
                 };
 
                 nodes.Add(new StrategyBacktestNode(
-                    id,
+                    strategyId,
                     strategy.Name,
                     ledger,
                     equity));
 
-                id++;
                 continue;
             }
 
@@ -971,7 +962,7 @@ public sealed class PortfolioBacktestRunner
                 else
                     symbolTfPnL[keyTf] = netDelta;
 
-                var keyStrTf = $"S{id:00}::{m.Symbol}::{m.Timeframe}";
+                var keyStrTf = $"S{strategyId:00}::{m.Symbol}::{m.Timeframe}";
                 if (strategySymbolTfPnL.ContainsKey(keyStrTf))
                     strategySymbolTfPnL[keyStrTf] += netDelta;
                 else
@@ -985,7 +976,7 @@ public sealed class PortfolioBacktestRunner
                     positiveStrategyHitsByMarket[m] += 1;
             }
 
-            strategyDiagnostics[id] = new TradeDecisionDiagnosticsSnapshot
+            strategyDiagnostics[strategyId] = new TradeDecisionDiagnosticsSnapshot
             {
                 TicksProcessed = diag.TicksProcessed,
                 SignalLong = diag.SignalLong,
@@ -997,12 +988,11 @@ public sealed class PortfolioBacktestRunner
             };
 
             nodes.Add(new StrategyBacktestNode(
-                id,
+                strategyId,
                 strategy.Name,
                 ledger,
                 equity));
 
-            id++;
         }
 
         var adjustedSymbolPnL = AggregateAdjustedSymbolPnL(symbolTfPnL);
@@ -1085,6 +1075,41 @@ public sealed class PortfolioBacktestRunner
             reportingRunUtc);
 
         return result;
+    }
+
+    private static Dictionary&lt;Type, int&gt; BuildStableStrategyIdMap(IReadOnlyList&lt;Type&gt; selectedTypes)
+    {
+        string[] canonicalTypeOrder =
+        [
+            "AltcoinLeadershipPullbackQuantStrategy",
+            "DiagnosticQuantStrategy",
+            "EmaRsiQuantStrategy",
+            "EmaTrendPullbackQuantStrategy",
+            "EmaTrendQuantStrategy",
+            "FourHourEarlyTrendContinuationQuantStrategy",
+            "RsiSwingQuantStrategy"
+        ];
+
+        var canonicalIds = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i &lt; canonicalTypeOrder.Length; i++)
+            canonicalIds[canonicalTypeOrder[i]] = i + 1;
+
+        var output = new Dictionary&lt;Type, int&gt;();
+        int nextDynamicId = canonicalTypeOrder.Length + 1;
+
+        foreach (Type type in selectedTypes.Distinct())
+        {
+            if (canonicalIds.TryGetValue(type.Name, out int stableId))
+            {
+                output[type] = stableId;
+                continue;
+            }
+
+            output[type] = nextDynamicId;
+            nextDynamicId++;
+        }
+
+        return output;
     }
 
     private Dictionary&lt;Type, decimal&gt; BuildStrategyTrustWeights(
@@ -20004,9 +20029,11 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 33.16 KB
-LINES: 944
+SIZE: 33.35 KB
+LINES: 950
 ==============================
+
+
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -20857,17 +20884,21 @@ $@"&lt;!DOCTYPE html&gt;
 
     private IReadOnlyList&lt;Type&gt; GetSelectedStrategyTypes(PortfolioBacktestOrchestrator orchestrator)
     {
+        ArgumentNullException.ThrowIfNull(orchestrator);
+
         if (_strategyList == null || _strategyList.Items.Count == 0)
-            return orchestrator.GetRegisteredStrategies();
+            throw new InvalidOperationException("Strategy list is not loaded.");
 
         List&lt;Type&gt; checkedItems = _strategyList.CheckedItems
             .OfType&lt;StrategyListItem&gt;()
             .Select(x =&gt; x.Type)
             .ToList();
 
-        return checkedItems.Count == 0
-            ? orchestrator.GetRegisteredStrategies()
-            : checkedItems;
+        if (checkedItems.Count == 0)
+            throw new InvalidOperationException(
+                "No strategy selected. Master reset / solo research mode requires at least one checked strategy.");
+
+        return checkedItems;
     }
 
     private IReadOnlyList&lt;string&gt; GetSelectedTimeframes()
