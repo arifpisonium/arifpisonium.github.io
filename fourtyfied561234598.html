@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__19-10-45.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__19-10-45.txt
-GENERATED: 2026-04-13 19:10:45
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__23-37-43.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__23-37-43.txt
+GENERATED: 2026-04-13 23:37:43
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -24,7 +24,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───83fd55a0-2ca7-4b17-ab80-33bb3787962b.vsidx
+│       │   └───b04b2858-e303-45e9-9369-68198e45b1a4.vsidx
 │       └───v18
 │           ├───.futdcache.v2
 │           ├───.suo
@@ -2920,8 +2920,8 @@ public readonly record struct MarketKey(string Symbol, string Timeframe)
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Portfolio\PortfolioBacktestOrchestrator.cs
 TYPE: .cs
-SIZE: 7.75 KB
-LINES: 212
+SIZE: 9.62 KB
+LINES: 261
 ==============================
 using System;
 using System.Collections.Generic;
@@ -3037,8 +3037,17 @@ public sealed class PortfolioBacktestOrchestrator
             fitnessSvc.RecomputeCioWeightsWithGating(result, allowedStrategyIds, cfg)
             ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
 
-        result.CanonicalCioPostGatingWeights =
-            PreserveCanonicalCioWeights(rawCanonicalCioPostGatingWeights);
+        var preservedCanonical = PreserveCanonicalCioWeights(rawCanonicalCioPostGatingWeights);
+
+        // PATCH 12 / SOLO MASTER RESET FALLBACK:
+        // If fitness-gated canonical CIO is empty, preserve deployable truth
+        // from the runner instead of allowing downstream A84 generation to crash.
+        if (preservedCanonical.Count == 0)
+        {
+            preservedCanonical = BuildCanonicalFallbackFromRunner(result);
+        }
+
+        result.CanonicalCioPostGatingWeights = preservedCanonical;
 
         // PATCH 20:
         // Canonical post-gating cash must survive into downstream reports.
@@ -3113,6 +3122,46 @@ public sealed class PortfolioBacktestOrchestrator
         }
 
         return cleaned;
+    }
+
+    private static Dictionary&lt;string, decimal&gt; BuildCanonicalFallbackFromRunner(
+        PortfolioBacktestResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        // First preference: runner market allocation weights
+        if (result.MarketAllocationWeights != null &amp;&amp; result.MarketAllocationWeights.Count &gt; 0)
+        {
+            return PreserveCanonicalCioWeights(
+                result.MarketAllocationWeights.ToDictionary(
+                    kv =&gt; kv.Key,
+                    kv =&gt; kv.Value,
+                    StringComparer.OrdinalIgnoreCase));
+        }
+
+        // Second preference: runner CIO symbol-timeframe weights
+        if (result.CioSymbolTimeframeWeights != null &amp;&amp; result.CioSymbolTimeframeWeights.Count &gt; 0)
+        {
+            return PreserveCanonicalCioWeights(
+                result.CioSymbolTimeframeWeights.ToDictionary(
+                    kv =&gt; NormalizeCanonicalKey(kv.Key),
+                    kv =&gt; kv.Value,
+                    StringComparer.OrdinalIgnoreCase));
+        }
+
+        return new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeCanonicalKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return string.Empty;
+
+        string trimmed = key.Trim();
+
+        return trimmed.StartsWith("CIO::", StringComparison.OrdinalIgnoreCase)
+            ? trimmed.Substring("CIO::".Length)
+            : trimmed;
     }
 
     private static decimal ComputeCanonicalCashWeight(
