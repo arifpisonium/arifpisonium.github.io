@@ -9,24 +9,19 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-13__23-37-43.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-13__23-37-43.txt
-GENERATED: 2026-04-13 23:37:43
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-14__11-56-23.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-14__11-56-23.txt
+GENERATED: 2026-04-14 11:56:23
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
-│   ├───ProjectEvaluation
-│   │   ├───tqga.metadata.v10.bin
-│   │   ├───tqga.projects.v10.bin
-│   │   └───tqga.strings.v10.bin
 │   └───TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───b04b2858-e303-45e9-9369-68198e45b1a4.vsidx
+│       │   └───e651f3a6-fbdb-4d41-bedc-617305563bbf.vsidx
 │       └───v18
-│           ├───.futdcache.v2
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
 │           └───DocumentLayout.json
@@ -7506,8 +7501,8 @@ $@"&lt;!DOCTYPE html&gt;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\FullReportService.cs
 TYPE: .cs
-SIZE: 5.02 KB
-LINES: 129
+SIZE: 5.79 KB
+LINES: 143
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
@@ -7522,6 +7517,7 @@ public sealed class FullReportService
     private const string Report33Prefix = "REPORT_33_TRADE_INTELLIGENCE_MASTER_";
     private const string Report34Prefix = "REPORT_34_TRADE_BLOTTER_";
     private const string Report35Prefix = "REPORT_35_TRADE_INTELLIGENCE_";
+    private const string Report36Prefix = "REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_";
 
     public string BuildCombinedReport()
     {
@@ -7545,8 +7541,9 @@ public sealed class FullReportService
         sb.AppendLine("REPORT 32 CSV omitted from combined report for GitHub size control.");
         sb.AppendLine("REPORT 33 TXT omitted from combined report for GitHub size control.");
         sb.AppendLine("REPORT 33 CSV omitted from combined report for GitHub size control.");
-        sb.AppendLine("REPORT 34 TRADE_BLOTTER included as compact replacement.");
-        sb.AppendLine("REPORT 35 TRADE_INTELLIGENCE included as compact replacement.");
+        sb.AppendLine("REPORT 34 TXT omitted from combined report. Publish separately as standalone Report_34.html.");
+        sb.AppendLine("REPORT 35 TXT omitted from combined report. Publish separately as standalone Report_35.html.");
+        sb.AppendLine("REPORT 36 TXT omitted from combined report. Publish separately as standalone Report_36.html.");
         sb.AppendLine();
 
         AppendCompactReplacementNotice(sb);
@@ -7592,11 +7589,19 @@ public sealed class FullReportService
 
         string fileName = Path.GetFileName(filePath);
 
-        // Exclude BOTH TXT and CSV for REPORT 32 and REPORT 33
         if (fileName.StartsWith(Report32Prefix, StringComparison.OrdinalIgnoreCase))
             return false;
 
         if (fileName.StartsWith(Report33Prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (fileName.StartsWith(Report34Prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (fileName.StartsWith(Report35Prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (fileName.StartsWith(Report36Prefix, StringComparison.OrdinalIgnoreCase))
             return false;
 
         return true;
@@ -7610,24 +7615,28 @@ public sealed class FullReportService
         string? report33Csv = GetLatestFile($"{Report33Prefix}*.csv");
         string? report34Txt = GetLatestFile($"{Report34Prefix}*.txt");
         string? report35Txt = GetLatestFile($"{Report35Prefix}*.txt");
+        string? report36Txt = GetLatestFile($"{Report36Prefix}*.txt");
 
         if (report32Txt != null)
-            sb.AppendLine($"OMITTED: {Path.GetFileName(report32Txt)} -- replaced by compact REPORT 34 in REPORT_ALL");
+            sb.AppendLine($"OMITTED: {Path.GetFileName(report32Txt)} -- superseded by standalone REPORT 34");
 
         if (report32Csv != null)
-            sb.AppendLine($"OMITTED: {Path.GetFileName(report32Csv)} -- replaced by compact REPORT 34 in REPORT_ALL");
+            sb.AppendLine($"OMITTED: {Path.GetFileName(report32Csv)} -- superseded by standalone REPORT 34");
 
         if (report33Txt != null)
-            sb.AppendLine($"OMITTED: {Path.GetFileName(report33Txt)} -- replaced by compact REPORT 35 in REPORT_ALL");
+            sb.AppendLine($"OMITTED: {Path.GetFileName(report33Txt)} -- superseded by standalone REPORT 35");
 
         if (report33Csv != null)
-            sb.AppendLine($"OMITTED: {Path.GetFileName(report33Csv)} -- replaced by compact REPORT 35 in REPORT_ALL");
+            sb.AppendLine($"OMITTED: {Path.GetFileName(report33Csv)} -- superseded by standalone REPORT 35");
 
         if (report34Txt != null)
-            sb.AppendLine($"INCLUDED: {Path.GetFileName(report34Txt)}");
+            sb.AppendLine($"STANDALONE: {Path.GetFileName(report34Txt)} -&gt; Publish to Report_34.html");
 
         if (report35Txt != null)
-            sb.AppendLine($"INCLUDED: {Path.GetFileName(report35Txt)}");
+            sb.AppendLine($"STANDALONE: {Path.GetFileName(report35Txt)} -&gt; Publish to Report_35.html");
+
+        if (report36Txt != null)
+            sb.AppendLine($"STANDALONE: {Path.GetFileName(report36Txt)} -&gt; Publish to Report_36.html");
     }
 
     private static string? GetLatestFile(string pattern)
@@ -7818,8 +7827,8 @@ public sealed class GitHubCodeAuditPublishResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubPagesPublishService.cs
 TYPE: .cs
-SIZE: 22.48 KB
-LINES: 545
+SIZE: 28.42 KB
+LINES: 645
 ==============================
 using System.ComponentModel;
 using System.Diagnostics;
@@ -7924,8 +7933,6 @@ public sealed class GitHubPagesPublishService
         if (string.IsNullOrWhiteSpace(sourceHtmlText))
             throw new InvalidOperationException($"REPORT_ALL_31 HTML file is empty: {latestReportHtmlPath}");
 
-        // Same operational discipline as code-audit publishing:
-        // manual GitHub web edits may exist, so always hard-sync local clone to remote first.
         RunGit(repoRootPath, "rebase --abort", allowFailure: true);
         RunGit(repoRootPath, $"fetch {RemoteName}");
         RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
@@ -7959,6 +7966,76 @@ public sealed class GitHubPagesPublishService
             PublishedIndexHtmlPath = publishedIndexHtmlPath,
             ArchivedHtmlPath = archivedHtmlPath,
             PublicUrl = "https://arifpisonium.github.io/"
+        };
+    }
+
+    public GitHubStandaloneReportsPublishResult PublishStandaloneReports343536(string repoRootPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(repoRootPath);
+
+        if (!Directory.Exists(repoRootPath))
+            throw new DirectoryNotFoundException($"GitHub Pages repo folder not found: {repoRootPath}");
+
+        EnsureGitRepository(repoRootPath);
+        Directory.CreateDirectory(DataPaths.Reports);
+
+        string report34SourcePath = GetLatestFileByPrefix("REPORT_34_TRADE_BLOTTER_");
+        string report35SourcePath = GetLatestFileByPrefix("REPORT_35_TRADE_INTELLIGENCE_");
+        string report36SourcePath = GetLatestFileByPrefix("REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_");
+
+        RunGit(repoRootPath, "rebase --abort", allowFailure: true);
+        RunGit(repoRootPath, $"fetch {RemoteName}");
+        RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
+
+        string report34HtmlPath = Path.Combine(repoRootPath, "Report_34.html");
+        string report35HtmlPath = Path.Combine(repoRootPath, "Report_35.html");
+        string report36HtmlPath = Path.Combine(repoRootPath, "Report_36.html");
+
+        File.WriteAllText(
+            report34HtmlPath,
+            BuildStandaloneReportPage(
+                title: "REPORT 34 — TRADE_BLOTTER",
+                reportFileName: Path.GetFileName(report34SourcePath),
+                reportText: File.ReadAllText(report34SourcePath, Encoding.UTF8),
+                rawHref: Path.GetFileName(report34SourcePath)),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        File.WriteAllText(
+            report35HtmlPath,
+            BuildStandaloneReportPage(
+                title: "REPORT 35 — TRADE_INTELLIGENCE",
+                reportFileName: Path.GetFileName(report35SourcePath),
+                reportText: File.ReadAllText(report35SourcePath, Encoding.UTF8),
+                rawHref: Path.GetFileName(report35SourcePath)),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        File.WriteAllText(
+            report36HtmlPath,
+            BuildStandaloneReportPage(
+                title: "REPORT 36 — SOLO_STRATEGY_SCORE_SUMMARY",
+                reportFileName: Path.GetFileName(report36SourcePath),
+                reportText: File.ReadAllText(report36SourcePath, Encoding.UTF8),
+                rawHref: Path.GetFileName(report36SourcePath)),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        RunGit(repoRootPath, "add Report_34.html Report_35.html Report_36.html");
+        RunGit(repoRootPath, $"commit -m \"TQGA publish standalone 34 35 36 {DateTime.UtcNow:yyyyMMdd_HHmmss}\"", allowNoChanges: true);
+        RunGit(repoRootPath, $"push {RemoteName} {BranchName}");
+
+        SaveRepoPath(repoRootPath);
+
+        return new GitHubStandaloneReportsPublishResult
+        {
+            RepoRootPath = repoRootPath,
+            Report34SourcePath = report34SourcePath,
+            Report35SourcePath = report35SourcePath,
+            Report36SourcePath = report36SourcePath,
+            PublishedReport34HtmlPath = report34HtmlPath,
+            PublishedReport35HtmlPath = report35HtmlPath,
+            PublishedReport36HtmlPath = report36HtmlPath,
+            Report34PublicUrl = "https://arifpisonium.github.io/Report_34.html",
+            Report35PublicUrl = "https://arifpisonium.github.io/Report_35.html",
+            Report36PublicUrl = "https://arifpisonium.github.io/Report_36.html"
         };
     }
 
@@ -8038,7 +8115,7 @@ public sealed class GitHubPagesPublishService
             }
             catch
             {
-                // Keep non-fatal. Git index cleanup above is the critical part.
+                // Non-fatal cleanup attempt.
             }
         }
     }
@@ -8222,51 +8299,14 @@ public sealed class GitHubPagesPublishService
         sb.AppendLine("    &lt;meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" /&gt;");
         sb.AppendLine("    &lt;title&gt;TQGA REPORT ALL 31&lt;/title&gt;");
         sb.AppendLine("    &lt;style&gt;");
-        sb.AppendLine("        body {");
-        sb.AppendLine("            font-family: Consolas, \"Courier New\", monospace;");
-        sb.AppendLine("            margin: 0;");
-        sb.AppendLine("            background: #f7f8fb;");
-        sb.AppendLine("            color: #111827;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        .wrap {");
-        sb.AppendLine("            max-width: 1400px;");
-        sb.AppendLine("            margin: 24px auto;");
-        sb.AppendLine("            padding: 24px;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        .card {");
-        sb.AppendLine("            background: #ffffff;");
-        sb.AppendLine("            border: 1px solid #d1d5db;");
-        sb.AppendLine("            border-radius: 12px;");
-        sb.AppendLine("            box-shadow: 0 2px 8px rgba(0,0,0,0.05);");
-        sb.AppendLine("            overflow: hidden;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        .head {");
-        sb.AppendLine("            padding: 18px 22px;");
-        sb.AppendLine("            border-bottom: 1px solid #e5e7eb;");
-        sb.AppendLine("            background: #f3f4f6;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        .title {");
-        sb.AppendLine("            font-size: 24px;");
-        sb.AppendLine("            font-weight: 700;");
-        sb.AppendLine("            margin: 0 0 8px 0;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        .meta {");
-        sb.AppendLine("            font-size: 14px;");
-        sb.AppendLine("            line-height: 1.6;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        pre {");
-        sb.AppendLine("            margin: 0;");
-        sb.AppendLine("            padding: 22px;");
-        sb.AppendLine("            white-space: pre-wrap;");
-        sb.AppendLine("            word-wrap: break-word;");
-        sb.AppendLine("            overflow-wrap: anywhere;");
-        sb.AppendLine("            line-height: 1.45;");
-        sb.AppendLine("            font-size: 14px;");
-        sb.AppendLine("        }");
-        sb.AppendLine("        a {");
-        sb.AppendLine("            color: #1d4ed8;");
-        sb.AppendLine("            text-decoration: none;");
-        sb.AppendLine("        }");
+        sb.AppendLine("        body { font-family: Consolas, \"Courier New\", monospace; margin: 0; background: #f7f8fb; color: #111827; }");
+        sb.AppendLine("        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }");
+        sb.AppendLine("        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }");
+        sb.AppendLine("        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }");
+        sb.AppendLine("        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }");
+        sb.AppendLine("        .meta { font-size: 14px; line-height: 1.6; }");
+        sb.AppendLine("        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }");
+        sb.AppendLine("        a { color: #1d4ed8; text-decoration: none; }");
         sb.AppendLine("    &lt;/style&gt;");
         sb.AppendLine("&lt;/head&gt;");
         sb.AppendLine("&lt;body&gt;");
@@ -8280,6 +8320,52 @@ public sealed class GitHubPagesPublishService
         sb.AppendLine($"                    &lt;div&gt;&lt;strong&gt;Source File:&lt;/strong&gt; {System.Net.WebUtility.HtmlEncode(fileName)}&lt;/div&gt;");
         sb.AppendLine("                    &lt;div&gt;&lt;strong&gt;Mode:&lt;/strong&gt; Web-safe trimmed publish&lt;/div&gt;");
         sb.AppendLine("                    &lt;div&gt;&lt;a href=\"FULL_REPORT_LATEST.txt\"&gt;Open raw text&lt;/a&gt; | &lt;a href=\"reports.html\"&gt;Open reports index&lt;/a&gt;&lt;/div&gt;");
+        sb.AppendLine("                &lt;/div&gt;");
+        sb.AppendLine("            &lt;/div&gt;");
+        sb.AppendLine($"            &lt;pre&gt;{escaped}&lt;/pre&gt;");
+        sb.AppendLine("        &lt;/div&gt;");
+        sb.AppendLine("    &lt;/div&gt;");
+        sb.AppendLine("&lt;/body&gt;");
+        sb.AppendLine("&lt;/html&gt;");
+
+        return sb.ToString();
+    }
+
+    private static string BuildStandaloneReportPage(string title, string reportFileName, string reportText, string rawHref)
+    {
+        string escaped = System.Net.WebUtility.HtmlEncode(reportText ?? string.Empty);
+        string safeTitle = System.Net.WebUtility.HtmlEncode(title);
+        string safeFile = System.Net.WebUtility.HtmlEncode(reportFileName);
+        string safeRawHref = System.Net.WebUtility.HtmlEncode(rawHref);
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine("&lt;!DOCTYPE html&gt;");
+        sb.AppendLine("&lt;html lang=\"en\"&gt;");
+        sb.AppendLine("&lt;head&gt;");
+        sb.AppendLine("    &lt;meta charset=\"utf-8\" /&gt;");
+        sb.AppendLine("    &lt;meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" /&gt;");
+        sb.AppendLine($"    &lt;title&gt;{safeTitle}&lt;/title&gt;");
+        sb.AppendLine("    &lt;style&gt;");
+        sb.AppendLine("        body { font-family: Consolas, \"Courier New\", monospace; margin: 0; background: #f7f8fb; color: #111827; }");
+        sb.AppendLine("        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }");
+        sb.AppendLine("        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }");
+        sb.AppendLine("        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }");
+        sb.AppendLine("        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }");
+        sb.AppendLine("        .meta { font-size: 14px; line-height: 1.6; }");
+        sb.AppendLine("        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }");
+        sb.AppendLine("        a { color: #1d4ed8; text-decoration: none; }");
+        sb.AppendLine("    &lt;/style&gt;");
+        sb.AppendLine("&lt;/head&gt;");
+        sb.AppendLine("&lt;body&gt;");
+        sb.AppendLine("    &lt;div class=\"wrap\"&gt;");
+        sb.AppendLine("        &lt;div class=\"card\"&gt;");
+        sb.AppendLine("            &lt;div class=\"head\"&gt;");
+        sb.AppendLine($"                &lt;div class=\"title\"&gt;{safeTitle}&lt;/div&gt;");
+        sb.AppendLine("                &lt;div class=\"meta\"&gt;");
+        sb.AppendLine($"                    &lt;div&gt;&lt;strong&gt;Published (UTC):&lt;/strong&gt; {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}&lt;/div&gt;");
+        sb.AppendLine($"                    &lt;div&gt;&lt;strong&gt;Source File:&lt;/strong&gt; {safeFile}&lt;/div&gt;");
+        sb.AppendLine($"                    &lt;div&gt;&lt;a href=\"{safeRawHref}\"&gt;Open raw text&lt;/a&gt; | &lt;a href=\"/\"&gt;Open main site&lt;/a&gt;&lt;/div&gt;");
         sb.AppendLine("                &lt;/div&gt;");
         sb.AppendLine("            &lt;/div&gt;");
         sb.AppendLine($"            &lt;pre&gt;{escaped}&lt;/pre&gt;");
@@ -8343,6 +8429,15 @@ public sealed class GitHubPagesPublishService
 
         return sb.ToString();
     }
+
+    private static string GetLatestFileByPrefix(string prefix)
+    {
+        return Directory
+            .EnumerateFiles(DataPaths.Reports, $"{prefix}*.txt", SearchOption.TopDirectoryOnly)
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault()
+            ?? throw new FileNotFoundException($"No report found for prefix: {prefix}");
+    }
 }
 
 public sealed class GitHubPagesPublishResult
@@ -8365,6 +8460,20 @@ public sealed class GitHubLatestReportHtmlPublishResult
     public string PublishedIndexHtmlPath { get; init; } = string.Empty;
     public string ArchivedHtmlPath { get; init; } = string.Empty;
     public string PublicUrl { get; init; } = string.Empty;
+}
+
+public sealed class GitHubStandaloneReportsPublishResult
+{
+    public string RepoRootPath { get; init; } = string.Empty;
+    public string Report34SourcePath { get; init; } = string.Empty;
+    public string Report35SourcePath { get; init; } = string.Empty;
+    public string Report36SourcePath { get; init; } = string.Empty;
+    public string PublishedReport34HtmlPath { get; init; } = string.Empty;
+    public string PublishedReport35HtmlPath { get; init; } = string.Empty;
+    public string PublishedReport36HtmlPath { get; init; } = string.Empty;
+    public string Report34PublicUrl { get; init; } = string.Empty;
+    public string Report35PublicUrl { get; init; } = string.Empty;
+    public string Report36PublicUrl { get; init; } = string.Empty;
 }
 
 ==============================
@@ -15359,8 +15468,8 @@ public sealed class Report33TradeIntelligenceMasterReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report34TradeBlotterCompactService.cs
 TYPE: .cs
-SIZE: 7.86 KB
-LINES: 193
+SIZE: 8.35 KB
+LINES: 201
 ==============================
 using System.Globalization;
 using System.Text;
@@ -15384,9 +15493,8 @@ public sealed class Report34TradeBlotterCompactService
         Directory.CreateDirectory(DataPaths.Reports);
 
         string stamp = PakistanTime.Stamp(runUtc);
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_34_TRADE_BLOTTER_{stamp}.txt");
+        string fileName = $"REPORT_34_TRADE_BLOTTER_{stamp}.txt";
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var symbolToTimeframe = BuildSymbolToTimeframeMap(selectedMarkets);
 
@@ -15399,6 +15507,9 @@ public sealed class Report34TradeBlotterCompactService
 
         var sb = new StringBuilder();
 
+        sb.AppendLine($"FILE: {fileName}");
+        sb.AppendLine("----------------------------------------------------------------------");
+        sb.AppendLine();
         sb.AppendLine("REPORT 34 — TRADE_BLOTTER");
         sb.AppendLine("=========================");
         sb.AppendLine();
@@ -15411,13 +15522,14 @@ public sealed class Report34TradeBlotterCompactService
         sb.AppendLine("-----------");
         sb.AppendLine($"Run Timestamp (PKT)                : {PakistanTime.FormatLabel(runUtc)}");
         sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine($"File Name                          : {fileName}");
         sb.AppendLine($"Total Trade Rows                   : {rows.Count}");
         sb.AppendLine($"Closed Trades                      : {rows.Count(x =&gt; x.IsClosed)}");
         sb.AppendLine($"Open Trades                        : {rows.Count(x =&gt; !x.IsClosed)}");
         sb.AppendLine();
         sb.AppendLine("TRADE JOURNAL");
         sb.AppendLine("-------------");
-        sb.AppendLine("TradeID | StrategyId | StrategyName | Symbol | Timeframe | Side | Quantity | EntryTime(PKT) | EntryPrice | ExitTime(PKT) | ExitPrice | Closed | RealizedPnL | HoldingMinutes | OrderType | EntryReason | ExitReason | StopLoss | TakeProfit | ExpectedPrice | PlanSource | FavorableExcursion | AdverseExcursion | RMultiple");
+        sb.AppendLine("TradeID | StrategyId | StrategyName | Symbol | Side | Qty | TradeValueUSDT | Timeframe | EntryTime(PKT) | EntryPrice | ExitTime(PKT) | ExitPrice | Closed | RealizedPnL | HoldingMinutes | OrderType | EntryReason | ExitReason | StopLoss | TakeProfit | ExpectedPrice | PlanSource | FavorableExcursion | AdverseExcursion | RMultiple");
 
         foreach (var row in rows)
         {
@@ -15426,9 +15538,10 @@ public sealed class Report34TradeBlotterCompactService
                 $"S{row.StrategyId:00}",
                 Sanitize(row.StrategyName),
                 row.Symbol,
-                row.Timeframe,
                 row.Side,
                 row.Quantity.ToString("F8", CultureInfo.InvariantCulture),
+                row.TradeValueUsdt.ToString("F4", CultureInfo.InvariantCulture),
+                row.Timeframe,
                 PakistanTime.FormatLabel(row.EntryTimeUtc),
                 row.EntryPrice.ToString("F8", CultureInfo.InvariantCulture),
                 row.ExitTimeUtc.HasValue ? PakistanTime.FormatLabel(row.ExitTimeUtc.Value) : "OPEN",
@@ -15493,14 +15606,17 @@ public sealed class Report34TradeBlotterCompactService
                 rMultiple = trade.RealizedPnL / rMoney;
         }
 
+        decimal tradeValueUsdt = trade.Quantity * trade.EntryPrice;
+
         return new Row(
             TradeId: tradeId,
             StrategyId: node.StrategyId,
             StrategyName: node.StrategyName ?? $"S{node.StrategyId:00}",
             Symbol: trade.Symbol,
-            Timeframe: timeframe,
             Side: trade.Side.ToString(),
             Quantity: trade.Quantity,
+            TradeValueUsdt: tradeValueUsdt,
+            Timeframe: timeframe,
             EntryTimeUtc: trade.EntryTime,
             EntryPrice: trade.EntryPrice,
             ExitTimeUtc: trade.ExitTime,
@@ -15534,9 +15650,10 @@ public sealed class Report34TradeBlotterCompactService
         int StrategyId,
         string StrategyName,
         string Symbol,
-        string Timeframe,
         string Side,
         decimal Quantity,
+        decimal TradeValueUsdt,
+        string Timeframe,
         DateTime EntryTimeUtc,
         decimal EntryPrice,
         DateTime? ExitTimeUtc,
@@ -15559,8 +15676,8 @@ public sealed class Report34TradeBlotterCompactService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report35TradeIntelligenceCompactService.cs
 TYPE: .cs
-SIZE: 9.6 KB
-LINES: 231
+SIZE: 10.18 KB
+LINES: 242
 ==============================
 using System.Globalization;
 using System.Text;
@@ -15585,9 +15702,8 @@ public sealed class Report35TradeIntelligenceCompactService
         Directory.CreateDirectory(DataPaths.Reports);
 
         string stamp = PakistanTime.Stamp(runUtc);
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_35_TRADE_INTELLIGENCE_{stamp}.txt");
+        string fileName = $"REPORT_35_TRADE_INTELLIGENCE_{stamp}.txt";
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var symbolToTimeframe = BuildSymbolToTimeframeMap(result.SelectedMarkets ?? new List&lt;string&gt;());
 
@@ -15600,6 +15716,9 @@ public sealed class Report35TradeIntelligenceCompactService
 
         var sb = new StringBuilder();
 
+        sb.AppendLine($"FILE: {fileName}");
+        sb.AppendLine("----------------------------------------------------------------------");
+        sb.AppendLine();
         sb.AppendLine("REPORT 35 — TRADE_INTELLIGENCE");
         sb.AppendLine("==============================");
         sb.AppendLine();
@@ -15612,21 +15731,25 @@ public sealed class Report35TradeIntelligenceCompactService
         sb.AppendLine("-----------");
         sb.AppendLine($"Run Timestamp (PKT)                : {PakistanTime.FormatLabel(runUtc)}");
         sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine($"File Name                          : {fileName}");
         sb.AppendLine($"Total Trade Rows                   : {rows.Count}");
         sb.AppendLine($"Closed Trades                      : {rows.Count(x =&gt; x.IsClosed)}");
         sb.AppendLine($"Open Trades                        : {rows.Count(x =&gt; !x.IsClosed)}");
         sb.AppendLine();
         sb.AppendLine("SECTION O — FULL TRADE JOURNAL");
         sb.AppendLine("------------------------------");
-        sb.AppendLine("TradeID | Strategy | Market | Side | OrderType | EntryTime(PKT) | EntryTime(UTC) | EntryPrice | ExitTime(PKT) | ExitTime(UTC) | ExitPrice | Quantity | Closed | GrossPnL | Commission | NetPnL | HoldingMinutes | BarsHeld | StopLossAtEntry | TakeProfitAtEntry | ExpectedPrice | EntryReason | ExitReason | PlanSource | RMoney | RMultiple | FavorableExcursion | AdverseExcursion");
+        sb.AppendLine("TradeID | Strategy | Symbol | Side | Qty | TradeValueUSDT | Market | OrderType | EntryTime(PKT) | EntryTime(UTC) | EntryPrice | ExitTime(PKT) | ExitTime(UTC) | ExitPrice | Closed | GrossPnL | Commission | NetPnL | HoldingMinutes | BarsHeld | StopLossAtEntry | TakeProfitAtEntry | ExpectedPrice | EntryReason | ExitReason | PlanSource | RMoney | RMultiple | FavorableExcursion | AdverseExcursion");
 
         foreach (var row in rows)
         {
             sb.AppendLine(string.Join(" | ",
                 row.TradeId.ToString(CultureInfo.InvariantCulture),
                 $"S{row.StrategyId:00} {Sanitize(row.StrategyName)}",
-                row.MarketKey,
+                row.Symbol,
                 row.Side,
+                row.Quantity.ToString("F8", CultureInfo.InvariantCulture),
+                row.TradeValueUsdt.ToString("F4", CultureInfo.InvariantCulture),
+                row.MarketKey,
                 row.OrderType,
                 PakistanTime.FormatLabel(row.EntryTimeUtc),
                 $"{row.EntryTimeUtc:yyyy-MM-dd HH:mm:ss} UTC",
@@ -15634,7 +15757,6 @@ public sealed class Report35TradeIntelligenceCompactService
                 row.ExitTimeUtc.HasValue ? PakistanTime.FormatLabel(row.ExitTimeUtc.Value) : "OPEN",
                 row.ExitTimeUtc.HasValue ? $"{row.ExitTimeUtc.Value:yyyy-MM-dd HH:mm:ss} UTC" : "OPEN",
                 row.ExitPrice.HasValue ? row.ExitPrice.Value.ToString("F8", CultureInfo.InvariantCulture) : "OPEN",
-                row.Quantity.ToString("F8", CultureInfo.InvariantCulture),
                 row.IsClosed ? "YES" : "NO",
                 row.GrossPnl.ToString("F8", CultureInfo.InvariantCulture),
                 row.Commission.ToString("F8", CultureInfo.InvariantCulture),
@@ -15709,10 +15831,13 @@ public sealed class Report35TradeIntelligenceCompactService
             }
         }
 
+        decimal tradeValueUsdt = trade.Quantity * trade.EntryPrice;
+
         return new Row(
             TradeId: tradeId,
             StrategyId: node.StrategyId,
             StrategyName: node.StrategyName ?? $"S{node.StrategyId:00}",
+            Symbol: trade.Symbol,
             MarketKey: $"{trade.Symbol}::{timeframe}",
             Side: trade.Side.ToString(),
             OrderType: trade.TrueOrderType,
@@ -15721,6 +15846,7 @@ public sealed class Report35TradeIntelligenceCompactService
             ExitTimeUtc: trade.ExitTime,
             ExitPrice: trade.ExitPrice,
             Quantity: trade.Quantity,
+            TradeValueUsdt: tradeValueUsdt,
             IsClosed: trade.IsClosed,
             GrossPnl: grossPnl,
             Commission: commission,
@@ -15768,6 +15894,7 @@ public sealed class Report35TradeIntelligenceCompactService
         int TradeId,
         int StrategyId,
         string StrategyName,
+        string Symbol,
         string MarketKey,
         string Side,
         string OrderType,
@@ -15776,6 +15903,7 @@ public sealed class Report35TradeIntelligenceCompactService
         DateTime? ExitTimeUtc,
         decimal? ExitPrice,
         decimal Quantity,
+        decimal TradeValueUsdt,
         bool IsClosed,
         decimal GrossPnl,
         decimal Commission,
@@ -15797,14 +15925,14 @@ public sealed class Report35TradeIntelligenceCompactService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report36SoloStrategyScoreSummaryService.cs
 TYPE: .cs
-SIZE: 11.57 KB
-LINES: 296
+SIZE: 11.09 KB
+LINES: 267
 ==============================
 using System.Globalization;
 using System.Text;
+using TQGA.Application.Portfolio;
 using TQGA.Application.Paths;
 using TQGA.Application.Reporting;
-using TQGA.Application.Portfolio;
 using TQGA.Domain.Trading;
 
 namespace TQGA.Application.Services;
@@ -15819,81 +15947,118 @@ public sealed class Report36SoloStrategyScoreSummaryService
         ArgumentNullException.ThrowIfNull(nodes);
         ArgumentNullException.ThrowIfNull(selectedMarkets);
 
-        // Solo report only makes sense when exactly one strategy node exists.
         if (nodes.Count != 1)
             return;
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        StrategyBacktestNode node = nodes[0];
-
         string stamp = PakistanTime.Stamp(runUtc);
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_{stamp}.txt");
+        string fileName = $"REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_{stamp}.txt";
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
+        StrategyBacktestNode node = nodes[0];
         var symbolToTimeframe = BuildSymbolToTimeframeMap(selectedMarkets);
 
-        var trades = node.Ledger.Trades
-            .Select((trade, idx) =&gt; BuildRow(node, trade, idx + 1, symbolToTimeframe))
-            .OrderBy(x =&gt; x.EntryTimeUtc)
+        var closedTrades = node.Ledger.Trades
+            .Where(t =&gt; t.IsClosed)
             .ToList();
 
-        var closedTrades = trades.Where(x =&gt; x.IsClosed).ToList();
-        var positiveTrades = closedTrades.Where(x =&gt; x.NetPnl &gt; 0m).ToList();
-        var negativeTrades = closedTrades.Where(x =&gt; x.NetPnl &lt; 0m).ToList();
-        var rTrades = closedTrades.Where(x =&gt; x.RMultiple.HasValue).ToList();
+        int winningTrades = closedTrades.Count(t =&gt; t.RealizedPnL &gt; 0m);
+        int losingTrades = closedTrades.Count(t =&gt; t.RealizedPnL &lt; 0m);
 
-        decimal netPnl = closedTrades.Sum(x =&gt; x.NetPnl);
+        decimal netPnl = closedTrades.Sum(t =&gt; t.RealizedPnL);
         decimal expectancy = closedTrades.Count == 0 ? 0m : netPnl / closedTrades.Count;
-        decimal avgR = rTrades.Count == 0 ? 0m : rTrades.Sum(x =&gt; x.RMultiple!.Value) / rTrades.Count;
-        decimal worstR = rTrades.Count == 0 ? 0m : rTrades.Min(x =&gt; x.RMultiple!.Value);
-        decimal bestR = rTrades.Count == 0 ? 0m : rTrades.Max(x =&gt; x.RMultiple!.Value);
 
-        int breadthMarketsTraded = closedTrades
-            .Select(x =&gt; x.MarketKey)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Count();
+        var rValues = closedTrades
+            .Select(TryGetRMultiple)
+            .Where(x =&gt; x.HasValue)
+            .Select(x =&gt; x!.Value)
+            .ToList();
 
-        int breadthMarketsPositive = closedTrades
-            .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
-            .Count(g =&gt; g.Sum(x =&gt; x.NetPnl) &gt; 0m);
+        decimal avgR = rValues.Count == 0 ? 0m : rValues.Average();
+        decimal worstR = rValues.Count == 0 ? 0m : rValues.Min();
+        decimal bestR = rValues.Count == 0 ? 0m : rValues.Max();
 
-        int breadthMarketsNegative = closedTrades
-            .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
-            .Count(g =&gt; g.Sum(x =&gt; x.NetPnl) &lt; 0m);
+        int severeLossCount = rValues.Count(x =&gt; x &lt;= -2m);
+        int catastrophicLossCount = rValues.Count(x =&gt; x &lt;= -3m);
 
-        int severeLossCount = rTrades.Count(x =&gt; x.RMultiple!.Value &lt;= -2.0m);
-        int catastrophicLossCount = rTrades.Count(x =&gt; x.RMultiple!.Value &lt;= -3.0m);
+        decimal totalTradeValueUsdt = closedTrades.Sum(x =&gt; x.Quantity * x.EntryPrice);
+        decimal averageTradeValueUsdt = closedTrades.Count == 0 ? 0m : totalTradeValueUsdt / closedTrades.Count;
+        decimal averageQty = closedTrades.Count == 0 ? 0m : closedTrades.Average(x =&gt; x.Quantity);
 
-        int tpMissLikeCount = closedTrades.Count(x =&gt;
-            x.FavorableExcursion &gt; 0m &amp;&amp;
-            x.FavorableExcursion &gt; Math.Max(0m, x.NetPnl) * 1.50m);
+        int longTradeCount = closedTrades.Count(x =&gt; x.Side == TradeSide.Buy);
+        int shortTradeCount = closedTrades.Count(x =&gt; x.Side == TradeSide.Sell);
 
-        int lateHoldBleedLikeCount = closedTrades.Count(x =&gt;
-            x.FavorableExcursion &gt; 0m &amp;&amp;
-            x.NetPnl &lt; x.FavorableExcursion * 0.35m);
+        var marketPnL = AggregateMarketPnl(closedTrades, symbolToTimeframe);
+        int symbolBreadthTraded = marketPnL.Count;
+        int symbolBreadthPositive = marketPnL.Count(x =&gt; x.Value &gt; 0m);
+        int symbolBreadthNegative = marketPnL.Count(x =&gt; x.Value &lt; 0m);
 
-        string slHitPattern = BuildSlHitPattern(
-            severeLossCount,
-            catastrophicLossCount,
-            negativeTrades);
+        int tpMissLikeCount = 0;
+        int lateHoldBleedLikeCount = 0;
+        decimal negativeHoldMinutesTotal = 0m;
+        int negativeHoldMinutesCount = 0;
 
-        string tpMissPattern = BuildTpMissPattern(
-            tpMissLikeCount,
-            lateHoldBleedLikeCount,
-            positiveTrades,
-            closedTrades);
+        foreach (var trade in closedTrades)
+        {
+            decimal holdingMinutes = trade.ExitTime.HasValue
+                ? (decimal)(trade.ExitTime.Value - trade.EntryTime).TotalMinutes
+                : 0m;
 
-        string decision = BuildDecision(
+            decimal favorableMoney = trade.FavorableExcursion * trade.Quantity;
+            decimal realized = trade.RealizedPnL;
+
+            if (favorableMoney &gt; 0m &amp;&amp; favorableMoney &gt; Math.Abs(realized) * 1.50m)
+                tpMissLikeCount++;
+
+            if (realized &lt; 0m &amp;&amp; holdingMinutes &gt; 0m)
+            {
+                negativeHoldMinutesTotal += holdingMinutes;
+                negativeHoldMinutesCount++;
+
+                if (holdingMinutes &gt;= 240m)
+                    lateHoldBleedLikeCount++;
+            }
+        }
+
+        decimal avgNegHoldMinutes = negativeHoldMinutesCount == 0
+            ? 0m
+            : negativeHoldMinutesTotal / negativeHoldMinutesCount;
+
+        string slPattern = catastrophicLossCount &gt; 0
+            ? $"CAT_TAILS_PRESENT (catR={catastrophicLossCount}, avgNegHoldMin={avgNegHoldMinutes:0})"
+            : "NO_MAJOR_CAT_TAILS";
+
+        decimal tpMissRate = closedTrades.Count == 0 ? 0m : (decimal)tpMissLikeCount / closedTrades.Count * 100m;
+        string tpPattern = tpMissLikeCount &gt; 0
+            ? $"LATE_HOLD_BLEED (rate={tpMissRate:0.00}%)"
+            : "NO_SIGNIFICANT_TP_MISS";
+
+        string decision = ComputeDecision(
             expectancy,
             avgR,
             worstR,
-            breadthMarketsPositive,
-            breadthMarketsTraded);
+            catastrophicLossCount,
+            tpMissLikeCount,
+            symbolBreadthPositive,
+            symbolBreadthNegative);
+
+        var topPositiveMarkets = marketPnL
+            .Where(x =&gt; x.Value &gt; 0m)
+            .OrderByDescending(x =&gt; x.Value)
+            .Take(10)
+            .ToList();
+
+        var topNegativeMarkets = marketPnL
+            .OrderBy(x =&gt; x.Value)
+            .Take(10)
+            .ToList();
 
         var sb = new StringBuilder();
 
+        sb.AppendLine($"FILE: {fileName}");
+        sb.AppendLine("----------------------------------------------------------------------");
+        sb.AppendLine();
         sb.AppendLine("REPORT 36 — SOLO STRATEGY SCORE SUMMARY");
         sb.AppendLine("=======================================");
         sb.AppendLine();
@@ -15905,24 +16070,30 @@ public sealed class Report36SoloStrategyScoreSummaryService
         sb.AppendLine("-----------");
         sb.AppendLine($"Run Timestamp (PKT)                : {PakistanTime.FormatLabel(runUtc)}");
         sb.AppendLine($"Run Timestamp (UTC)                : {runUtc:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine($"File Name                          : {fileName}");
         sb.AppendLine($"Strategy Id                        : S{node.StrategyId:00}");
         sb.AppendLine($"Strategy Name                      : {node.StrategyName}");
         sb.AppendLine($"Closed Trades                      : {closedTrades.Count}");
-        sb.AppendLine($"Winning Trades                     : {positiveTrades.Count}");
-        sb.AppendLine($"Losing Trades                      : {negativeTrades.Count}");
+        sb.AppendLine($"Winning Trades                     : {winningTrades}");
+        sb.AppendLine($"Losing Trades                      : {losingTrades}");
         sb.AppendLine();
         sb.AppendLine("FINAL SCORECARD");
         sb.AppendLine("---------------");
-        sb.AppendLine($"Net P&amp;L                            : {netPnl:F4}");
-        sb.AppendLine($"Expectancy                         : {expectancy:F6}");
-        sb.AppendLine($"Avg R                              : {avgR:F4}");
-        sb.AppendLine($"Worst R                            : {worstR:F4}");
-        sb.AppendLine($"Best R                             : {bestR:F4}");
-        sb.AppendLine($"Symbol Breadth Traded              : {breadthMarketsTraded}");
-        sb.AppendLine($"Symbol Breadth Positive            : {breadthMarketsPositive}");
-        sb.AppendLine($"Symbol Breadth Negative            : {breadthMarketsNegative}");
-        sb.AppendLine($"Likely SL-Hit Pattern              : {slHitPattern}");
-        sb.AppendLine($"Likely TP-Miss Pattern             : {tpMissPattern}");
+        sb.AppendLine($"Net P&amp;L                            : {netPnl.ToString("0.0000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Expectancy                         : {expectancy.ToString("0.000000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Avg R                              : {avgR.ToString("0.0000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Worst R                            : {worstR.ToString("0.0000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Best R                             : {bestR.ToString("0.0000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Total Trade Value (USDT)           : {totalTradeValueUsdt.ToString("0.0000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Average Trade Value (USDT)         : {averageTradeValueUsdt.ToString("0.0000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Average Qty                        : {averageQty.ToString("0.00000000", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Long Trades                        : {longTradeCount}");
+        sb.AppendLine($"Short Trades                       : {shortTradeCount}");
+        sb.AppendLine($"Symbol Breadth Traded              : {symbolBreadthTraded}");
+        sb.AppendLine($"Symbol Breadth Positive            : {symbolBreadthPositive}");
+        sb.AppendLine($"Symbol Breadth Negative            : {symbolBreadthNegative}");
+        sb.AppendLine($"Likely SL-Hit Pattern              : {slPattern}");
+        sb.AppendLine($"Likely TP-Miss Pattern             : {tpPattern}");
         sb.AppendLine($"Decision                           : {decision}");
         sb.AppendLine();
         sb.AppendLine("RISK / EXPECTANCY FLAGS");
@@ -15932,28 +16103,17 @@ public sealed class Report36SoloStrategyScoreSummaryService
         sb.AppendLine($"TP-Miss-Like Count                 : {tpMissLikeCount}");
         sb.AppendLine($"Late-Hold-Bleed-Like Count         : {lateHoldBleedLikeCount}");
         sb.AppendLine();
+
         sb.AppendLine("TOP POSITIVE MARKETS");
         sb.AppendLine("--------------------");
-        foreach (var item in closedTrades
-                     .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
-                     .Select(g =&gt; new { MarketKey = g.Key, NetPnl = g.Sum(x =&gt; x.NetPnl) })
-                     .OrderByDescending(x =&gt; x.NetPnl)
-                     .Take(10))
-        {
-            sb.AppendLine($"{item.MarketKey,-24} {item.NetPnl,14:F4}");
-        }
+        foreach (var kv in topPositiveMarkets)
+            sb.AppendLine($"{kv.Key,-24} {kv.Value.ToString("0.0000", CultureInfo.InvariantCulture),14}");
 
         sb.AppendLine();
         sb.AppendLine("TOP NEGATIVE MARKETS");
         sb.AppendLine("--------------------");
-        foreach (var item in closedTrades
-                     .GroupBy(x =&gt; x.MarketKey, StringComparer.OrdinalIgnoreCase)
-                     .Select(g =&gt; new { MarketKey = g.Key, NetPnl = g.Sum(x =&gt; x.NetPnl) })
-                     .OrderBy(x =&gt; x.NetPnl)
-                     .Take(10))
-        {
-            sb.AppendLine($"{item.MarketKey,-24} {item.NetPnl,14:F4}");
-        }
+        foreach (var kv in topNegativeMarkets)
+            sb.AppendLine($"{kv.Key,-24} {kv.Value.ToString("0.0000", CultureInfo.InvariantCulture),14}");
 
         File.WriteAllText(path, sb.ToString());
     }
@@ -15977,124 +16137,63 @@ public sealed class Report36SoloStrategyScoreSummaryService
         return output;
     }
 
-    private static Row BuildRow(
-        StrategyBacktestNode node,
-        Trade trade,
-        int tradeId,
+    private static decimal? TryGetRMultiple(Trade trade)
+    {
+        if (!trade.StopLossAtEntry.HasValue)
+            return null;
+
+        decimal riskPerUnit = Math.Abs(trade.EntryPrice - trade.StopLossAtEntry.Value);
+        decimal rMoney = riskPerUnit * trade.Quantity;
+
+        if (rMoney &lt;= 0m)
+            return null;
+
+        return trade.RealizedPnL / rMoney;
+    }
+
+    private static Dictionary&lt;string, decimal&gt; AggregateMarketPnl(
+        IReadOnlyList&lt;Trade&gt; trades,
         IReadOnlyDictionary&lt;string, string&gt; symbolToTimeframe)
     {
-        string timeframe = symbolToTimeframe.TryGetValue(trade.Symbol, out var tf)
-            ? tf
-            : "UNKNOWN_TF";
+        var output = new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
 
-        decimal holdingMinutes = trade.ExitTime.HasValue
-            ? (decimal)(trade.ExitTime.Value - trade.EntryTime).TotalMinutes
-            : 0m;
-
-        decimal grossPnl = trade.RealizedPnL;
-        decimal commission = 0m;
-        decimal netPnl = grossPnl - commission;
-
-        decimal? rMoney = null;
-        decimal? rMultiple = null;
-
-        if (trade.StopLossAtEntry.HasValue)
+        foreach (var trade in trades)
         {
-            decimal riskPerUnit = Math.Abs(trade.EntryPrice - trade.StopLossAtEntry.Value);
-            if (riskPerUnit &gt; 0m)
-            {
-                rMoney = riskPerUnit * trade.Quantity;
-                if (rMoney.Value &gt; 0m)
-                    rMultiple = netPnl / rMoney.Value;
-            }
+            string timeframe = symbolToTimeframe.TryGetValue(trade.Symbol, out var tf)
+                ? tf
+                : "UNKNOWN_TF";
+
+            string key = $"{trade.Symbol}::{timeframe}";
+
+            if (output.ContainsKey(key))
+                output[key] += trade.RealizedPnL;
+            else
+                output[key] = trade.RealizedPnL;
         }
 
-        return new Row(
-            TradeId: tradeId,
-            StrategyId: node.StrategyId,
-            StrategyName: node.StrategyName ?? $"S{node.StrategyId:00}",
-            MarketKey: $"{trade.Symbol}::{timeframe}",
-            EntryTimeUtc: trade.EntryTime,
-            IsClosed: trade.IsClosed,
-            NetPnl: netPnl,
-            FavorableExcursion: trade.FavorableExcursion * trade.Quantity,
-            AdverseExcursion: trade.AdverseExcursion * trade.Quantity,
-            RMultiple: rMultiple,
-            HoldingMinutes: holdingMinutes);
+        return output;
     }
 
-    private static string BuildSlHitPattern(
-        int severeLossCount,
-        int catastrophicLossCount,
-        IReadOnlyList&lt;Row&gt; negativeTrades)
-    {
-        decimal avgNegativeHold = negativeTrades.Count == 0
-            ? 0m
-            : negativeTrades.Sum(x =&gt; x.HoldingMinutes) / negativeTrades.Count;
-
-        if (catastrophicLossCount &gt; 0)
-            return $"CAT_TAILS_PRESENT (catR={catastrophicLossCount}, avgNegHoldMin={avgNegativeHold:F0})";
-
-        if (severeLossCount &gt; 0)
-            return $"SEVERE_R_TAILS (sevR={severeLossCount}, avgNegHoldMin={avgNegativeHold:F0})";
-
-        return $"CONTROLLED_NEGATIVE_R (avgNegHoldMin={avgNegativeHold:F0})";
-    }
-
-    private static string BuildTpMissPattern(
-        int tpMissLikeCount,
-        int lateHoldBleedLikeCount,
-        IReadOnlyList&lt;Row&gt; positiveTrades,
-        IReadOnlyList&lt;Row&gt; closedTrades)
-    {
-        if (closedTrades.Count == 0)
-            return "NO_TRADES";
-
-        decimal tpMissRate = (decimal)tpMissLikeCount / closedTrades.Count;
-        decimal bleedRate = (decimal)lateHoldBleedLikeCount / closedTrades.Count;
-
-        if (bleedRate &gt;= 0.20m)
-            return $"LATE_HOLD_BLEED (rate={bleedRate:P2})";
-
-        if (tpMissRate &gt;= 0.20m)
-            return $"UNDERMONETIZED_WINNERS (rate={tpMissRate:P2})";
-
-        return "TP_CAPTURE_ACCEPTABLE";
-    }
-
-    private static string BuildDecision(
+    private static string ComputeDecision(
         decimal expectancy,
         decimal avgR,
         decimal worstR,
-        int breadthMarketsPositive,
-        int breadthMarketsTraded)
+        int catastrophicLossCount,
+        int tpMissLikeCount,
+        int symbolBreadthPositive,
+        int symbolBreadthNegative)
     {
-        bool positive = expectancy &gt; 0m;
-        bool avgRPositive = avgR &gt; 0m;
-        bool tailControlled = worstR &gt; -3m;
-        bool breadthOk = breadthMarketsPositive &gt;= 2 &amp;&amp; breadthMarketsTraded &gt;= 2;
+        if (expectancy &lt;= 0m || avgR &lt;= 0m)
+            return "QUARANTINE";
 
-        if (positive &amp;&amp; avgRPositive &amp;&amp; tailControlled &amp;&amp; breadthOk)
-            return "PROMOTE";
-
-        if (positive)
+        if (catastrophicLossCount &gt; 0 || worstR &lt;= -3m || tpMissLikeCount &gt; 0)
             return "REFINE";
 
-        return "QUARANTINE";
-    }
+        if (symbolBreadthPositive &lt;= symbolBreadthNegative)
+            return "REFINE";
 
-    private sealed record Row(
-        int TradeId,
-        int StrategyId,
-        string StrategyName,
-        string MarketKey,
-        DateTime EntryTimeUtc,
-        bool IsClosed,
-        decimal NetPnl,
-        decimal FavorableExcursion,
-        decimal AdverseExcursion,
-        decimal? RMultiple,
-        decimal HoldingMinutes);
+        return "PROMOTE";
+    }
 }
 
 ==============================
@@ -20290,8 +20389,8 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 34.17 KB
-LINES: 973
+SIZE: 35.99 KB
+LINES: 1015
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -20331,6 +20430,7 @@ public sealed class MainForm : Form
     private Button? _btnCodesFile;
     private Button? _btnGitHubPublished;
     private Button? _btnGitHubReportsPublished;
+    private Button? _btnGitHubPublishedReports343536;
 
     private Label? _lblStrategies;
     private CheckedListBox? _strategyList;
@@ -20400,7 +20500,7 @@ public sealed class MainForm : Form
 
         Text = "TQGA";
         Width = 1550;
-        Height = 980;
+        Height = 1020;
         StartPosition = FormStartPosition.CenterScreen;
 
         BuildUi();
@@ -20419,6 +20519,7 @@ public sealed class MainForm : Form
         _btnCodesFile = new Button { Text = "CODES FILE", Width = 220, Top = 450, Left = 30 };
         _btnGitHubPublished = new Button { Text = "GITHUB Codes Published", Width = 220, Top = 500, Left = 30 };
         _btnGitHubReportsPublished = new Button { Text = "GITHUB Reports Published", Width = 220, Top = 550, Left = 30 };
+        _btnGitHubPublishedReports343536 = new Button { Text = "GITHUB Published Report 34,35,36", Width = 220, Top = 600, Left = 30 };
 
         _btnDownload.Click += async (_, _) =&gt; await RunSafe(_bootstrapper.ForceFullDownloadAsync);
         _btnUpdate.Click += async (_, _) =&gt; await RunSafe(_bootstrapper.UpdateAsync);
@@ -20429,6 +20530,7 @@ public sealed class MainForm : Form
         _btnCodesFile.Click += async (_, _) =&gt; await BuildCodesFileAsync();
         _btnGitHubPublished.Click += async (_, _) =&gt; await GitHubPublishedAsync();
         _btnGitHubReportsPublished.Click += async (_, _) =&gt; await GitHubReportsPublishedAsync();
+        _btnGitHubPublishedReports343536.Click += async (_, _) =&gt; await GitHubPublishedReports343536Async();
 
         _btnFullReportSave.Click += (_, _) =&gt;
         {
@@ -20522,7 +20624,8 @@ public sealed class MainForm : Form
         Controls.AddRange(
         [
             _btnDownload, _btnUpdate, _btnRunResearch, _btnFullReportSave, _btnFullReportClipboard,
-            _btnPublished, _btnReportAll31, _btnGitPublished, _btnCodesFile, _btnGitHubPublished, _btnGitHubReportsPublished,
+            _btnPublished, _btnReportAll31, _btnGitPublished, _btnCodesFile, _btnGitHubPublished,
+            _btnGitHubReportsPublished, _btnGitHubPublishedReports343536,
             _lblStrategies, _strategyList, _btnSelectAll, _btnSelectNone,
             _lblTimeframes, _timeframeList, _btnTfAll, _btnTfNone,
             _lblCoinCategories, _coinCategoryList, _btnCatAll, _btnCatNone,
@@ -20926,6 +21029,43 @@ public sealed class MainForm : Form
         }
     }
 
+    private async Task GitHubPublishedReports343536Async()
+    {
+        Toggle(false);
+
+        try
+        {
+            string repoRootPath = ResolveGitRepoPath();
+
+            var publishResult = await Task.Run(() =&gt;
+                _gitHubPagesPublish.PublishStandaloneReports343536(repoRootPath));
+
+            MessageBox.Show(
+                $"GITHUB Published Report 34,35,36 completed successfully.\n\n" +
+                $"Report 34 Source: {publishResult.Report34SourcePath}\n" +
+                $"Report 35 Source: {publishResult.Report35SourcePath}\n" +
+                $"Report 36 Source: {publishResult.Report36SourcePath}\n\n" +
+                $"Report 34 URL: {publishResult.Report34PublicUrl}\n" +
+                $"Report 35 URL: {publishResult.Report35PublicUrl}\n" +
+                $"Report 36 URL: {publishResult.Report36PublicUrl}",
+                "GITHUB Published Report 34,35,36",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"GITHUB Published Report 34,35,36 failed.\n\n{ex.Message}",
+                "GITHUB Published Report 34,35,36 ERROR",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            Toggle(true);
+        }
+    }
+
     private string ResolveTqgaSolutionRoot()
     {
         string? current = AppContext.BaseDirectory;
@@ -21218,6 +21358,7 @@ $@"&lt;!DOCTYPE html&gt;
         if (_btnCodesFile != null) _btnCodesFile.Enabled = enabled;
         if (_btnGitHubPublished != null) _btnGitHubPublished.Enabled = enabled;
         if (_btnGitHubReportsPublished != null) _btnGitHubReportsPublished.Enabled = enabled;
+        if (_btnGitHubPublishedReports343536 != null) _btnGitHubPublishedReports343536.Enabled = enabled;
 
         if (_strategyList != null) _strategyList.Enabled = enabled;
         if (_timeframeList != null) _timeframeList.Enabled = enabled;
