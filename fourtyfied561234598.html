@@ -9,18 +9,16 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__19-31-49.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__19-31-49.txt
-GENERATED: 2026-04-15 19:31:49
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__19-58-22.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__19-58-22.txt
+GENERATED: 2026-04-15 19:58:22
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
-│       ├───DesignTimeBuild
-│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───5ac4ca91-6809-4ba3-9bd5-4528a49c9cc1.vsidx
+│       │   └───9700ac41-cabc-4cc4-95cf-cf1a265e3102.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -665,7 +663,7 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 64.32 KB
+SIZE: 64.41 KB
 LINES: 1638
 ==============================
 
@@ -895,7 +893,7 @@ public sealed class PortfolioBacktestRunner
             var openRiskByCluster = new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
             decimal totalOpenRiskPct = 0m;
             decimal peakEquity = allocatedCapital;
-
+            //throw new InvalidOperationException("DEBUG PROOF: 2025 FILTER RUNNER ACTIVE");
             foreach (var m in selectedMarkets)
             {
                 var marketWeight = marketAllocationWeights.TryGetValue(m, out var resolvedMarketWeight)
