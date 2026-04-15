@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__12-08-25.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__12-08-25.txt
-GENERATED: 2026-04-15 12:08:25
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__19-05-04.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__19-05-04.txt
+GENERATED: 2026-04-15 19:05:04
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───812018d4-eade-4e15-b823-ec4ad9d72e8d.vsidx
+│       │   └───50162e68-6e93-4fa9-9fbd-8862d840e726.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -665,9 +665,13 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 62.4 KB
-LINES: 1630
+SIZE: 64.06 KB
+LINES: 1634
 ==============================
+
+
+
+// i am sending current existing file of PortfolioBacktestRunner.cs
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
 using TQGA.Application.Backtesting;
@@ -7827,8 +7831,8 @@ public sealed class GitHubCodeAuditPublishResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubPagesPublishService.cs
 TYPE: .cs
-SIZE: 45.49 KB
-LINES: 1020
+SIZE: 44.39 KB
+LINES: 988
 ==============================
 using System.ComponentModel;
 using System.Diagnostics;
@@ -7865,6 +7869,14 @@ public sealed class GitHubPagesPublishService
     [
         ".git", ".vs", "bin", "obj", "packages", "node_modules",
         ReportsFolderName, CodesFolderName
+    ];
+
+    private static readonly string[] PreferredCodeRoots =
+    [
+        "TQGA.Application",
+        "TQGA.Domain",
+        "TQGA.Infrastructure",
+        "TQGA.WinForms"
     ];
 
     public GitHubPagesPublishResult PublishReportAll31(
@@ -7956,10 +7968,6 @@ public sealed class GitHubPagesPublishService
         if (string.IsNullOrWhiteSpace(sourceHtmlText))
             throw new InvalidOperationException($"REPORT_ALL_31 HTML file is empty: {latestReportHtmlPath}");
 
-        RunGit(repoRootPath, "rebase --abort", allowFailure: true);
-        RunGit(repoRootPath, $"fetch {RemoteName}");
-        RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
-
         string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         string localArchiveRoot = GetLocalArchiveRoot(repoRootPath);
         Directory.CreateDirectory(localArchiveRoot);
@@ -8005,10 +8013,6 @@ public sealed class GitHubPagesPublishService
         string report34SourcePath = GetLatestFileByPrefix("REPORT_34_TRADE_BLOTTER_");
         string report35SourcePath = GetLatestFileByPrefix("REPORT_35_TRADE_INTELLIGENCE_");
         string report36SourcePath = GetLatestFileByPrefix("REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_");
-
-        RunGit(repoRootPath, "rebase --abort", allowFailure: true);
-        RunGit(repoRootPath, $"fetch {RemoteName}");
-        RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
 
         string report34HtmlPath = Path.Combine(repoRootPath, "Report_34.html");
         string report35HtmlPath = Path.Combine(repoRootPath, "Report_35.html");
@@ -8094,19 +8098,19 @@ public sealed class GitHubPagesPublishService
         string reportsIndexPath = Path.Combine(reportsPublishRoot, "index.html");
         string codesIndexPath = Path.Combine(codesPublishRoot, "index.html");
 
-        WriteTextIfChanged(
+        WriteFileIfChanged(
             reportsIndexPath,
             BuildGeneratedFolderIndexPage(
                 title: "TQGA Reports",
-                description: "Published report pages generated incrementally from the local Reports folder.",
+                description: "Published report pages generated automatically from the local Reports folder.",
                 webBasePath: ReportsFolderName,
                 pages: reportPages));
 
-        WriteTextIfChanged(
+        WriteFileIfChanged(
             codesIndexPath,
             BuildGeneratedFolderIndexPage(
                 title: "TQGA Codes",
-                description: "Published code pages generated incrementally from selected TQGA solution folders.",
+                description: "Published code pages generated automatically from the local TQGA solution folder.",
                 webBasePath: CodesFolderName,
                 pages: codePages));
 
@@ -8183,7 +8187,7 @@ public sealed class GitHubPagesPublishService
                     reportText: reportText,
                     rawHref: "../" + sourceFileName);
 
-            WriteTextIfChanged(targetPath, html);
+            WriteFileIfChanged(targetPath, html);
 
             pages.Add(new GeneratedPageInfo(
                 Title: sourceFileName,
@@ -8198,9 +8202,11 @@ public sealed class GitHubPagesPublishService
 
     private static List&lt;GeneratedPageInfo&gt; PublishCodeFolderIncremental(string localSolutionRoot, string codesPublishRoot)
     {
-        var sourceRoots = GetCodeSourceRoots(localSolutionRoot);
+        IEnumerable&lt;string&gt; rootCandidates = PreferredCodeRoots
+            .Select(x =&gt; Path.Combine(localSolutionRoot, x))
+            .Where(Directory.Exists);
 
-        var sourceFiles = sourceRoots
+        var sourceFiles = rootCandidates
             .SelectMany(root =&gt; Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories))
             .Where(ShouldPublishCodeFile)
             .OrderBy(x =&gt; x, StringComparer.OrdinalIgnoreCase)
@@ -8222,9 +8228,7 @@ public sealed class GitHubPagesPublishService
             string codeText = File.ReadAllText(sourcePath, Encoding.UTF8);
             string title = safeRelative;
 
-            WriteTextIfChanged(
-                targetPath,
-                BuildCodePage(title, safeRelative, codeText));
+            WriteFileIfChanged(targetPath, BuildCodePage(title, safeRelative, codeText));
 
             string publicRelativePath = $"{CodesFolderName}/{targetRelative}".Replace("\\", "/");
             string editRelativePath = $"{CodesFolderName}/{targetRelative}".Replace("\\", "/");
@@ -8238,31 +8242,6 @@ public sealed class GitHubPagesPublishService
         }
 
         return pages;
-    }
-
-    private static List&lt;string&gt; GetCodeSourceRoots(string localSolutionRoot)
-    {
-        string[] preferred =
-        [
-            "TQGA.Application",
-            "TQGA.Domain",
-            "TQGA.Infrastructure",
-            "TQGA.WinForms"
-        ];
-
-        var roots = new List&lt;string&gt;();
-
-        foreach (string folder in preferred)
-        {
-            string path = Path.Combine(localSolutionRoot, folder);
-            if (Directory.Exists(path))
-                roots.Add(path);
-        }
-
-        if (roots.Count &gt; 0)
-            return roots;
-
-        return [localSolutionRoot];
     }
 
     private static bool ShouldPublishCodeFile(string filePath)
@@ -8283,11 +8262,11 @@ public sealed class GitHubPagesPublishService
         return true;
     }
 
-    private static void WriteTextIfChanged(string targetPath, string content)
+    private static void WriteFileIfChanged(string targetPath, string content)
     {
-        string? targetDir = Path.GetDirectoryName(targetPath);
-        if (!string.IsNullOrWhiteSpace(targetDir))
-            Directory.CreateDirectory(targetDir);
+        string? dir = Path.GetDirectoryName(targetPath);
+        if (!string.IsNullOrWhiteSpace(dir))
+            Directory.CreateDirectory(dir);
 
         if (File.Exists(targetPath))
         {
@@ -8307,10 +8286,6 @@ public sealed class GitHubPagesPublishService
     {
         string safeTitle = System.Net.WebUtility.HtmlEncode(title);
         string safeDescription = System.Net.WebUtility.HtmlEncode(description);
-
-        var orderedPages = pages
-            .OrderBy(x =&gt; x.Title, StringComparer.OrdinalIgnoreCase)
-            .ToList();
 
         var sb = new StringBuilder();
 
@@ -8339,14 +8314,13 @@ public sealed class GitHubPagesPublishService
         sb.AppendLine($"            &lt;div class=\"meta\"&gt;{safeDescription}&lt;/div&gt;");
         sb.AppendLine($"            &lt;div class=\"meta\"&gt;&lt;strong&gt;Published (UTC):&lt;/strong&gt; {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}&lt;/div&gt;");
         sb.AppendLine($"            &lt;div class=\"meta\"&gt;&lt;strong&gt;Folder:&lt;/strong&gt; {System.Net.WebUtility.HtmlEncode(webBasePath)}&lt;/div&gt;");
-        sb.AppendLine($"            &lt;div class=\"meta\"&gt;&lt;strong&gt;Pages:&lt;/strong&gt; {orderedPages.Count}&lt;/div&gt;");
         sb.AppendLine("            &lt;table&gt;");
         sb.AppendLine("                &lt;thead&gt;");
         sb.AppendLine("                    &lt;tr&gt;&lt;th&gt;Name&lt;/th&gt;&lt;th&gt;Open&lt;/th&gt;&lt;th&gt;Edit&lt;/th&gt;&lt;/tr&gt;");
         sb.AppendLine("                &lt;/thead&gt;");
         sb.AppendLine("                &lt;tbody&gt;");
 
-        foreach (GeneratedPageInfo page in orderedPages)
+        foreach (GeneratedPageInfo page in pages)
         {
             string safeName = System.Net.WebUtility.HtmlEncode(page.Title);
             string safePublic = System.Net.WebUtility.HtmlEncode(page.PublicUrl);
@@ -8468,7 +8442,6 @@ public sealed class GitHubPagesPublishService
             }
             catch
             {
-                // Non-fatal cleanup attempt.
             }
         }
     }
@@ -8482,7 +8455,6 @@ public sealed class GitHubPagesPublishService
         }
         catch
         {
-            // Non-fatal cleanup attempt.
         }
     }
 
@@ -20764,14 +20736,15 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 38.05 KB
-LINES: 1062
+SIZE: 42.36 KB
+LINES: 1158
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -20807,7 +20780,8 @@ public sealed class MainForm : Form
     private Button? _btnGitHubPublished;
     private Button? _btnGitHubReportsPublished;
     private Button? _btnGitHubPublishedReports343536;
-    private Button? _btnGitHubPublishedTqgaFolders;
+    private Button? _btnGitHubPublishedTqgaReportsFolder;
+    private Button? _btnGitHubPublishedTqgaCodesFolder;
 
     private Label? _lblStrategies;
     private CheckedListBox? _strategyList;
@@ -20877,7 +20851,7 @@ public sealed class MainForm : Form
 
         Text = "TQGA";
         Width = 1550;
-        Height = 1060;
+        Height = 1020;
         StartPosition = FormStartPosition.CenterScreen;
 
         BuildUi();
@@ -20885,19 +20859,27 @@ public sealed class MainForm : Form
 
     private void BuildUi()
     {
-        _btnDownload = new Button { Text = "DOWNLOAD CANDLES DATA", Width = 220, Top = 30, Left = 30 };
-        _btnUpdate = new Button { Text = "UPDATE CANDLES DATA", Width = 220, Top = 80, Left = 30 };
-        _btnRunResearch = new Button { Text = "RUN PORTOFOLIO", Width = 220, Top = 130, Left = 30 };
-        _btnFullReportSave = new Button { Text = "FULL REPORT → FILE", Width = 220, Top = 200, Left = 30 };
-        _btnFullReportClipboard = new Button { Text = "FULL REPORT → CLIPBOARD", Width = 220, Top = 250, Left = 30 };
-        _btnPublished = new Button { Text = "PUBLISHED", Width = 220, Top = 300, Left = 30 };
-        _btnReportAll31 = new Button { Text = "REPORT ALL 31", Width = 220, Top = 350, Left = 30 };
-        _btnGitPublished = new Button { Text = "GIT PUBLISHED", Width = 220, Top = 400, Left = 30 };
-        _btnCodesFile = new Button { Text = "CODES FILE", Width = 220, Top = 450, Left = 30 };
-        _btnGitHubPublished = new Button { Text = "GITHUB Codes Published", Width = 220, Top = 500, Left = 30 };
-        _btnGitHubReportsPublished = new Button { Text = "GITHUB Reports Published", Width = 220, Top = 550, Left = 30 };
-        _btnGitHubPublishedReports343536 = new Button { Text = "GITHUB Published Report 34,35,36", Width = 220, Top = 600, Left = 30 };
-        _btnGitHubPublishedTqgaFolders = new Button { Text = "GITHUB Published TQGA Reports + Codes", Width = 220, Top = 650, Left = 30 };
+        const int leftColumnLeft = 30;
+        const int leftColumnWidth = 220;
+        const int buttonStartTop = 30;
+        const int buttonStep = 40;
+
+        int buttonIndex = 0;
+
+        _btnDownload = new Button { Text = "DOWNLOAD CANDLES DATA", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnUpdate = new Button { Text = "UPDATE CANDLES DATA", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnRunResearch = new Button { Text = "RUN PORTOFOLIO", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnFullReportSave = new Button { Text = "FULL REPORT → FILE", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnFullReportClipboard = new Button { Text = "FULL REPORT → CLIPBOARD", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnPublished = new Button { Text = "PUBLISHED", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnReportAll31 = new Button { Text = "REPORT ALL 31", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnGitPublished = new Button { Text = "GIT PUBLISHED", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnCodesFile = new Button { Text = "CODES FILE", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnGitHubPublished = new Button { Text = "GITHUB Codes Published", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnGitHubReportsPublished = new Button { Text = "GITHUB Reports Published", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnGitHubPublishedReports343536 = new Button { Text = "GITHUB Published Report 34,35,36", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnGitHubPublishedTqgaReportsFolder = new Button { Text = "GITHUB Published TQGA Reports Folder", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
+        _btnGitHubPublishedTqgaCodesFolder = new Button { Text = "GITHUB Published TQGA Codes Folder", Width = leftColumnWidth, Top = buttonStartTop + (buttonStep * buttonIndex++), Left = leftColumnLeft };
 
         _btnDownload.Click += async (_, _) =&gt; await RunSafe(_bootstrapper.ForceFullDownloadAsync);
         _btnUpdate.Click += async (_, _) =&gt; await RunSafe(_bootstrapper.UpdateAsync);
@@ -20909,7 +20891,8 @@ public sealed class MainForm : Form
         _btnGitHubPublished.Click += async (_, _) =&gt; await GitHubPublishedAsync();
         _btnGitHubReportsPublished.Click += async (_, _) =&gt; await GitHubReportsPublishedAsync();
         _btnGitHubPublishedReports343536.Click += async (_, _) =&gt; await GitHubPublishedReports343536Async();
-        _btnGitHubPublishedTqgaFolders.Click += async (_, _) =&gt; await GitHubPublishedTqgaFoldersAsync();
+        _btnGitHubPublishedTqgaReportsFolder.Click += async (_, _) =&gt; await GitHubPublishedTqgaReportsFolderAsync();
+        _btnGitHubPublishedTqgaCodesFolder.Click += async (_, _) =&gt; await GitHubPublishedTqgaCodesFolderAsync();
 
         _btnFullReportSave.Click += (_, _) =&gt;
         {
@@ -20925,9 +20908,9 @@ public sealed class MainForm : Form
         };
 
         _lblStrategies = new Label { Text = "Select Strategies:", Left = 300, Top = 30, Width = 220 };
-        _strategyList = new CheckedListBox { Left = 300, Top = 55, Width = 330, Height = 560, CheckOnClick = true };
-        _btnSelectAll = new Button { Text = "Select All", Left = 300, Top = 625, Width = 120 };
-        _btnSelectNone = new Button { Text = "Select None", Left = 430, Top = 625, Width = 120 };
+        _strategyList = new CheckedListBox { Left = 300, Top = 55, Width = 330, Height = 530, CheckOnClick = true };
+        _btnSelectAll = new Button { Text = "Select All", Left = 300, Top = 595, Width = 120 };
+        _btnSelectNone = new Button { Text = "Select None", Left = 430, Top = 595, Width = 120 };
         _btnSelectAll.Click += (_, _) =&gt; SetAllChecked(_strategyList, true);
         _btnSelectNone.Click += (_, _) =&gt; SetAllChecked(_strategyList, false);
 
@@ -20954,25 +20937,25 @@ public sealed class MainForm : Form
         };
 
         _lblCoinNames = new Label { Text = "Coin Names:", Left = 1140, Top = 30, Width = 220 };
-        _coinNameList = new CheckedListBox { Left = 1140, Top = 55, Width = 230, Height = 560, CheckOnClick = true };
-        _btnCoinAll = new Button { Text = "Coin All", Left = 1140, Top = 625, Width = 100 };
-        _btnCoinNone = new Button { Text = "Coin None", Left = 1250, Top = 625, Width = 100 };
+        _coinNameList = new CheckedListBox { Left = 1140, Top = 55, Width = 230, Height = 530, CheckOnClick = true };
+        _btnCoinAll = new Button { Text = "Coin All", Left = 1140, Top = 595, Width = 100 };
+        _btnCoinNone = new Button { Text = "Coin None", Left = 1250, Top = 595, Width = 100 };
         _btnCoinAll.Click += (_, _) =&gt; SetAllChecked(_coinNameList, true);
         _btnCoinNone.Click += (_, _) =&gt; SetAllChecked(_coinNameList, false);
 
-        _lblSoloResearch = new Label { Text = "Solo Research Mode:", Left = 300, Top = 665, Width = 220 };
+        _lblSoloResearch = new Label { Text = "Solo Research Mode:", Left = 300, Top = 635, Width = 220 };
         _chkSoloResearchMode = new CheckBox
         {
             Text = "AUTO-CHECK ONLY ACTIVE STRATEGY",
             Left = 300,
-            Top = 690,
+            Top = 660,
             Width = 280,
             Checked = false
         };
         _cmbSoloStrategy = new ComboBox
         {
             Left = 300,
-            Top = 720,
+            Top = 690,
             Width = 330,
             DropDownStyle = ComboBoxStyle.DropDownList
         };
@@ -21004,7 +20987,8 @@ public sealed class MainForm : Form
         [
             _btnDownload, _btnUpdate, _btnRunResearch, _btnFullReportSave, _btnFullReportClipboard,
             _btnPublished, _btnReportAll31, _btnGitPublished, _btnCodesFile, _btnGitHubPublished,
-            _btnGitHubReportsPublished, _btnGitHubPublishedReports343536, _btnGitHubPublishedTqgaFolders,
+            _btnGitHubReportsPublished, _btnGitHubPublishedReports343536,
+            _btnGitHubPublishedTqgaReportsFolder, _btnGitHubPublishedTqgaCodesFolder,
             _lblStrategies, _strategyList, _btnSelectAll, _btnSelectNone,
             _lblTimeframes, _timeframeList, _btnTfAll, _btnTfNone,
             _lblCoinCategories, _coinCategoryList, _btnCatAll, _btnCatNone,
@@ -21445,7 +21429,7 @@ public sealed class MainForm : Form
         }
     }
 
-    private async Task GitHubPublishedTqgaFoldersAsync()
+    private async Task GitHubPublishedTqgaReportsFolderAsync()
     {
         Toggle(false);
 
@@ -21453,31 +21437,27 @@ public sealed class MainForm : Form
         {
             string repoRootPath = ResolveGitRepoPath();
             string localReportsPath = DataPaths.Reports;
-            string localSolutionRoot = ResolveTqgaSolutionRoot();
 
-            var publishResult = await Task.Run(() =&gt;
-                _gitHubPagesPublish.PublishTqgaReportsAndCodes(
-                    repoRootPath,
-                    localReportsPath,
-                    localSolutionRoot));
+            object publishResult = await InvokeGitHubPagesPublisherAsync(
+                "PublishTqgaReportsFolder",
+                [repoRootPath, localReportsPath]);
 
             MessageBox.Show(
-                $"GITHUB Published TQGA Reports + Codes completed successfully.\n\n" +
-                $"Reports Published: {publishResult.ReportsPublishedCount}\n" +
-                $"Codes Published: {publishResult.CodesPublishedCount}\n\n" +
-                $"Reports URL: {publishResult.ReportsRootPublicUrl}\n" +
-                $"Codes URL: {publishResult.CodesRootPublicUrl}\n\n" +
-                $"Reports Edit URL: {publishResult.ReportsRootEditUrl}\n" +
-                $"Codes Edit URL: {publishResult.CodesRootEditUrl}",
-                "GITHUB Published TQGA Reports + Codes",
+                BuildReflectionSuccessMessage(
+                    header: "GITHUB Published TQGA Reports Folder completed successfully.",
+                    publishResult,
+                    ("ReportsPublishedCount", "Reports Published"),
+                    ("ReportsRootPublicUrl", "Reports URL"),
+                    ("ReportsRootEditUrl", "Reports Edit URL")),
+                "GITHUB Published TQGA Reports Folder",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"GITHUB Published TQGA Reports + Codes failed.\n\n{ex.Message}",
-                "GITHUB Published TQGA Reports + Codes ERROR",
+                $"GITHUB Published TQGA Reports Folder failed.\n\n{ex.Message}",
+                "GITHUB Published TQGA Reports Folder ERROR",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         }
@@ -21485,6 +21465,93 @@ public sealed class MainForm : Form
         {
             Toggle(true);
         }
+    }
+
+    private async Task GitHubPublishedTqgaCodesFolderAsync()
+    {
+        Toggle(false);
+
+        try
+        {
+            string repoRootPath = ResolveGitRepoPath();
+            string localSolutionRoot = ResolveTqgaSolutionRoot();
+
+            object publishResult = await InvokeGitHubPagesPublisherAsync(
+                "PublishTqgaCodesFolder",
+                [repoRootPath, localSolutionRoot]);
+
+            MessageBox.Show(
+                BuildReflectionSuccessMessage(
+                    header: "GITHUB Published TQGA Codes Folder completed successfully.",
+                    publishResult,
+                    ("CodesPublishedCount", "Codes Published"),
+                    ("CodesRootPublicUrl", "Codes URL"),
+                    ("CodesRootEditUrl", "Codes Edit URL")),
+                "GITHUB Published TQGA Codes Folder",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"GITHUB Published TQGA Codes Folder failed.\n\n{ex.Message}",
+                "GITHUB Published TQGA Codes Folder ERROR",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            Toggle(true);
+        }
+    }
+
+    private async Task&lt;object&gt; InvokeGitHubPagesPublisherAsync(string methodName, object[] args)
+    {
+        MethodInfo? method = _gitHubPagesPublish.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
+        if (method == null)
+        {
+            throw new MissingMethodException(
+                $"GitHubPagesPublishService does not contain method '{methodName}'. " +
+                $"Please patch GitHubPagesPublishService.cs first.");
+        }
+
+        return await Task.Run(() =&gt;
+        {
+            try
+            {
+                return method.Invoke(_gitHubPagesPublish, args)
+                    ?? throw new InvalidOperationException($"Method '{methodName}' returned null.");
+            }
+            catch (TargetInvocationException tie) when (tie.InnerException != null)
+            {
+                throw tie.InnerException;
+            }
+        });
+    }
+
+    private static string BuildReflectionSuccessMessage(
+        string header,
+        object result,
+        params (string PropertyName, string Label)[] mappings)
+    {
+        var lines = new List&lt;string&gt; { header, string.Empty };
+
+        Type type = result.GetType();
+
+        foreach ((string propertyName, string label) in mappings)
+        {
+            PropertyInfo? property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            if (property == null)
+                continue;
+
+            object? value = property.GetValue(result);
+            if (value == null)
+                continue;
+
+            lines.Add($"{label}: {value}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private string ResolveTqgaSolutionRoot()
@@ -21780,7 +21847,8 @@ $@"&lt;!DOCTYPE html&gt;
         if (_btnGitHubPublished != null) _btnGitHubPublished.Enabled = enabled;
         if (_btnGitHubReportsPublished != null) _btnGitHubReportsPublished.Enabled = enabled;
         if (_btnGitHubPublishedReports343536 != null) _btnGitHubPublishedReports343536.Enabled = enabled;
-        if (_btnGitHubPublishedTqgaFolders != null) _btnGitHubPublishedTqgaFolders.Enabled = enabled;
+        if (_btnGitHubPublishedTqgaReportsFolder != null) _btnGitHubPublishedTqgaReportsFolder.Enabled = enabled;
+        if (_btnGitHubPublishedTqgaCodesFolder != null) _btnGitHubPublishedTqgaCodesFolder.Enabled = enabled;
 
         if (_strategyList != null) _strategyList.Enabled = enabled;
         if (_timeframeList != null) _timeframeList.Enabled = enabled;
