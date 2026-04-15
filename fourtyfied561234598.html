@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__09-57-18.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__09-57-18.txt
-GENERATED: 2026-04-15 09:57:18
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__12-08-25.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__12-08-25.txt
+GENERATED: 2026-04-15 12:08:25
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───ee132dc5-d675-4044-b615-ad8f92d1164b.vsidx
+│       │   └───812018d4-eade-4e15-b823-ec4ad9d72e8d.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -7827,8 +7827,8 @@ public sealed class GitHubCodeAuditPublishResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubPagesPublishService.cs
 TYPE: .cs
-SIZE: 44.59 KB
-LINES: 987
+SIZE: 45.49 KB
+LINES: 1020
 ==============================
 using System.ComponentModel;
 using System.Diagnostics;
@@ -8082,39 +8082,33 @@ public sealed class GitHubPagesPublishService
 
         EnsureGitRepository(repoRootPath);
 
-        RunGit(repoRootPath, "rebase --abort", allowFailure: true);
-        RunGit(repoRootPath, $"fetch {RemoteName}");
-        RunGit(repoRootPath, $"reset --hard {RemoteName}/{BranchName}");
-
         string reportsPublishRoot = Path.Combine(repoRootPath, ReportsFolderName);
         string codesPublishRoot = Path.Combine(repoRootPath, CodesFolderName);
 
-        RecreateDirectory(reportsPublishRoot);
-        RecreateDirectory(codesPublishRoot);
+        Directory.CreateDirectory(reportsPublishRoot);
+        Directory.CreateDirectory(codesPublishRoot);
 
-        List&lt;GeneratedPageInfo&gt; reportPages = PublishReportFolder(localReportsPath, reportsPublishRoot);
-        List&lt;GeneratedPageInfo&gt; codePages = PublishCodeFolder(localSolutionRoot, codesPublishRoot);
+        List&lt;GeneratedPageInfo&gt; reportPages = PublishReportFolderIncremental(localReportsPath, reportsPublishRoot);
+        List&lt;GeneratedPageInfo&gt; codePages = PublishCodeFolderIncremental(localSolutionRoot, codesPublishRoot);
 
         string reportsIndexPath = Path.Combine(reportsPublishRoot, "index.html");
         string codesIndexPath = Path.Combine(codesPublishRoot, "index.html");
 
-        File.WriteAllText(
+        WriteTextIfChanged(
             reportsIndexPath,
             BuildGeneratedFolderIndexPage(
                 title: "TQGA Reports",
-                description: "Published report pages generated automatically from the local Reports folder.",
+                description: "Published report pages generated incrementally from the local Reports folder.",
                 webBasePath: ReportsFolderName,
-                pages: reportPages),
-            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                pages: reportPages));
 
-        File.WriteAllText(
+        WriteTextIfChanged(
             codesIndexPath,
             BuildGeneratedFolderIndexPage(
                 title: "TQGA Codes",
-                description: "Published code pages generated automatically from the local TQGA solution folder.",
+                description: "Published code pages generated incrementally from selected TQGA solution folders.",
                 webBasePath: CodesFolderName,
-                pages: codePages),
-            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                pages: codePages));
 
         RunGit(repoRootPath, $"add \"{ReportsFolderName}\" \"{CodesFolderName}\"");
         RunGit(repoRootPath, $"commit -m \"TQGA publish reports and codes folders {DateTime.UtcNow:yyyyMMdd_HHmmss}\"", allowNoChanges: true);
@@ -8159,7 +8153,7 @@ public sealed class GitHubPagesPublishService
         File.WriteAllText(path, repoRootPath.Trim(), Encoding.UTF8);
     }
 
-    private static List&lt;GeneratedPageInfo&gt; PublishReportFolder(string localReportsPath, string reportsPublishRoot)
+    private static List&lt;GeneratedPageInfo&gt; PublishReportFolderIncremental(string localReportsPath, string reportsPublishRoot)
     {
         var sourceFiles = Directory
             .EnumerateFiles(localReportsPath, "*.*", SearchOption.TopDirectoryOnly)
@@ -8189,7 +8183,7 @@ public sealed class GitHubPagesPublishService
                     reportText: reportText,
                     rawHref: "../" + sourceFileName);
 
-            File.WriteAllText(targetPath, html, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            WriteTextIfChanged(targetPath, html);
 
             pages.Add(new GeneratedPageInfo(
                 Title: sourceFileName,
@@ -8202,10 +8196,12 @@ public sealed class GitHubPagesPublishService
         return pages;
     }
 
-    private static List&lt;GeneratedPageInfo&gt; PublishCodeFolder(string localSolutionRoot, string codesPublishRoot)
+    private static List&lt;GeneratedPageInfo&gt; PublishCodeFolderIncremental(string localSolutionRoot, string codesPublishRoot)
     {
-        var sourceFiles = Directory
-            .EnumerateFiles(localSolutionRoot, "*.*", SearchOption.AllDirectories)
+        var sourceRoots = GetCodeSourceRoots(localSolutionRoot);
+
+        var sourceFiles = sourceRoots
+            .SelectMany(root =&gt; Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories))
             .Where(ShouldPublishCodeFile)
             .OrderBy(x =&gt; x, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -8226,10 +8222,9 @@ public sealed class GitHubPagesPublishService
             string codeText = File.ReadAllText(sourcePath, Encoding.UTF8);
             string title = safeRelative;
 
-            File.WriteAllText(
+            WriteTextIfChanged(
                 targetPath,
-                BuildCodePage(title, safeRelative, codeText),
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                BuildCodePage(title, safeRelative, codeText));
 
             string publicRelativePath = $"{CodesFolderName}/{targetRelative}".Replace("\\", "/");
             string editRelativePath = $"{CodesFolderName}/{targetRelative}".Replace("\\", "/");
@@ -8243,6 +8238,31 @@ public sealed class GitHubPagesPublishService
         }
 
         return pages;
+    }
+
+    private static List&lt;string&gt; GetCodeSourceRoots(string localSolutionRoot)
+    {
+        string[] preferred =
+        [
+            "TQGA.Application",
+            "TQGA.Domain",
+            "TQGA.Infrastructure",
+            "TQGA.WinForms"
+        ];
+
+        var roots = new List&lt;string&gt;();
+
+        foreach (string folder in preferred)
+        {
+            string path = Path.Combine(localSolutionRoot, folder);
+            if (Directory.Exists(path))
+                roots.Add(path);
+        }
+
+        if (roots.Count &gt; 0)
+            return roots;
+
+        return [localSolutionRoot];
     }
 
     private static bool ShouldPublishCodeFile(string filePath)
@@ -8263,6 +8283,22 @@ public sealed class GitHubPagesPublishService
         return true;
     }
 
+    private static void WriteTextIfChanged(string targetPath, string content)
+    {
+        string? targetDir = Path.GetDirectoryName(targetPath);
+        if (!string.IsNullOrWhiteSpace(targetDir))
+            Directory.CreateDirectory(targetDir);
+
+        if (File.Exists(targetPath))
+        {
+            string existing = File.ReadAllText(targetPath, Encoding.UTF8);
+            if (string.Equals(existing, content, StringComparison.Ordinal))
+                return;
+        }
+
+        File.WriteAllText(targetPath, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
     private static string BuildGeneratedFolderIndexPage(
         string title,
         string description,
@@ -8271,6 +8307,10 @@ public sealed class GitHubPagesPublishService
     {
         string safeTitle = System.Net.WebUtility.HtmlEncode(title);
         string safeDescription = System.Net.WebUtility.HtmlEncode(description);
+
+        var orderedPages = pages
+            .OrderBy(x =&gt; x.Title, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         var sb = new StringBuilder();
 
@@ -8299,13 +8339,14 @@ public sealed class GitHubPagesPublishService
         sb.AppendLine($"            &lt;div class=\"meta\"&gt;{safeDescription}&lt;/div&gt;");
         sb.AppendLine($"            &lt;div class=\"meta\"&gt;&lt;strong&gt;Published (UTC):&lt;/strong&gt; {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}&lt;/div&gt;");
         sb.AppendLine($"            &lt;div class=\"meta\"&gt;&lt;strong&gt;Folder:&lt;/strong&gt; {System.Net.WebUtility.HtmlEncode(webBasePath)}&lt;/div&gt;");
+        sb.AppendLine($"            &lt;div class=\"meta\"&gt;&lt;strong&gt;Pages:&lt;/strong&gt; {orderedPages.Count}&lt;/div&gt;");
         sb.AppendLine("            &lt;table&gt;");
         sb.AppendLine("                &lt;thead&gt;");
         sb.AppendLine("                    &lt;tr&gt;&lt;th&gt;Name&lt;/th&gt;&lt;th&gt;Open&lt;/th&gt;&lt;th&gt;Edit&lt;/th&gt;&lt;/tr&gt;");
         sb.AppendLine("                &lt;/thead&gt;");
         sb.AppendLine("                &lt;tbody&gt;");
 
-        foreach (GeneratedPageInfo page in pages)
+        foreach (GeneratedPageInfo page in orderedPages)
         {
             string safeName = System.Net.WebUtility.HtmlEncode(page.Title);
             string safePublic = System.Net.WebUtility.HtmlEncode(page.PublicUrl);
@@ -8370,14 +8411,6 @@ public sealed class GitHubPagesPublishService
         sb.AppendLine("&lt;/html&gt;");
 
         return sb.ToString();
-    }
-
-    private static void RecreateDirectory(string directoryPath)
-    {
-        if (Directory.Exists(directoryPath))
-            Directory.Delete(directoryPath, recursive: true);
-
-        Directory.CreateDirectory(directoryPath);
     }
 
     private static void EnsureGitRepository(string repoRootPath)
