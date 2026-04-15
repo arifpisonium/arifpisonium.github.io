@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__19-05-04.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__19-05-04.txt
-GENERATED: 2026-04-15 19:05:04
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__19-31-49.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__19-31-49.txt
+GENERATED: 2026-04-15 19:31:49
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───50162e68-6e93-4fa9-9fbd-8862d840e726.vsidx
+│       │   └───5ac4ca91-6809-4ba3-9bd5-4528a49c9cc1.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -665,8 +665,8 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 64.06 KB
-LINES: 1634
+SIZE: 64.32 KB
+LINES: 1638
 ==============================
 
 
@@ -905,7 +905,11 @@ public sealed class PortfolioBacktestRunner
                 if (marketWeight &lt;= 0m)
                     continue;
 
+                DateTime fromUtc = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                DateTime toUtcExclusive = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
                 var candles = _feed.GetCandles(m.Symbol, m.Timeframe)
+                    .Where(c =&gt; c.Time &gt;= fromUtc &amp;&amp; c.Time &lt; toUtcExclusive)
                     .OrderBy(c =&gt; c.Time)
                     .ToList();
 
