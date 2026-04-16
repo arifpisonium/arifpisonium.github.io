@@ -21,12 +21,12 @@
             <div class="head">
                 <div class="title">REPORT 35 — TRADE_INTELLIGENCE</div>
                 <div class="meta">
-                    <div><strong>Published (UTC):</strong> 2026-04-16 05:47:27</div>
-                    <div><strong>Source File:</strong> REPORT_35_TRADE_INTELLIGENCE_20260416_104648.txt</div>
-                    <div><a href="REPORT_35_TRADE_INTELLIGENCE_20260416_104648.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                    <div><strong>Published (UTC):</strong> 2026-04-16 06:52:14</div>
+                    <div><strong>Source File:</strong> REPORT_35_TRADE_INTELLIGENCE_20260416_115147.txt</div>
+                    <div><a href="REPORT_35_TRADE_INTELLIGENCE_20260416_115147.txt">Open raw text</a> | <a href="/">Open main site</a></div>
                 </div>
             </div>
-            <pre>FILE: REPORT_35_TRADE_INTELLIGENCE_20260416_104648.txt
+            <pre>FILE: REPORT_35_TRADE_INTELLIGENCE_20260416_115147.txt
 ----------------------------------------------------------------------
 
 REPORT 35 — TRADE_INTELLIGENCE
@@ -34,17 +34,56 @@ REPORT 35 — TRADE_INTELLIGENCE
 
 PURPOSE
 -------
-Compact text version of REPORT 33 trade journal for REPORT_ALL size control.
-Field headings are printed once only, then each trade prints values in sequence.
+Compact trade intelligence report with a summary-first layout for fast audit.
+Use SECTION A for decision-making and SECTION O for the full journal.
 
 RUN CONTEXT
 -----------
-Run Timestamp (PKT)                : 2026-04-16 10:46:48 PKT
-Run Timestamp (UTC)                : 2026-04-16 05:46:48 UTC
-File Name                          : REPORT_35_TRADE_INTELLIGENCE_20260416_104648.txt
+Run Timestamp (PKT)                : 2026-04-16 11:51:47 PKT
+Run Timestamp (UTC)                : 2026-04-16 06:51:47 UTC
+File Name                          : REPORT_35_TRADE_INTELLIGENCE_20260416_115147.txt
+
+SECTION A — SUMMARY
+-------------------
 Total Trade Rows                   : 262
 Closed Trades                      : 262
 Open Trades                        : 0
+Distinct Strategies                : 1
+Distinct Symbols                   : 4
+Distinct Markets                   : 4
+Backtest First Entry (PKT)         : 2025-01-01 05:00:00 PKT
+Backtest First Entry (UTC)         : 2025-01-01 00:00:00 UTC
+Backtest Last Entry (PKT)          : 2025-11-18 05:00:00 PKT
+Backtest Last Entry (UTC)          : 2025-11-18 00:00:00 UTC
+Backtest First Exit (PKT)          : 2025-01-03 05:00:00 PKT
+Backtest First Exit (UTC)          : 2025-01-03 00:00:00 UTC
+Backtest Last Exit (PKT)           : 2025-11-19 05:00:00 PKT
+Backtest Last Exit (UTC)           : 2025-11-19 00:00:00 UTC
+Gross PnL                          : -1432.7328
+Commission                         : 0.0000
+Net PnL                            : -1432.7328
+Total Trade Value (USDT)           : 260453.3565
+Average Trade Value (USDT)         : 994.0968
+Average Holding Minutes (Closed)   : 4407.94
+Exit Family Count — TakeProfitHit  : 91
+Exit Family Count — StopLossHit    : 167
+Exit Family Count — NonNegativeExit: 93
+Exit Family Count — LossExit       : 169
+Plan Source — StrategyNative       : 262
+Plan Source — Non-StrategyNative   : 0
+
+SECTION B — STRATEGY SUMMARY
+----------------------------
+Strategy | NetPnL | Trades | WinRate | ProfitFactor | AvgTrade | AvgR | BestMarket | WorstMarket | StrategyNative% | NonStrategyNative%
+S05 EMA Trend (50/200) | -1432.7328 | 262 | 35.50% | 0.8513 | -5.4684 | -0.1826 | AAVEUSDT::1d | AVAXUSDT::1d | 100.00% | 0.00%
+
+SECTION C — MARKET SUMMARY
+--------------------------
+Market | NetPnL | Trades | WinRate | ProfitFactor | AvgTrade | AvgR | BestStrategy | WorstStrategy
+AAVEUSDT::1d | -124.2453 | 40 | 35.00% | 0.9085 | -3.1061 | -0.1028 | S05 | S05
+ATOMUSDT::1d | -322.7631 | 61 | 37.70% | 0.8575 | -5.2912 | -0.1766 | S05 | S05
+APTUSDT::1d | -445.2216 | 73 | 35.62% | 0.8323 | -6.0989 | -0.2031 | S05 | S05
+AVAXUSDT::1d | -540.5028 | 88 | 34.09% | 0.8390 | -6.1421 | -0.2061 | S05 | S05
 
 SECTION O — FULL TRADE JOURNAL
 ------------------------------

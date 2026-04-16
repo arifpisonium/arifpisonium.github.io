@@ -21,12 +21,12 @@
             <div class="head">
                 <div class="title">REPORT 34 — TRADE_BLOTTER</div>
                 <div class="meta">
-                    <div><strong>Published (UTC):</strong> 2026-04-16 05:47:26</div>
-                    <div><strong>Source File:</strong> REPORT_34_TRADE_BLOTTER_20260416_104648.txt</div>
-                    <div><a href="REPORT_34_TRADE_BLOTTER_20260416_104648.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                    <div><strong>Published (UTC):</strong> 2026-04-16 06:52:14</div>
+                    <div><strong>Source File:</strong> REPORT_34_TRADE_BLOTTER_20260416_115147.txt</div>
+                    <div><a href="REPORT_34_TRADE_BLOTTER_20260416_115147.txt">Open raw text</a> | <a href="/">Open main site</a></div>
                 </div>
             </div>
-            <pre>FILE: REPORT_34_TRADE_BLOTTER_20260416_104648.txt
+            <pre>FILE: REPORT_34_TRADE_BLOTTER_20260416_115147.txt
 ----------------------------------------------------------------------
 
 REPORT 34 — TRADE_BLOTTER
@@ -34,20 +34,58 @@ REPORT 34 — TRADE_BLOTTER
 
 PURPOSE
 -------
-Compact text version of REPORT 32 for REPORT_ALL size control.
-Field headings are printed once only, then each trade prints values in sequence.
+Compact trade blotter with a top audit summary plus the full journal.
+Use SECTION A for fast review and SECTION B for row-level surgery.
 
 RUN CONTEXT
 -----------
-Run Timestamp (PKT)                : 2026-04-16 10:46:48 PKT
-Run Timestamp (UTC)                : 2026-04-16 05:46:48 UTC
-File Name                          : REPORT_34_TRADE_BLOTTER_20260416_104648.txt
+Run Timestamp (PKT)                : 2026-04-16 11:51:47 PKT
+Run Timestamp (UTC)                : 2026-04-16 06:51:47 UTC
+File Name                          : REPORT_34_TRADE_BLOTTER_20260416_115147.txt
+
+SECTION A — SUMMARY
+-------------------
 Total Trade Rows                   : 262
 Closed Trades                      : 262
 Open Trades                        : 0
+Distinct Strategies                : 1
+Distinct Symbols                   : 4
+Distinct Markets                   : 4
+Backtest First Entry (PKT)         : 2025-01-01 05:00:00 PKT
+Backtest First Entry (UTC)         : 2025-01-01 00:00:00 UTC
+Backtest Last Entry (PKT)          : 2025-11-18 05:00:00 PKT
+Backtest Last Entry (UTC)          : 2025-11-18 00:00:00 UTC
+Backtest First Exit (PKT)          : 2025-01-03 05:00:00 PKT
+Backtest First Exit (UTC)          : 2025-01-03 00:00:00 UTC
+Backtest Last Exit (PKT)           : 2025-11-19 05:00:00 PKT
+Backtest Last Exit (UTC)           : 2025-11-19 00:00:00 UTC
+Total Trade Value (USDT)           : 260453.3565
+Average Trade Value (USDT)         : 994.0968
+Average Qty                        : 120.58336456
+Average Holding Minutes (Closed)   : 4407.94
+Exit Tag Count — TakeProfitHit     : 91
+Exit Tag Count — StopLossHit       : 167
+Exit Tag Count — NonNegativeExit   : 93
+Exit Tag Count — LossExit          : 169
+Plan Source — StrategyNative       : 262
+Plan Source — Non-StrategyNative   : 0
 
-TRADE JOURNAL
--------------
+SECTION A1 — TOP SYMBOLS BY TRADE COUNT
+---------------------------------------
+AVAXUSDT     Trades=    88  NetPnL=     -540.5028
+APTUSDT      Trades=    73  NetPnL=     -445.2216
+ATOMUSDT     Trades=    61  NetPnL=     -322.7631
+AAVEUSDT     Trades=    40  NetPnL=     -124.2453
+
+SECTION A2 — TOP MARKETS BY TRADE COUNT
+---------------------------------------
+AVAXUSDT::1d       Trades=    88  NetPnL=     -540.5028
+APTUSDT::1d        Trades=    73  NetPnL=     -445.2216
+ATOMUSDT::1d       Trades=    61  NetPnL=     -322.7631
+AAVEUSDT::1d       Trades=    40  NetPnL=     -124.2453
+
+SECTION B — FULL TRADE JOURNAL
+------------------------------
 TradeID | StrategyId | StrategyName | Symbol | Side | Qty | TradeValueUSDT | Timeframe | EntryTime(PKT) | EntryPrice | ExitTime(PKT) | ExitPrice | Closed | RealizedPnL | HoldingMinutes | OrderType | EntryReason | ExitReason | StopLoss | TakeProfit | ExpectedPrice | PlanSource | FavorableExcursion | AdverseExcursion | RMultiple
 41 | S05 | EMA Trend (50/200) | APTUSDT | Buy | 110.72700075 | 998.7575 | 1d | 2025-01-01 05:00:00 PKT | 9.02000000 | 2025-01-03 05:00:00 PKT | 9.81000000 | YES | 87.47433059 | 2880.00 | Market | EMA Trend (50/200)|Signal=Long|Symbol=APTUSDT|Time=2025-01-01 00:00:00|PlanSource=StrategyNative|Family=S05 | EMA Trend (50/200)|Signal=Exit|Symbol=APTUSDT|Time=2025-01-03 00:00:00|NonNegativeExit|PlanSource=StrategyNative|Family=S05|ProtectiveExit=TakeProfitHit | 8.74940000 | 9.56120000 | 9.24550000 | StrategyNative | 87.47433059 | 0.00000000 | 2.9194
 114 | S05 | EMA Trend (50/200) | ATOMUSDT | Buy | 151.87190019 | 994.3053 | 1d | 2025-01-01 05:00:00 PKT | 6.54700000 | 2025-01-03 05:00:00 PKT | 7.42300000 | YES | 133.03978456 | 2880.00 | Market | EMA Trend (50/200)|Signal=Long|Symbol=ATOMUSDT|Time=2025-01-01 00:00:00|PlanSource=StrategyNative|Family=S05 | EMA Trend (50/200)|Signal=Exit|Symbol=ATOMUSDT|Time=2025-01-03 00:00:00|NonNegativeExit|PlanSource=StrategyNative|Family=S05|ProtectiveExit=TakeProfitHit | 6.35059000 | 6.93982000 | 6.71067500 | StrategyNative | 133.03978456 | 0.00000000 | 4.4601
