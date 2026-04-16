@@ -9,16 +9,18 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-15__19-58-22.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-15__19-58-22.txt
-GENERATED: 2026-04-15 19:58:22
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-16__10-47-06.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-16__10-47-06.txt
+GENERATED: 2026-04-16 10:47:06
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
 ├───.vs
 │   └───TQGA
+│       ├───DesignTimeBuild
+│       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───9700ac41-cabc-4cc4-95cf-cf1a265e3102.vsidx
+│       │   └───b75b7fde-dcec-4da5-957c-55263ec51f6e.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -663,13 +665,9 @@ public sealed class PortfolioBacktestResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Backtesting\PortfolioBacktestRunner.cs
 TYPE: .cs
-SIZE: 64.41 KB
-LINES: 1638
+SIZE: 66.11 KB
+LINES: 1685
 ==============================
-
-
-
-// i am sending current existing file of PortfolioBacktestRunner.cs
 using Microsoft.Extensions.DependencyInjection;
 using TQGA.Application.Accounting;
 using TQGA.Application.Backtesting;
@@ -723,6 +721,21 @@ public sealed class PortfolioBacktestRunner
             "FILUSDT",
             "LINKUSDT",
             "NEARUSDT"
+        };
+
+    // PATCH 32B — S05 solo 2025 diagnostic basket
+    // Current 2025 REPORT_36 shows only these traded symbols and only one survivor.
+    // Narrow S05 solo research to this exact forensic basket and 1d only.
+    private static readonly HashSet&lt;string&gt; S05DiagnosticSymbols =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "AAVEUSDT",
+            "ADAUSDT",
+            "ALGOUSDT",
+            "APTUSDT",
+            "ARBUSDT",
+            "ATOMUSDT",
+            "AVAXUSDT"
         };
 
     public PortfolioBacktestRunner(
@@ -796,6 +809,8 @@ public sealed class PortfolioBacktestRunner
 
         if (activeTimeframes.Count == 0)
             throw new InvalidOperationException("No valid timeframes selected.");
+
+        ApplySoloResearchNarrowing(types, ref activeSymbols, ref activeTimeframes);
 
         // MASTER RESET MODE
         // No pre-trade narrowing, no Wave B narrowing, no CIO narrowing before trade generation.
@@ -893,7 +908,7 @@ public sealed class PortfolioBacktestRunner
             var openRiskByCluster = new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase);
             decimal totalOpenRiskPct = 0m;
             decimal peakEquity = allocatedCapital;
-            //throw new InvalidOperationException("DEBUG PROOF: 2025 FILTER RUNNER ACTIVE");
+
             foreach (var m in selectedMarkets)
             {
                 var marketWeight = marketAllocationWeights.TryGetValue(m, out var resolvedMarketWeight)
@@ -1215,6 +1230,42 @@ public sealed class PortfolioBacktestRunner
     {
         return market.Timeframe.Equals("4h", StringComparison.OrdinalIgnoreCase)
             &amp;&amp; S06Phase1FamilySymbols.Contains(market.Symbol);
+    }
+
+    private static void ApplySoloResearchNarrowing(
+        IReadOnlyList&lt;Type&gt; strategyTypes,
+        ref List&lt;string&gt; activeSymbols,
+        ref List&lt;string&gt; activeTimeframes)
+    {
+        if (strategyTypes == null || strategyTypes.Count != 1)
+            return;
+
+        Type onlyType = strategyTypes[0];
+        if (!onlyType.Name.Equals("EmaTrendQuantStrategy", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        activeTimeframes = activeTimeframes
+            .Where(tf =&gt; tf.Equals("1d", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (activeTimeframes.Count == 0)
+            activeTimeframes = new List&lt;string&gt; { "1d" };
+
+        var narrowedSymbols = activeSymbols
+            .Where(s =&gt; S05DiagnosticSymbols.Contains(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (narrowedSymbols.Count == 0)
+        {
+            narrowedSymbols = S05DiagnosticSymbols
+                .Where(s =&gt; BinanceUniverse.ActiveSymbols.Contains(s, StringComparer.OrdinalIgnoreCase))
+                .OrderBy(s =&gt; s, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        activeSymbols = narrowedSymbols;
     }
 
     private (string? Symbol, string? Timeframe, decimal? StartPrice, decimal? EndPrice) ResolveBenchmarkSnapshot(
@@ -2302,8 +2353,6 @@ public sealed class PortfolioBacktestRunner
         public decimal EffectiveMinRelativeToLeaderPreTradeScore { get; init; }
     }
 }
-
-
 
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\GlobalUsings.cs
@@ -5258,8 +5307,8 @@ public sealed class A84ChatGptUploadReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\A84ExecutiveSummaryReportService.cs
 TYPE: .cs
-SIZE: 9.17 KB
-LINES: 275
+SIZE: 11.77 KB
+LINES: 347
 ==============================
 using System;
 using System.Collections.Generic;
@@ -5279,24 +5328,24 @@ public sealed class A84ExecutiveSummaryReportService
         DateTime runUtc,
         IReadOnlyList&lt;Type&gt; selectedStrategies,
         Dictionary&lt;string, decimal&gt; cioWeightsFinal,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots,
+        IReadOnlyCollection&lt;int&gt; allowedStrategyIds,
         int recentMinutesWindow = 10)
     {
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(selectedStrategies);
         ArgumentNullException.ThrowIfNull(cioWeightsFinal);
+        ArgumentNullException.ThrowIfNull(fitnessSnapshots);
+        ArgumentNullException.ThrowIfNull(allowedStrategyIds);
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        // Use PKT stamp for the file name so the visible file chronology matches your local review clock.
         string pktStamp = PakistanTime.Stamp(runUtc);
 
         string outFile = Path.Combine(
             DataPaths.Reports,
             $"A84_00_EXECUTIVE_SUMMARY_{pktStamp}.txt");
 
-        // PATCH 14C preserved:
-        // Use ONLY real equity timestamps for Start/End time.
-        // Never allow DateTime.MinValue to be published.
         var eq = result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;();
 
         var ordered = eq
@@ -5321,10 +5370,6 @@ public sealed class A84ExecutiveSummaryReportService
         }
         else if (ordered.Count &gt; 0)
         {
-            // Only seed/no-real-time case:
-            // keep equity values, but publish no fake time.
-            startTimeUtc = null;
-            endTimeUtc = null;
             startEquity = ordered.First().Value;
             endEquity = ordered.Last().Value;
         }
@@ -5333,15 +5378,43 @@ public sealed class A84ExecutiveSummaryReportService
             ? 0m
             : ((endEquity / startEquity) - 1m) * 100m;
 
-        var strategyLines = selectedStrategies
-            .Select((t, idx) =&gt; $"  S{idx + 1:00}  {t.Name}")
+        var selectedStrategyIds = selectedStrategies
+            .Select(ResolveStableStrategyId)
+            .Distinct()
+            .OrderBy(x =&gt; x)
+            .ToList();
+
+        var selectedStrategyLines = selectedStrategies
+            .Select(t =&gt;
+            {
+                int id = ResolveStableStrategyId(t);
+                return $"  S{id:00}  {t.Name}";
+            })
+            .Distinct()
+            .ToList();
+
+        var allowedLines = allowedStrategyIds
+            .OrderBy(x =&gt; x)
+            .Select(id =&gt;
+                $"  S{id:00}  {ResolveStrategyName(id, selectedStrategies, fitnessSnapshots)}")
+            .ToList();
+
+        var strategyIdsPresentInPnl = (result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;())
+            .Keys
+            .Distinct()
+            .OrderBy(x =&gt; x)
+            .ToList();
+
+        var strategyPnlIdentityLines = strategyIdsPresentInPnl
+            .Select(id =&gt;
+                $"  S{id:00}  {ResolveStrategyName(id, selectedStrategies, fitnessSnapshots)}")
             .ToList();
 
         var topStrategies = (result.StrategyPnL ?? new Dictionary&lt;int, decimal&gt;())
             .OrderByDescending(x =&gt; x.Value)
             .Take(30)
             .Select(x =&gt;
-                $"S{x.Key:00}  {PadRightSafe(StrategyNameFromSelection(selectedStrategies, x.Key), 28)}  PnL  {x.Value,14:0.00}")
+                $"S{x.Key:00}  {PadRightSafe(ResolveStrategyName(x.Key, selectedStrategies, fitnessSnapshots), 28)}  PnL  {x.Value,14:0.00}")
             .ToList();
 
         var topMarkets = (result.SymbolTimeframePnL ?? new Dictionary&lt;string, decimal&gt;(StringComparer.OrdinalIgnoreCase))
@@ -5357,7 +5430,6 @@ public sealed class A84ExecutiveSummaryReportService
             if (Directory.Exists(DataPaths.Reports))
             {
                 DateTime cutoff = runUtc.AddMinutes(-recentMinutesWindow);
-
                 recentFiles = Directory
                     .GetFiles(DataPaths.Reports)
                     .Select(f =&gt; new FileInfo(f))
@@ -5379,13 +5451,14 @@ public sealed class A84ExecutiveSummaryReportService
         sb.AppendLine("A84_00 — EXECUTIVE SUMMARY");
         sb.AppendLine("==========================");
         sb.AppendLine();
-
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
         sb.AppendLine("PATCH_14D_A84_00_PKT_ABOVE_UTC");
+        sb.AppendLine("PATCH_32_A84_00_IDENTITY_TRUTH_SEPARATION");
         sb.AppendLine("WRITER = A84ExecutiveSummaryReportService.GenerateAndWrite");
         sb.AppendLine("RULE   = PKT is printed first, UTC printed immediately below");
         sb.AppendLine("RULE   = DateTime.MinValue is never published");
+        sb.AppendLine("RULE   = UI-selected identity, gate identity, and PnL identity must be printed separately");
         sb.AppendLine();
 
         sb.AppendLine($"Run Timestamp (PKT)   : {PakistanTime.FormatLabel(runUtc)}");
@@ -5422,15 +5495,41 @@ public sealed class A84ExecutiveSummaryReportService
         }
 
         sb.AppendLine();
-        sb.AppendLine("STRATEGIES SELECTED");
-        sb.AppendLine("-------------------");
-        if (strategyLines.Count == 0)
+        sb.AppendLine("IDENTITY TRUTH — UI CHECKED");
+        sb.AppendLine("---------------------------");
+        if (selectedStrategyLines.Count == 0)
         {
             sb.AppendLine("NONE");
         }
         else
         {
-            foreach (string line in strategyLines)
+            foreach (string line in selectedStrategyLines)
+                sb.AppendLine(line);
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("IDENTITY TRUTH — ALLOWED AFTER GATE");
+        sb.AppendLine("-----------------------------------");
+        if (allowedLines.Count == 0)
+        {
+            sb.AppendLine("NONE");
+        }
+        else
+        {
+            foreach (string line in allowedLines)
+                sb.AppendLine(line);
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("IDENTITY TRUTH — STRATEGY IDS PRESENT IN PNL");
+        sb.AppendLine("--------------------------------------------");
+        if (strategyPnlIdentityLines.Count == 0)
+        {
+            sb.AppendLine("NONE");
+        }
+        else
+        {
+            foreach (string line in strategyPnlIdentityLines)
                 sb.AppendLine(line);
         }
 
@@ -5476,22 +5575,44 @@ public sealed class A84ExecutiveSummaryReportService
         File.WriteAllText(outFile, sb.ToString(), Encoding.UTF8);
     }
 
-    private static string StrategyNameFromSelection(
-        IReadOnlyList&lt;Type&gt; selectedStrategies,
-        int strategyId)
+    private static int ResolveStableStrategyId(Type type)
     {
-        int idx = strategyId - 1;
+        ArgumentNullException.ThrowIfNull(type);
 
-        if (idx &lt; 0 || idx &gt;= selectedStrategies.Count)
-            return $"Strategy_{strategyId:00}";
+        return type.Name switch
+        {
+            "AltcoinLeadershipPullbackQuantStrategy" =&gt; 1,
+            "DiagnosticQuantStrategy" =&gt; 2,
+            "EmaRsiQuantStrategy" =&gt; 3,
+            "EmaTrendPullbackQuantStrategy" =&gt; 4,
+            "EmaTrendQuantStrategy" =&gt; 5,
+            "FourHourEarlyTrendContinuationQuantStrategy" =&gt; 6,
+            "RsiSwingQuantStrategy" =&gt; 7,
+            _ =&gt; 0
+        };
+    }
 
-        return selectedStrategies[idx].Name;
+    private static string ResolveStrategyName(
+        int strategyId,
+        IReadOnlyList&lt;Type&gt; selectedStrategies,
+        IReadOnlyDictionary&lt;int, StrategyFitnessSnapshot&gt; fitnessSnapshots)
+    {
+        if (fitnessSnapshots.TryGetValue(strategyId, out var snapshot))
+        {
+            if (!string.IsNullOrWhiteSpace(snapshot.StrategyCode))
+                return snapshot.StrategyCode;
+        }
+
+        Type? selectedMatch = selectedStrategies.FirstOrDefault(t =&gt; ResolveStableStrategyId(t) == strategyId);
+        if (selectedMatch != null)
+            return selectedMatch.Name;
+
+        return $"Strategy_{strategyId:00}";
     }
 
     private static string PadRightSafe(string value, int totalWidth)
     {
         value ??= string.Empty;
-
         if (value.Length == totalWidth)
             return value;
 
@@ -17251,8 +17372,8 @@ public sealed class SymbolTimeframePnlReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\UniversalResearchReportService.cs
 TYPE: .cs
-SIZE: 4.54 KB
-LINES: 139
+SIZE: 4.6 KB
+LINES: 141
 ==============================
 using System;
 using System.Collections.Generic;
@@ -17272,7 +17393,6 @@ public sealed class UniversalResearchReportService
         ArgumentNullException.ThrowIfNull(selectedStrategies);
 
         var canonicalCio = GetStoredCanonicalCioOrThrow(result);
-
         new A84MarketRegimeDetectionReportService().Generate(result);
         new A84AlphaDecayMonitoringReportService().Generate(result);
 
@@ -17286,6 +17406,7 @@ public sealed class UniversalResearchReportService
             canonicalCio);
 
         result.CanonicalCioPostGatingWeights = canonicalCio;
+
         fitnessSvc.GenerateAndWrite(result, runUtc, cfg);
 
         var fitnessSnapshots = fitnessRows.ToDictionary(
@@ -17368,6 +17489,8 @@ public sealed class UniversalResearchReportService
             runUtc,
             selectedStrategies,
             canonicalCio,
+            fitnessSnapshots,
+            allowed,
             recentMinutesWindow: 10);
 
         new A84ChatGptUploadReportService().GenerateAndWrite(
