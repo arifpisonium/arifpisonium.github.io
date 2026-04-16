@@ -21,12 +21,12 @@
             <div class="head">
                 <div class="title">REPORT 36 — SOLO_STRATEGY_SCORE_SUMMARY</div>
                 <div class="meta">
-                    <div><strong>Published (UTC):</strong> 2026-04-16 06:52:14</div>
-                    <div><strong>Source File:</strong> REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_115147.txt</div>
-                    <div><a href="REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_115147.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                    <div><strong>Published (UTC):</strong> 2026-04-16 07:05:34</div>
+                    <div><strong>Source File:</strong> REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_120451.txt</div>
+                    <div><a href="REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_120451.txt">Open raw text</a> | <a href="/">Open main site</a></div>
                 </div>
             </div>
-            <pre>FILE: REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_115147.txt
+            <pre>FILE: REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_120451.txt
 ----------------------------------------------------------------------
 
 REPORT 36 — SOLO STRATEGY SCORE SUMMARY
@@ -39,77 +39,92 @@ This version is summary-first and audit-ready.
 
 RUN CONTEXT
 -----------
-Run Timestamp (PKT)                : 2026-04-16 11:51:47 PKT
-Run Timestamp (UTC)                : 2026-04-16 06:51:47 UTC
-File Name                          : REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_115147.txt
-Strategy Id                        : S05
-Strategy Name                      : EMA Trend (50/200)
+Run Timestamp (PKT)                : 2026-04-16 12:04:51 PKT
+Run Timestamp (UTC)                : 2026-04-16 07:04:51 UTC
+File Name                          : REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_20260416_120451.txt
+Strategy Id                        : S03
+Strategy Name                      : EMA + RSI Quant
 Backtest First Entry (PKT)         : 2025-01-01 05:00:00 PKT
 Backtest First Entry (UTC)         : 2025-01-01 00:00:00 UTC
-Backtest Last Exit (PKT)           : 2025-11-19 05:00:00 PKT
-Backtest Last Exit (UTC)           : 2025-11-19 00:00:00 UTC
+Backtest Last Exit (PKT)           : 2026-01-01 00:00:00 PKT
+Backtest Last Exit (UTC)           : 2025-12-31 19:00:00 UTC
 
 SECTION A — EXECUTIVE SUMMARY
 -----------------------------
-Decision                           : QUARANTINE
-Closed Trades                      : 262
-Winning Trades                     : 93
-Losing Trades                      : 169
-Flat Trades                        : 0
-Win Rate                           : 35.50%
-Net P&amp;L                            : -1432.7328
-Expectancy                         : -5.468446
-Avg R                              : -0.1826
-Worst R                            : -9.5388
-Best R                             : 5.3543
-Total Trade Value (USDT)           : 260453.3565
-Average Trade Value (USDT)         : 994.0968
-Average Qty                        : 120.58336456
-Average Holding Minutes            : 4407.94
-Long Trades                        : 262
+Decision                           : REFINE
+Closed Trades                      : 8347
+Winning Trades                     : 3580
+Losing Trades                      : 4764
+Flat Trades                        : 3
+Win Rate                           : 42.89%
+Net P&amp;L                            : 4031657.7260
+Expectancy                         : 483.006796
+Avg R                              : 1.7411
+Worst R                            : -24.9999
+Best R                             : 6903.4824
+Total Trade Value (USDT)           : 156395105.0190
+Average Trade Value (USDT)         : 18736.6844
+Average Qty                        : 2272.42444107
+Average Holding Minutes            : 13.05
+Long Trades                        : 8347
 Short Trades                       : 0
 
 SECTION B — BREADTH / MARKET HEALTH
 -----------------------------------
-Symbol Breadth Traded              : 4
-Symbol Breadth Positive            : 0
-Symbol Breadth Negative            : 4
+Symbol Breadth Traded              : 26
+Symbol Breadth Positive            : 18
+Symbol Breadth Negative            : 8
 Symbol Breadth Flat                : 0
-Likely SL-Hit Pattern              : CAT_TAILS_PRESENT (catR=21, avgNegHoldMin=4175)
-Likely TP-Miss Pattern             : LATE_HOLD_BLEED (rate=1.91%)
+Likely SL-Hit Pattern              : CAT_TAILS_PRESENT (catR=105, avgNegHoldMin=2806)
+Likely TP-Miss Pattern             : LATE_HOLD_BLEED (rate=3.93%)
 
 SECTION C — EXIT FAMILY SUMMARY
 -------------------------------
-TakeProfitHit Count                : 91
-TakeProfitHit Avg R                : 3.0210
-TakeProfitHit Avg Hold Min         : 4873.85
-StopLossHit Count                  : 167
-StopLossHit Avg R                  : -1.9301
-StopLossHit Avg Hold Min           : 4173.41
-NonNegativeExit Count              : 93
-NonNegativeExit Avg R              : 2.9591
-NonNegativeExit Avg Hold Min       : 4830.97
-LossExit Count                     : 169
-LossExit Avg R                     : -1.9115
-LossExit Avg Hold Min              : 4175.15
+TakeProfitHit Count                : 1839
+TakeProfitHit Avg R                : 3.1931
+TakeProfitHit Avg Hold Min         : -4370.96
+StopLossHit Count                  : 4593
+StopLossHit Avg R                  : -1.3999
+StopLossHit Avg Hold Min           : 2246.14
+NonNegativeExit Count              : 3583
+NonNegativeExit Avg R              : 5.8972
+NonNegativeExit Avg Hold Min       : -2393.62
+LossExit Count                     : 4764
+LossExit Avg R                     : -1.3846
+LossExit Avg Hold Min              : 1823.11
 
 SECTION D — RISK / EXPECTANCY FLAGS
 -----------------------------------
-Severe Loss Count (R &lt;= -2)        : 55
-Catastrophic Loss Count (R &lt;= -3)  : 21
-TP-Miss-Like Count                 : 5
-Late-Hold-Bleed-Like Count         : 169
+Severe Loss Count (R &lt;= -2)        : 403
+Catastrophic Loss Count (R &lt;= -3)  : 105
+TP-Miss-Like Count                 : 328
+Late-Hold-Bleed-Like Count         : 4548
 
 TOP POSITIVE MARKETS
 --------------------
-NO POSITIVE MARKETS
+ETCUSDT::1d                2319484.5397
+LTCUSDT::1d                 612235.0842
+BNBUSDT::1d                 378107.7765
+LINKUSDT::1d                299169.2744
+INJUSDT::1d                 214544.5256
+DOTUSDT::1d                 114885.5160
+AVAXUSDT::1d                 88830.8604
+ALGOUSDT::1d                 79416.8631
+UNIUSDT::1d                  60689.1276
+ORDIUSDT::1d                 57336.5932
 
 TOP NEGATIVE MARKETS
 --------------------
-AVAXUSDT::1d                  -540.5028
-APTUSDT::1d                   -445.2216
-ATOMUSDT::1d                  -322.7631
-AAVEUSDT::1d                  -124.2453
+ICPUSDT::1d                 -75191.1959
+FILUSDT::1d                 -54403.4151
+MKRUSDT::1d                 -46053.7319
+SUIUSDT::1d                 -42035.0386
+NEARUSDT::1d                -28549.7366
+TIAUSDT::1d                 -13552.7305
+RUNEUSDT::1d                -10769.8696
+BTCUSDT::1d                  -4697.1705
+AAVEUSDT::1d                   191.1249
+SOLUSDT::1d                   1398.2061
 </pre>
         </div>
     </div>
