@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-16__12-16-07.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-16__12-16-07.txt
-GENERATED: 2026-04-16 12:16:07
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-16__15-15-39.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-16__15-15-39.txt
+GENERATED: 2026-04-16 15:15:39
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───7dd85060-4111-4ed2-93c5-8372f48ffad1.vsidx
+│       │   └───a12afb86-c749-4369-8174-2fe366783393.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -18715,8 +18715,8 @@ public sealed record TradeResult(
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Trading\TradingEngine.cs
 TYPE: .cs
-SIZE: 12.22 KB
-LINES: 424
+SIZE: 18.7 KB
+LINES: 619
 ==============================
 using System;
 using System.Threading;
@@ -18739,6 +18739,27 @@ public sealed class TradingEngine : ITradingEngine
     private readonly TradeDecisionDiagnostics _diag;
 
     private Trade? _openTrade;
+
+    private const decimal DefaultLongStopLossFactor = 0.96m;
+    private const decimal DefaultLongTakeProfitFactor = 1.08m;
+    private const decimal DefaultLongExpectedFactor = 1.03m;
+    private const decimal DefaultShortStopLossFactor = 1.04m;
+    private const decimal DefaultShortTakeProfitFactor = 0.92m;
+    private const decimal DefaultShortExpectedFactor = 0.97m;
+
+    private const decimal S03LongStopLossFactor = 0.97m;
+    private const decimal S03LongTakeProfitFactor = 1.06m;
+    private const decimal S03LongExpectedFactor = 1.02m;
+    private const decimal S03ShortStopLossFactor = 1.03m;
+    private const decimal S03ShortTakeProfitFactor = 0.94m;
+    private const decimal S03ShortExpectedFactor = 0.98m;
+
+    private const decimal S03BreakEvenArmR = 1.25m;
+    private const decimal S03BreakEvenFloorR = 0.15m;
+    private const decimal S03DisasterExitR = -2.50m;
+    private const decimal S03StaleLossExitMinutes = 2880m;
+    private const decimal S03StaleNoProgressExitMinutes = 4320m;
+    private const decimal S03HardTimeoutExitMinutes = 10080m;
 
     public TradingEngine(
         IStrategy strategy,
@@ -18784,13 +18805,10 @@ public sealed class TradingEngine : ITradingEngine
             _equity.Update(time, _capital.CurrentEquity);
         }
 
-        // S05 / general protective-exit enforcement
-        // IMPORTANT:
-        // Existing code stored SL/TP on the trade object but did not enforce them.
-        // That allowed excessive tails and late-hold bleed if the strategy's own Exit signal came too late.
-        //
-        // This patch makes SL/TP executable truth, not just report metadata.
         if (await TryExecuteProtectiveExitAsync(symbol, price, time, ct))
+            return;
+
+        if (await TryExecuteManagedRiskExitAsync(symbol, price, time, ct))
             return;
 
         var context = new StrategyContext(
@@ -18969,6 +18987,96 @@ public sealed class TradingEngine : ITradingEngine
         return true;
     }
 
+    private async Task&lt;bool&gt; TryExecuteManagedRiskExitAsync(
+        string symbol,
+        decimal price,
+        DateTime time,
+        CancellationToken ct)
+    {
+        if (_openTrade == null)
+            return false;
+
+        if (!string.Equals(_openTrade.Symbol, symbol, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!ShouldTriggerManagedRiskExit(_openTrade, price, time, out string managedExitTag))
+            return false;
+
+        await _executor.ClosePositionAsync(symbol, ct);
+
+        var fillPrice = _executor.GetFillPrice();
+
+        _openTrade.Close(
+            exitPrice: fillPrice,
+            exitTime: time,
+            exitReason: BuildManagedRiskExitReason(
+                symbol,
+                fillPrice,
+                _openTrade,
+                time,
+                managedExitTag));
+
+        _ledger.Record(_openTrade);
+        _capital.OnTradeClosed(_openTrade.RealizedPnL);
+        _risk.OnTradeClosed(_openTrade.RealizedPnL);
+
+        _diag.OnExitExecuted();
+
+        _openTrade = null;
+        return true;
+    }
+
+    private bool ShouldTriggerManagedRiskExit(
+        Trade openTrade,
+        decimal marketPrice,
+        DateTime marketTime,
+        out string managedExitTag)
+    {
+        managedExitTag = string.Empty;
+
+        if (!IsS03EngineFallbackTrade(openTrade))
+            return false;
+
+        decimal? rMultiple = ComputeOpenTradeRMultiple(openTrade, marketPrice);
+        if (!rMultiple.HasValue)
+            return false;
+
+        decimal favorableR = ComputeFavorableR(openTrade);
+        decimal holdingMinutes = (decimal)(marketTime - openTrade.EntryTime).TotalMinutes;
+
+        if (rMultiple.Value &lt;= S03DisasterExitR)
+        {
+            managedExitTag = "ManagedDisasterExit";
+            return true;
+        }
+
+        if (favorableR &gt;= S03BreakEvenArmR &amp;&amp; rMultiple.Value &lt;= S03BreakEvenFloorR)
+        {
+            managedExitTag = "ManagedBreakEvenDecayExit";
+            return true;
+        }
+
+        if (holdingMinutes &gt;= S03StaleLossExitMinutes &amp;&amp; rMultiple.Value &lt; 0m)
+        {
+            managedExitTag = "ManagedLateHoldLossExit";
+            return true;
+        }
+
+        if (holdingMinutes &gt;= S03StaleNoProgressExitMinutes &amp;&amp; favorableR &lt; 0.50m)
+        {
+            managedExitTag = "ManagedStaleNoProgressExit";
+            return true;
+        }
+
+        if (holdingMinutes &gt;= S03HardTimeoutExitMinutes)
+        {
+            managedExitTag = "ManagedHardTimeoutExit";
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool ShouldTriggerProtectiveExit(
         Trade openTrade,
         decimal marketPrice,
@@ -19041,6 +19149,36 @@ public sealed class TradingEngine : ITradingEngine
         return $"{baseReason}|ProtectiveExit={protectiveExitTag}";
     }
 
+    private string BuildManagedRiskExitReason(
+        string symbol,
+        decimal exitPrice,
+        Trade openTrade,
+        DateTime exitTime,
+        string managedExitTag)
+    {
+        string baseReason;
+
+        if (_strategy is ITradePlanStrategy tradePlanStrategy)
+        {
+            baseReason = tradePlanStrategy.BuildExitReason(
+                openTrade,
+                TradeSignal.Exit,
+                symbol,
+                exitPrice,
+                exitTime);
+        }
+        else
+        {
+            baseReason = BuildFallbackExitReason(
+                TradeSignal.Exit,
+                symbol,
+                exitPrice,
+                openTrade);
+        }
+
+        return $"{baseReason}|ManagedExit={managedExitTag}";
+    }
+
     private (ITradePlan Plan, string PlanSource) BuildEntryTradePlan(
         string symbol,
         TradeSignal signal,
@@ -19096,23 +19234,26 @@ public sealed class TradingEngine : ITradingEngine
         string entryReason =
             $"{strategyName}|Signal={signal}|Symbol={symbol}|Time={entryTime:yyyy-MM-dd HH:mm:ss}|PlanSource=EngineFallback";
 
-        decimal? stopLoss = entryPrice &lt;= 0m
-            ? null
-            : side == TradeSide.Buy
-                ? entryPrice * 0.96m
-                : entryPrice * 1.04m;
+        decimal stopLossFactor;
+        decimal takeProfitFactor;
+        decimal expectedFactor;
 
-        decimal? takeProfit = entryPrice &lt;= 0m
-            ? null
-            : side == TradeSide.Buy
-                ? entryPrice * 1.08m
-                : entryPrice * 0.92m;
+        if (IsS03Strategy())
+        {
+            stopLossFactor = side == TradeSide.Buy ? S03LongStopLossFactor : S03ShortStopLossFactor;
+            takeProfitFactor = side == TradeSide.Buy ? S03LongTakeProfitFactor : S03ShortTakeProfitFactor;
+            expectedFactor = side == TradeSide.Buy ? S03LongExpectedFactor : S03ShortExpectedFactor;
+        }
+        else
+        {
+            stopLossFactor = side == TradeSide.Buy ? DefaultLongStopLossFactor : DefaultShortStopLossFactor;
+            takeProfitFactor = side == TradeSide.Buy ? DefaultLongTakeProfitFactor : DefaultShortTakeProfitFactor;
+            expectedFactor = side == TradeSide.Buy ? DefaultLongExpectedFactor : DefaultShortExpectedFactor;
+        }
 
-        decimal? expectedPrice = entryPrice &lt;= 0m
-            ? null
-            : side == TradeSide.Buy
-                ? entryPrice * 1.03m
-                : entryPrice * 0.97m;
+        decimal? stopLoss = entryPrice &lt;= 0m ? null : entryPrice * stopLossFactor;
+        decimal? takeProfit = entryPrice &lt;= 0m ? null : entryPrice * takeProfitFactor;
+        decimal? expectedPrice = entryPrice &lt;= 0m ? null : entryPrice * expectedFactor;
 
         return new StrategyTradePlan(
             TrueOrderType: "Market",
@@ -19140,6 +19281,60 @@ public sealed class TradingEngine : ITradingEngine
             pnlState = exitPrice &lt;= openTrade.EntryPrice ? "NonNegativeExit" : "LossExit";
 
         return $"{strategyName}|Signal={signal}|Symbol={symbol}|{pnlState}|PlanSource=EngineFallback";
+    }
+
+    private bool IsS03Strategy()
+    {
+        string strategyName = string.IsNullOrWhiteSpace(_strategy.Name)
+            ? _strategy.GetType().Name
+            : _strategy.Name;
+
+        return strategyName.Contains("EMA + RSI Quant", StringComparison.OrdinalIgnoreCase)
+            || _strategy.GetType().Name.Contains("EmaRsiQuantStrategy", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsS03EngineFallbackTrade(Trade trade)
+    {
+        if (!IsS03Strategy())
+            return false;
+
+        return string.Equals(trade.PlanSource, "EngineFallback", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static decimal? ComputeOpenTradeRMultiple(Trade trade, decimal marketPrice)
+    {
+        decimal? riskMoney = ComputeRiskMoney(trade);
+        if (!riskMoney.HasValue || riskMoney.Value &lt;= 0m)
+            return null;
+
+        decimal openPnl =
+            (trade.Side == TradeSide.Buy
+                ? marketPrice - trade.EntryPrice
+                : trade.EntryPrice - marketPrice)
+            * trade.Quantity;
+
+        return openPnl / riskMoney.Value;
+    }
+
+    private static decimal ComputeFavorableR(Trade trade)
+    {
+        decimal? riskMoney = ComputeRiskMoney(trade);
+        if (!riskMoney.HasValue || riskMoney.Value &lt;= 0m)
+            return 0m;
+
+        decimal favorableMoney = trade.FavorableExcursion * trade.Quantity;
+        return favorableMoney / riskMoney.Value;
+    }
+
+    private static decimal? ComputeRiskMoney(Trade trade)
+    {
+        if (!trade.StopLossAtEntry.HasValue)
+            return null;
+
+        decimal riskPerUnit = Math.Abs(trade.EntryPrice - trade.StopLossAtEntry.Value);
+        decimal riskMoney = riskPerUnit * trade.Quantity;
+
+        return riskMoney &gt; 0m ? riskMoney : null;
     }
 }
 
@@ -20607,8 +20802,8 @@ public sealed class EarlyTrendContinuationSignal : ISignal
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Infrastructure\Strategies\EmaCrossSignal.cs
 TYPE: .cs
-SIZE: 0.62 KB
-LINES: 27
+SIZE: 1.16 KB
+LINES: 50
 ==============================
 using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
@@ -20620,7 +20815,8 @@ public sealed class EmaCrossSignal : ISignal
     private readonly Ema _fast = new(50);
     private readonly Ema _slow = new(200);
 
-    private bool _isBullish;
+    private bool _hasState;
+    private bool _wasBullish;
 
     public TradeSignal Evaluate(StrategyContext context)
     {
@@ -20630,11 +20826,33 @@ public sealed class EmaCrossSignal : ISignal
         if (!_fast.IsReady || !_slow.IsReady)
             return TradeSignal.None;
 
-        _isBullish = _fast.Value &gt; _slow.Value;
+        bool isBullish = _fast.Value &gt; _slow.Value;
 
-        return _isBullish
-            ? TradeSignal.Long
-            : TradeSignal.None;
+        if (!_hasState)
+        {
+            _wasBullish = isBullish;
+            _hasState = true;
+
+            return !context.HasOpenPosition &amp;&amp; isBullish
+                ? TradeSignal.Long
+                : TradeSignal.None;
+        }
+
+        TradeSignal signal = TradeSignal.None;
+
+        if (!context.HasOpenPosition)
+        {
+            if (!_wasBullish &amp;&amp; isBullish)
+                signal = TradeSignal.Long;
+        }
+        else
+        {
+            if (_wasBullish &amp;&amp; !isBullish)
+                signal = TradeSignal.Exit;
+        }
+
+        _wasBullish = isBullish;
+        return signal;
     }
 }
 
@@ -21082,8 +21300,8 @@ public sealed class RegimeGatedAltcoinLeadershipPullbackSignal : ISignal
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Infrastructure\Strategies\RsiReversionSignal.cs
 TYPE: .cs
-SIZE: 0.69 KB
-LINES: 27
+SIZE: 1.59 KB
+LINES: 57
 ==============================
 using TQGA.Application.Strategy;
 using TQGA.Domain.Indicators;
@@ -21093,6 +21311,13 @@ namespace TQGA.Infrastructure.Strategies;
 public sealed class RsiReversionSignal : ISignal
 {
     private readonly Rsi _rsi = new(14);
+    private decimal? _previousRsi;
+
+    private const decimal EntryArmRsi = 38m;
+    private const decimal EntryConfirmRsi = 42m;
+    private const decimal ExitTakeRsi = 58m;
+    private const decimal ExitFailureRsi = 32m;
+    private const decimal ExitFadeFloorRsi = 55m;
 
     public TradeSignal Evaluate(StrategyContext context)
     {
@@ -21101,15 +21326,38 @@ public sealed class RsiReversionSignal : ISignal
         if (!_rsi.IsReady)
             return TradeSignal.None;
 
-        // ENTRY → pullback in uptrend
-        if (!context.HasOpenPosition &amp;&amp; _rsi.Value &lt;= 45m)
-            return TradeSignal.Long;
+        decimal currentRsi = _rsi.Value;
+        TradeSignal signal = TradeSignal.None;
 
-        // EXIT → momentum exhaustion
-        if (context.HasOpenPosition &amp;&amp; _rsi.Value &gt;= 60m)
-            return TradeSignal.Exit;
+        if (!context.HasOpenPosition)
+        {
+            if (_previousRsi.HasValue &amp;&amp;
+                _previousRsi.Value &lt;= EntryArmRsi &amp;&amp;
+                currentRsi &gt;= EntryConfirmRsi)
+            {
+                signal = TradeSignal.Long;
+            }
+        }
+        else
+        {
+            if (currentRsi &gt;= ExitTakeRsi)
+            {
+                signal = TradeSignal.Exit;
+            }
+            else if (_previousRsi.HasValue &amp;&amp;
+                     _previousRsi.Value &gt;= ExitFadeFloorRsi &amp;&amp;
+                     currentRsi &lt; _previousRsi.Value)
+            {
+                signal = TradeSignal.Exit;
+            }
+            else if (currentRsi &lt;= ExitFailureRsi)
+            {
+                signal = TradeSignal.Exit;
+            }
+        }
 
-        return TradeSignal.None;
+        _previousRsi = currentRsi;
+        return signal;
     }
 }
 
@@ -21406,7 +21654,7 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 42.36 KB
+SIZE: 42.38 KB
 LINES: 1158
 ==============================
 using Microsoft.Extensions.DependencyInjection;
@@ -21578,9 +21826,9 @@ public sealed class MainForm : Form
         };
 
         _lblStrategies = new Label { Text = "Select Strategies:", Left = 300, Top = 30, Width = 220 };
-        _strategyList = new CheckedListBox { Left = 300, Top = 55, Width = 330, Height = 530, CheckOnClick = true };
-        _btnSelectAll = new Button { Text = "Select All", Left = 300, Top = 595, Width = 120 };
-        _btnSelectNone = new Button { Text = "Select None", Left = 430, Top = 595, Width = 120 };
+        _strategyList = new CheckedListBox { Left = 300, Top = 55, Width = 330, Height = 250, CheckOnClick = true, IntegralHeight = false };
+        _btnSelectAll = new Button { Text = "Select All", Left = 300, Top = 315, Width = 120 };
+        _btnSelectNone = new Button { Text = "Select None", Left = 430, Top = 315, Width = 120 };
         _btnSelectAll.Click += (_, _) =&gt; SetAllChecked(_strategyList, true);
         _btnSelectNone.Click += (_, _) =&gt; SetAllChecked(_strategyList, false);
 
@@ -21613,19 +21861,19 @@ public sealed class MainForm : Form
         _btnCoinAll.Click += (_, _) =&gt; SetAllChecked(_coinNameList, true);
         _btnCoinNone.Click += (_, _) =&gt; SetAllChecked(_coinNameList, false);
 
-        _lblSoloResearch = new Label { Text = "Solo Research Mode:", Left = 300, Top = 635, Width = 220 };
+        _lblSoloResearch = new Label { Text = "Solo Research Mode:", Left = 300, Top = 355, Width = 220 };
         _chkSoloResearchMode = new CheckBox
         {
             Text = "AUTO-CHECK ONLY ACTIVE STRATEGY",
             Left = 300,
-            Top = 660,
+            Top = 380,
             Width = 280,
             Checked = false
         };
         _cmbSoloStrategy = new ComboBox
         {
             Left = 300,
-            Top = 690,
+            Top = 410,
             Width = 330,
             DropDownStyle = ComboBoxStyle.DropDownList
         };
