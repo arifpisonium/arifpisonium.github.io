@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>REPORT_20_ALPHA_DECAY_S05_DEPENDENCY_AUDIT_20260416_065148.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">REPORT_20_ALPHA_DECAY_S05_DEPENDENCY_AUDIT_20260416_065148.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 06:52:19</div>
+                    <div><strong>Source File:</strong> REPORT_20_ALPHA_DECAY_S05_DEPENDENCY_AUDIT_20260416_065148.txt</div>
+                    <div><a href="../REPORT_20_ALPHA_DECAY_S05_DEPENDENCY_AUDIT_20260416_065148.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>REPORT 20 — ALPHA DECAY / S05 DEPENDENCY AUDIT
+==============================================
+
+PURPOSE
+-------
+Audit edge fatigue, concentration risk, and dependence on the dominant strategy sleeve.
+
+RUN CONTEXT
+-----------
+Run Timestamp (UTC)                : 2026-04-16 06:51:48
+Portfolio Timeline Points          : 151
+Selected Markets Count             : 7
+Runner Candidate Mix Count         : 7
+Canonical Deployable Count         : 7
+Cash Allocation Weight             : 0.00%
+
+PORTFOLIO ALPHA DECAY
+---------------------
+Early Half Return                  : -3.44%
+Late Half Return                   : -3.56%
+Decay Delta                        : -0.12%
+Alpha Decay Flag                   : YES
+
+DOMINANT STRATEGY DEPENDENCY
+----------------------------
+Dominant Strategy Id               : S05
+Dominant Strategy Code             : S05
+Dominant Strategy PnL              : -6941.82
+Total Strategy PnL                 : -6941.82
+Dominant Strategy Dependency Ratio : 100.00%
+S05 Dependency Flag                : NO
+
+SYMBOL::TF CONCENTRATION
+------------------------
+Total Symbol::TF PnL               : -6941.82
+Top 1 Symbol::TF Dependency Ratio  : 0.00%
+Top 2 Symbol::TF Dependency Ratio  : 0.00%
+
+STRATEGY PNL TABLE
+------------------
+StrId | StrategyCode                 | PnL        | Share
+------+------------------------------+------------+------------
+    5 | S05                          |   -6941.82 |    100.00%
+
+STRATEGY EARLY/LATE SPLIT
+-------------------------
+StrId | StrategyCode                 | EarlyPnL   | LatePnL    | DecayDelta | DecayFlag
+------+------------------------------+------------+------------+------------+----------
+    5 | S05                          |       0.00 |   -6941.82 |   -6941.82 | YES
+
+TOP SYMBOL::TF DEPENDENCY
+-------------------------
+Rank | Symbol::TF                | PnL        | Share
+-----+---------------------------+------------+------------
+   1 | ADAUSDT::1d               |       0.00 |      0.00%
+   2 | ALGOUSDT::1d              |       0.00 |      0.00%
+   3 | ARBUSDT::1d               |       0.00 |      0.00%
+   4 | AAVEUSDT::1d              |   -1046.32 |     15.07%
+   5 | ATOMUSDT::1d              |   -1614.68 |     23.26%
+   6 | APTUSDT::1d               |   -1940.75 |     27.96%
+   7 | AVAXUSDT::1d              |   -2340.07 |     33.71%
+
+SYMBOL::TF EARLY/LATE SPLIT
+---------------------------
+Symbol::TF                | EarlyPnL   | LatePnL    | DecayDelta | DecayFlag
+-------------------------+------------+------------+------------+----------
+ADAUSDT::1d               |       0.00 |       0.00 |       0.00 | NO
+ALGOUSDT::1d              |       0.00 |       0.00 |       0.00 | NO
+ARBUSDT::1d               |       0.00 |       0.00 |       0.00 | NO
+AAVEUSDT::1d              |   -1046.32 |       0.00 |    1046.32 | NO
+ATOMUSDT::1d              |   -1614.68 |       0.00 |    1614.68 | NO
+APTUSDT::1d               |   -1940.75 |       0.00 |    1940.75 | NO
+AVAXUSDT::1d              |   -2340.07 |       0.00 |    2340.07 | NO
+
+DEPENDENCY VERDICT
+------------------
+Dominant strategy dependency is high and late-half performance is weaker. This is edge-fatigue risk even if current equity is still positive.
+
+OPERATOR INTERPRETATION
+-----------------------
+Use this report before adding new strategy families.
+If S05 concentration is extreme and late-half weakening is visible,
+the next fix should target edge durability, not cosmetic breadth.
+
+</pre>
+        </div>
+    </div>
+</body>
+</html>

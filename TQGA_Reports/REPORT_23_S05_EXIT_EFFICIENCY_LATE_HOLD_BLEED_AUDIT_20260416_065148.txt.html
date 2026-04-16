@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>REPORT_23_S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT_20260416_065148.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">REPORT_23_S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT_20260416_065148.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 06:52:19</div>
+                    <div><strong>Source File:</strong> REPORT_23_S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT_20260416_065148.txt</div>
+                    <div><a href="../REPORT_23_S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT_20260416_065148.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>REPORT 23 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT
+=======================================================
+
+PURPOSE
+-------
+Audit whether S05 is still finding the right winners but monetizing them inefficiently via late-phase giveback / hold bleed.
+
+RUN CONTEXT
+-----------
+Run Timestamp (UTC)                : 2026-04-16 06:51:48
+Half Split Time (UTC)              : 2025-06-20 00:00:00
+Target Strategy Id                 : S05
+Target Strategy Code               : S05
+S05 Total PnL                      : -6941.82
+Portfolio Early Half Return        : -3.44%
+Portfolio Late Half Return         : -3.56%
+
+S05 WINNER CLUSTER
+------------------
+Positive S05 Winner Count          : 0
+Top 1 Winner Share                 : 0.00%
+Top 2 Winner Share                 : 0.00%
+
+S05 EXIT EFFICIENCY TABLE
+-------------------------
+NO POSITIVE S05 WINNER ROWS
+
+LIVE S05 INTERNAL CONTRIBUTORS
+------------------------------
+Rank | Strategy::Symbol::TF         | PnL
+-----+------------------------------+------------
+   1 | S05::ADAUSDT::1d             |       0.00
+   2 | S05::ALGOUSDT::1d            |       0.00
+   3 | S05::ARBUSDT::1d             |       0.00
+   4 | S05::AAVEUSDT::1d            |   -1046.32
+   5 | S05::ATOMUSDT::1d            |   -1614.68
+   6 | S05::APTUSDT::1d             |   -1940.75
+   7 | S05::AVAXUSDT::1d            |   -2340.07
+
+LIVE SYMBOL::TF TABLE
+---------------------
+Rank | Symbol::TF                | PnL
+-----+---------------------------+------------
+   1 | ADAUSDT::1d               |       0.00
+   2 | ALGOUSDT::1d              |       0.00
+   3 | ARBUSDT::1d               |       0.00
+   4 | AAVEUSDT::1d              |   -1046.32
+   5 | ATOMUSDT::1d              |   -1614.68
+   6 | APTUSDT::1d               |   -1940.75
+   7 | AVAXUSDT::1d              |   -2340.07
+
+EXIT EFFICIENCY VERDICT
+-----------------------
+Portfolio late-half weakening is visible under a narrow winner cluster, but exit bleed is not yet strongly proven at this layer.
+
+OPERATOR GUIDANCE
+-----------------
+1) If winners remain positive but exit efficiency is poor, next work should target profit-protection / late-hold control.
+2) If bleed is concentrated in UNIUSDT::4h and RNDRUSDT::4h, do not add many new strategy families yet.
+3) If no bleed is visible, the next patch should move back toward edge generation rather than exit discipline.
+
+</pre>
+        </div>
+    </div>
+</body>
+</html>

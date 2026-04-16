@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>REPORT_19_EDGE_DEATH_MAP_20260416_065148.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">REPORT_19_EDGE_DEATH_MAP_20260416_065148.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 06:52:19</div>
+                    <div><strong>Source File:</strong> REPORT_19_EDGE_DEATH_MAP_20260416_065148.txt</div>
+                    <div><a href="../REPORT_19_EDGE_DEATH_MAP_20260416_065148.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>REPORT 19 — EDGE DEATH MAP
+==========================
+
+PURPOSE
+-------
+Institutional funnel audit of where candidate breadth is dying.
+This report is designed to explain why final deployable alpha breadth is narrow.
+
+RUN CONTEXT
+-----------
+Run Timestamp (UTC)              : 2026-04-16 06:51:48
+Raw Candidate Universe           : 7
+Rejected Before Final Deploy     : 0
+Selected After Wave B            : 7
+Runner Candidate Mix Count       : 7
+Canonical Deployable Count       : 7
+Preserved Cash Weight            : 0.00%
+Total Strategies Evaluated       : 1
+Strategies Allowed               : 0
+Strategies Rejected              : 1
+Scarcity Override Count          : 0
+Lost In Canonical Normalization  : 0
+
+SECTION A — CANDIDATE FUNNEL
+----------------------------
+1. Raw Candidate Universe             : 7
+2. Markets Rejected (reason present)  : 0
+3. Markets Selected After Wave B      : 7
+4. Runner Candidate Mix Count         : 7
+5. Canonical Deployable Markets       : 7
+6. Preserved Cash                     : 0.00%
+
+SECTION B — MARKET REJECTION REASON COUNTS
+------------------------------------------
+NO MARKET REJECTION DATA
+
+SECTION C — STRATEGY GATE REASON COUNTS
+---------------------------------------
+GATED: pnl&lt;= 0                            1
+
+SECTION D — NEAR MISS MARKETS
+-----------------------------
+NO NEAR MISS MARKET DATA
+
+SECTION E — STRATEGY FITNESS SNAPSHOT
+-------------------------------------
+StrId | StrategyCode | Allowed | Trades | Exits | FitnessScore | PnL | GateReason
+------+--------------+---------+--------+-------+--------------+-----+-----------
+    5 | S05          | NO      |    262 |   262 |       0.0000 | -6941.82 | GATED: pnl&lt;= 0
+
+SECTION F — FINAL DEPLOYABLE ALLOCATION
+---------------------------------------
+AAVEUSDT::1d                 14.29%
+ADAUSDT::1d                  14.29%
+ALGOUSDT::1d                 14.29%
+APTUSDT::1d                  14.29%
+ARBUSDT::1d                  14.29%
+ATOMUSDT::1d                 14.29%
+AVAXUSDT::1d                 14.29%
+CASH                          0.00%
+
+SECTION G — BREADTH KILL VERDICT
+--------------------------------
+Dominant Kill Zone : STRATEGY_FITNESS_GATING
+Breadth is dying primarily at strategy fitness gating. Markets are surviving far enough to be candidates, but too many strategy sleeves are rejected before robust deployment.
+
+SECTION H — OPERATOR INTERPRETATION
+-----------------------------------
+This report should be used before changing thresholds.
+Do not loosen gates blindly.
+First identify where breadth dies:
+1) market selection / Wave B
+2) strategy fitness gating
+3) canonical CIO deployment
+4) preserved-cash regime defense
+
+</pre>
+        </div>
+    </div>
+</body>
+</html>
