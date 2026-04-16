@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>A84_06_CHATGPT_UPLOAD_20260416_101531.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">A84_06_CHATGPT_UPLOAD_20260416_101531.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 15:15:20</div>
+                    <div><strong>Source File:</strong> A84_06_CHATGPT_UPLOAD_20260416_101531.txt</div>
+                    <div><a href="../A84_06_CHATGPT_UPLOAD_20260416_101531.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>A84_06 — CHATGPT UPLOAD (COMPACT)
+================================
+Run Timestamp (UTC) : 2026-04-16 10:15:31
+
+TQGA — ARCHITECTURE STATE (Institutional Mode)
+---------------------------------------------
+• Market grid: Top20 symbols &#215; 3 TF (1h, 4h, 1d) =&gt; 60 markets.
+• Backtest: Strategy &#215; Market grid; captures StrategyPnL, SymbolPnL, Symbol&#215;TF PnL, Strategy&#215;Symbol&#215;TF PnL.
+• CIO: ranks markets by PnL score (per Symbol&#215;TF) then allocates with caps (per-market + per-symbol).
+• Fitness gating: kills dead strategies (0 trades / low PnL / fitness&lt;=0) before CIO recompute.
+
+RUN SCOPE
+---------
+Strategies Selected : 1
+  S01  EmaRsiQuantStrategy
+
+PORTFOLIO SNAPSHOT
+------------------
+Start Equity : 100000.00
+End Equity   : 91835.79
+Total Return : -8.16%
+Equity Points: 2815
+
+TOP STRATEGIES (PnL)
+--------------------
+S03  PnL -8164.21
+
+FITNESS GATING (summary)
+------------------------
+S03 | PnL -8164.21 | Trades 5604 | Fit 0.000 | Allowed False | GATED: pnl&lt;= 0
+Allowed Strategies: NONE
+
+TOP MARKETS (Symbol&#215;TF PnL)
+---------------------------
+JUPUSDT::1d  PnL 17.53
+NEARUSDT::1d  PnL 11.70
+ORDIUSDT::4h  PnL 5.92
+ICPUSDT::1d  PnL 5.79
+PEPEUSDT::1h  PnL 0.00
+PEPEUSDT::4h  PnL 0.00
+PEPEUSDT::1d  PnL 0.00
+SHIBUSDT::1h  PnL 0.00
+SHIBUSDT::4h  PnL 0.00
+SHIBUSDT::1d  PnL 0.00
+
+CIO ALLOCATION (POST-GATING, Top 10)
+-----------------------------------
+AAVEUSDT::1h  W 0.83%
+AAVEUSDT::4h  W 0.83%
+AAVEUSDT::1d  W 0.83%
+ADAUSDT::1h  W 0.83%
+ADAUSDT::4h  W 0.83%
+ADAUSDT::1d  W 0.83%
+ALGOUSDT::1h  W 0.83%
+ALGOUSDT::4h  W 0.83%
+ALGOUSDT::1d  W 0.83%
+APTUSDT::1h  W 0.83%
+
+REALISM / SURVIVAL CHECKLIST (minimum)
+--------------------------------------
+• Walk-forward: split history into sequential windows; tune on train, validate on next window only.
+• Friction: add fees + slippage + spread; stress with 2&#215; and 4&#215; friction multipliers.
+• Regime robustness: require stable performance across multiple regime buckets (trend/range/volatile).
+• Risk limits: max exposure per symbol, max drawdown stop, and kill-switch for degraded fitness.
+• No-leakage: indicators must use only past candles; avoid using final equity to pick parameters.
+
+WHAT TO UPLOAD TO CHATGPT
+-------------------------
+1) This file (A84_06_CHATGPT_UPLOAD)
+2) A84_00 Executive Summary
+3) A84_05 Strategy Fitness + CIO Gating
+4) REPORT_11 Symbol&#215;TF PnL and REPORT_12 CIO weights
+
+</pre>
+        </div>
+    </div>
+</body>
+</html>

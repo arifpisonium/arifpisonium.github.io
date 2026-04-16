@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>REPORT_21_S05_LATE_HALF_FAILURE_AUDIT_20260416_101531.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">REPORT_21_S05_LATE_HALF_FAILURE_AUDIT_20260416_101531.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 15:15:20</div>
+                    <div><strong>Source File:</strong> REPORT_21_S05_LATE_HALF_FAILURE_AUDIT_20260416_101531.txt</div>
+                    <div><a href="../REPORT_21_S05_LATE_HALF_FAILURE_AUDIT_20260416_101531.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>REPORT 21 — S05 LATE-HALF FAILURE AUDIT
+=======================================
+
+PURPOSE
+-------
+Audit whether current alpha fatigue is primarily a late-half weakening of the dominant S05 sleeve.
+
+RUN CONTEXT
+-----------
+Run Timestamp (UTC)                : 2026-04-16 10:15:31
+Portfolio Timeline Points          : 2815
+Selected Markets Count             : 120
+Runner Candidate Mix Count         : 120
+Canonical Deployable Count         : 120
+Cash Allocation Weight             : 0.00%
+
+PORTFOLIO LATE-HALF STATE
+-------------------------
+Early Half Return                  : -4.45%
+Late Half Return                   : -3.89%
+Decay Delta                        : 0.56%
+Late-Half Weaker Flag              : NO
+
+S05 DOMINANCE
+-------------
+Target Strategy Id                 : S05
+Target Strategy Code               : S05
+Target Strategy PnL                : 0.00
+Total Strategy PnL                 : -8164.21
+S05 Dependency Ratio               : 0.00%
+S05 Missing Flag                   : YES
+
+S05 INTERNAL CONCENTRATION
+--------------------------
+S05 Symbol::TF Contribution Count  : 0
+S05 Top 1 Share                    : 0.00%
+S05 Top 2 Share                    : 0.00%
+Portfolio Top 2 Symbol::TF Share   : -0.36%
+
+S05 POSITIVE CONTRIBUTORS
+-------------------------
+NO POSITIVE S05 CONTRIBUTORS
+
+S05 NEGATIVE CONTRIBUTORS
+-------------------------
+NO NEGATIVE S05 CONTRIBUTORS
+
+LIVE DEPLOYED SYMBOL::TF WINNERS
+-------------------------------
+Rank | Symbol::TF                | PnL
+-----+---------------------------+------------
+   1 | JUPUSDT::1d               |      17.53
+   2 | NEARUSDT::1d              |      11.70
+   3 | ORDIUSDT::4h              |       5.92
+   4 | ICPUSDT::1d               |       5.79
+   5 | PEPEUSDT::1h              |       0.00
+   6 | PEPEUSDT::4h              |       0.00
+   7 | PEPEUSDT::1d              |       0.00
+   8 | SHIBUSDT::1h              |       0.00
+   9 | SHIBUSDT::4h              |       0.00
+  10 | SHIBUSDT::1d              |       0.00
+
+S05 FAILURE HYPOTHESIS
+----------------------
+No severe S05 late-half failure pattern detected in this run.
+
+OPERATOR GUIDANCE
+-----------------
+1) If S05 dependency is extreme and late-half return is weaker, treat this as durability failure, not a pure breadth problem.
+2) Do not add many new strategy families before isolating why S05 weakened.
+3) Inspect whether UNIUSDT::4h and RNDRUSDT::4h remain the only monetized S05 cluster.
+4) Prefer targeted S05 durability research over broad architecture changes.
+
+</pre>
+        </div>
+    </div>
+</body>
+</html>

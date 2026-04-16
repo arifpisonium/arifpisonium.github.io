@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>A84_05_STRATEGY_FITNESS_20260416_101531.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">A84_05_STRATEGY_FITNESS_20260416_101531.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 15:15:20</div>
+                    <div><strong>Source File:</strong> A84_05_STRATEGY_FITNESS_20260416_101531.txt</div>
+                    <div><a href="../A84_05_STRATEGY_FITNESS_20260416_101531.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>A84_05 — STRATEGY FITNESS + CIO GATING
+======================================
+
+Run Timestamp (UTC) : 2026-04-16 10:15:31
+
+PUBLISH PATH SIGNATURE
+----------------------
+PATCH_13C_A84_05_CANONICAL_ONLY
+PATCH_23_SCARCITY_STRATEGY_GATE
+SOURCE = exact result.CanonicalCioPostGatingWeights
+RECOMPUTE = DISABLED
+LOCAL_CAP = DISABLED
+LOCAL_RESCALING = DISABLED
+LOCAL_CLEANING = DISABLED
+
+FITNESS CONFIG (GATING INPUTS ONLY)
+-----------------------------------
+MinTrades                : 30
+MinPnL                   : 0
+TopKMarkets              : 20
+MaxWeightPerMarket       : 10.00%  (NOT USED FOR A84_05 PUBLISH)
+MaxWeightPerSymbol       : 25.00%  (NOT USED FOR A84_05 PUBLISH)
+ScarcityModeMinCash      : 75.00%
+ScarcityModeMaxMarkets   : 1
+ScarcityOverrideMinTrades: 12
+ScarcityOverrideMinPnL   : 50
+ScarcityOverrideMaxStrat : 1
+
+SCARCITY DEFENSIVE MODE
+-----------------------
+Active                   : NO
+Runner Selected Markets  : 120
+Runner Cash Weight       : 0.00%
+Top Positive Winner      : NONE
+
+STRATEGY FITNESS TABLE
+----------------------
+Code | PnL         | Trades | Exits | Fitness   | Allowed | Override | GateReason
+-----+-------------+--------+-------+-----------+---------+----------+-----------------------------------------------
+S03  |    -8164.21 |   5604 |  5604 |    0.0000 | NO      | NO       | GATED: pnl&lt;= 0
+
+Allowed strategies : 0 / 1
+Allowed list       : NONE
+
+CANONICAL CIO SNAPSHOT
+----------------------
+Canonical Count    : 120
+Canonical Sum      : 100.00%
+Canonical Max      : 0.83%
+
+CIO WEIGHTS (POST-GATING) TOP 20
+-------------------------------
+AAVEUSDT::1h           W 0.83%
+AAVEUSDT::4h           W 0.83%
+AAVEUSDT::1d           W 0.83%
+ADAUSDT::1h            W 0.83%
+ADAUSDT::4h            W 0.83%
+ADAUSDT::1d            W 0.83%
+ALGOUSDT::1h           W 0.83%
+ALGOUSDT::4h           W 0.83%
+ALGOUSDT::1d           W 0.83%
+APTUSDT::1h            W 0.83%
+APTUSDT::4h            W 0.83%
+APTUSDT::1d            W 0.83%
+ARBUSDT::1h            W 0.83%
+ARBUSDT::4h            W 0.83%
+ARBUSDT::1d            W 0.83%
+ATOMUSDT::1h           W 0.83%
+ATOMUSDT::4h           W 0.83%
+ATOMUSDT::1d           W 0.83%
+AVAXUSDT::1h           W 0.83%
+AVAXUSDT::4h           W 0.83%
+</pre>
+        </div>
+    </div>
+</body>
+</html>

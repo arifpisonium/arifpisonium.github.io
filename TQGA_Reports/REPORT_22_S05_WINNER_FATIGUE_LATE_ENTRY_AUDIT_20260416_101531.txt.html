@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>REPORT_22_S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT_20260416_101531.txt</title>
+    <style>
+        body { font-family: Consolas, "Courier New", monospace; margin: 0; background: #f7f8fb; color: #111827; }
+        .wrap { max-width: 1400px; margin: 24px auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .head { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; background: #f3f4f6; }
+        .title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+        .meta { font-size: 14px; line-height: 1.6; }
+        pre { margin: 0; padding: 22px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; line-height: 1.45; font-size: 14px; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <div class="title">REPORT_22_S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT_20260416_101531.txt</div>
+                <div class="meta">
+                    <div><strong>Published (UTC):</strong> 2026-04-16 15:15:20</div>
+                    <div><strong>Source File:</strong> REPORT_22_S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT_20260416_101531.txt</div>
+                    <div><a href="../REPORT_22_S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT_20260416_101531.txt">Open raw text</a> | <a href="/">Open main site</a></div>
+                </div>
+            </div>
+            <pre>REPORT 22 — S05 WINNER FATIGUE / LATE ENTRY AUDIT
+=================================================
+
+PURPOSE
+-------
+Audit whether the dominant S05 winner cluster is weakening because the edge is arriving too late, fading faster, or concentrating too narrowly.
+
+RUN CONTEXT
+-----------
+Run Timestamp (UTC)                : 2026-04-16 10:15:31
+Half Split Time (UTC)              : 2025-06-27 05:00:00
+S05 Strategy Code                  : S05
+S05 Total PnL                      : 0.00
+S05 Positive Winner Count          : 0
+Portfolio Early Half Return        : -4.45%
+Portfolio Late Half Return         : -3.89%
+
+S05 WINNER CLUSTER CONCENTRATION
+-------------------------------
+Top 1 Winner Share                 : 0.00%
+Top 2 Winner Share                 : 0.00%
+
+S05 WINNER FATIGUE TABLE
+------------------------
+NO POSITIVE S05 WINNER ROWS
+
+LIVE SYMBOL::TF PNL TABLE
+-------------------------
+Rank | Symbol::TF                | PnL
+-----+---------------------------+------------
+   1 | JUPUSDT::1d               |      17.53
+   2 | NEARUSDT::1d              |      11.70
+   3 | ORDIUSDT::4h              |       5.92
+   4 | ICPUSDT::1d               |       5.79
+   5 | PEPEUSDT::1h              |       0.00
+   6 | PEPEUSDT::4h              |       0.00
+   7 | PEPEUSDT::1d              |       0.00
+   8 | SHIBUSDT::1h              |       0.00
+   9 | SHIBUSDT::4h              |       0.00
+  10 | SHIBUSDT::1d              |       0.00
+  11 | VETUSDT::1h               |       0.00
+  12 | VETUSDT::4h               |       0.00
+  13 | VETUSDT::1d               |       0.00
+  14 | MKRUSDT::1d               |      -1.67
+  15 | FILUSDT::1d               |      -1.73
+
+S05 INTERNAL ROWS
+-----------------
+NO S05 INTERNAL ROWS
+
+FAILURE HYPOTHESIS
+------------------
+No severe S05 winner fatigue pattern detected in this run.
+
+OPERATOR GUIDANCE
+-----------------
+1) If top S05 winners are strongly positive early and negative late, the next patch should target edge timing durability.
+2) If fatigue is isolated to UNI/RNDR, do not add broad new strategy families yet.
+3) Prefer late-entry / overstaying diagnostics before adding more admission lanes.
+
+</pre>
+        </div>
+    </div>
+</body>
+</html>
