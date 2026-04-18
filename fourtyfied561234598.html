@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-16__15-15-39.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-16__15-15-39.txt
-GENERATED: 2026-04-16 15:15:39
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-18__16-40-11.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-18__16-40-11.txt
+GENERATED: 2026-04-18 16:40:11
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───a12afb86-c749-4369-8174-2fe366783393.vsidx
+│       │   └───21e119f2-731c-4155-9c23-5b66d0c517b3.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -69,6 +69,10 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───CoinPerformanceAnalyzer.cs
 │   │   ├───PakistanTime.cs
 │   │   ├───PortfolioResearchReport.cs
+│   │   ├───ReportCatalog.cs
+│   │   ├───ReportFileNamingService.cs
+│   │   ├───ReportHeaderFormatter.cs
+│   │   ├───ReportRunContext.cs
 │   │   ├───StrategyExplainabilityWriter.cs
 │   │   ├───TradeCsvExporter.cs
 │   │   └───TradeExpectancyAnalyzer.cs
@@ -116,6 +120,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │   │   ├───Report34TradeBlotterCompactService.cs
 │   │   ├───Report35TradeIntelligenceCompactService.cs
 │   │   ├───Report36SoloStrategyScoreSummaryService.cs
+│   │   ├───ReportArchiveService.cs
 │   │   ├───ReportPortalPublishService.cs
 │   │   ├───StrategyContributionReportService.cs
 │   │   ├───StrategySymbolTimeframePnlReportService.cs
@@ -4684,6 +4689,350 @@ public sealed class PortfolioResearchReport
 }
 
 ==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Reporting\ReportCatalog.cs
+TYPE: .cs
+SIZE: 2.85 KB
+LINES: 85
+==============================
+using System.Collections.ObjectModel;
+
+namespace TQGA.Application.Reporting;
+
+public static class ReportCatalog
+{
+    public static readonly ReportDefinition ExecutiveSummary =
+        new("001", "EXECUTIVE_SUMMARY", "REPORT__001___EXECUTIVE_SUMMARY__.html");
+
+    public static readonly ReportDefinition MarketRegime =
+        new("002", "MARKET_REGIME", "REPORT__002___MARKET_REGIME__.html");
+
+    public static readonly ReportDefinition SoloStrategyScoreSummary =
+        new("003", "SOLO_STRATEGY_SCORE_SUMMARY", "REPORT__003___SOLO_STRATEGY_SCORE_SUMMARY__.html");
+
+    public static readonly ReportDefinition ReportAll =
+        new("999", "REPORT_ALL", "REPORT__999___REPORT_ALL__.html");
+
+    private static readonly Dictionary&lt;string, ReportDefinition&gt; ByPurposeInternal =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            [ExecutiveSummary.PurposeName] = ExecutiveSummary,
+            [MarketRegime.PurposeName] = MarketRegime,
+            [SoloStrategyScoreSummary.PurposeName] = SoloStrategyScoreSummary,
+            [ReportAll.PurposeName] = ReportAll
+        };
+
+    public static ReadOnlyDictionary&lt;string, ReportDefinition&gt; ByPurpose { get; } =
+        new(ByPurposeInternal);
+
+    public static ReportDefinition ResolveOrDefault(string purposeName, string reportNumber = "900")
+    {
+        string normalizedPurpose = NormalizePurposeName(purposeName);
+
+        if (ByPurposeInternal.TryGetValue(normalizedPurpose, out var definition))
+            return definition;
+
+        string publishedFileName = $"REPORT__{reportNumber}___{normalizedPurpose}__.html";
+
+        return new ReportDefinition(
+            Number: reportNumber,
+            PurposeName: normalizedPurpose,
+            PublishedFileName: publishedFileName);
+    }
+
+    public static string NormalizePurposeName(string? rawPurposeName)
+    {
+        if (string.IsNullOrWhiteSpace(rawPurposeName))
+            return "UNSPECIFIED_REPORT";
+
+        string upper = rawPurposeName.Trim().ToUpperInvariant();
+
+        var sb = new System.Text.StringBuilder(upper.Length);
+        bool previousWasUnderscore = false;
+
+        foreach (char ch in upper)
+        {
+            char next = char.IsLetterOrDigit(ch) ? ch : '_';
+
+            if (next == '_')
+            {
+                if (previousWasUnderscore)
+                    continue;
+
+                previousWasUnderscore = true;
+                sb.Append(next);
+                continue;
+            }
+
+            previousWasUnderscore = false;
+            sb.Append(next);
+        }
+
+        string collapsed = sb.ToString().Trim('_');
+
+        return string.IsNullOrWhiteSpace(collapsed)
+            ? "UNSPECIFIED_REPORT"
+            : collapsed;
+    }
+}
+
+public sealed record ReportDefinition(
+    string Number,
+    string PurposeName,
+    string PublishedFileName);
+
+==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Reporting\ReportFileNamingService.cs
+TYPE: .cs
+SIZE: 2.06 KB
+LINES: 65
+==============================
+using System.Globalization;
+
+namespace TQGA.Application.Reporting;
+
+public sealed class ReportFileNamingService
+{
+    public string BuildLocalFileName(
+        ReportDefinition definition,
+        DateTime runUtc,
+        string extension)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentException.ThrowIfNullOrWhiteSpace(extension);
+
+        string normalizedExtension = NormalizeExtension(extension);
+        DateTime pkt = ToPakistan(runUtc);
+
+        string day = pkt.ToString("dddd", CultureInfo.InvariantCulture).ToUpperInvariant();
+        string month = pkt.ToString("MMMM", CultureInfo.InvariantCulture).ToUpperInvariant();
+        string localStamp = $"{day}_{pkt:dd}_{month}_{pkt:yyyy}__{pkt:HH_mm_ss}";
+
+        return $"REPORT__{definition.Number}___{definition.PurposeName}__{localStamp}{normalizedExtension}";
+    }
+
+    public static string BuildPublishedFileName(ReportDefinition definition)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        return definition.PublishedFileName;
+    }
+
+    public string BuildPublishedPath(string folderPath, ReportDefinition definition)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(folderPath);
+        ArgumentNullException.ThrowIfNull(definition);
+
+        return Path.Combine(folderPath, BuildPublishedFileName(definition));
+    }
+
+    private static string NormalizeExtension(string extension)
+    {
+        string value = extension.Trim();
+
+        if (!value.StartsWith('.'))
+            value = "." + value;
+
+        return value.ToUpperInvariant();
+    }
+
+    private static DateTime ToPakistan(DateTime utc)
+    {
+        DateTime safeUtc = utc.Kind == DateTimeKind.Utc
+            ? utc
+            : DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+
+        try
+        {
+            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById("Pakistan Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(safeUtc, tz);
+        }
+        catch
+        {
+            return safeUtc.AddHours(5);
+        }
+    }
+}
+
+==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Reporting\ReportHeaderFormatter.cs
+TYPE: .cs
+SIZE: 3.59 KB
+LINES: 88
+==============================
+using System.Text;
+
+namespace TQGA.Application.Reporting;
+
+public sealed class ReportHeaderFormatter
+{
+    public static string BuildHeader(
+        ReportDefinition definition,
+        ReportRunContext context,
+        string title,
+        string purpose,
+        IEnumerable&lt;KeyValuePair&lt;string, string&gt;&gt;? summaryLines = null)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
+
+        var sb = new StringBuilder();
+
+        string fileName = string.IsNullOrWhiteSpace(context.SourceFileName)
+            ? "(not supplied)"
+            : context.SourceFileName;
+
+        sb.AppendLine($"FILE: {fileName}");
+        sb.AppendLine("----------------------------------------------------------------------");
+        sb.AppendLine();
+        sb.AppendLine(title);
+        sb.AppendLine(new string('=', title.Length));
+        sb.AppendLine();
+        sb.AppendLine("PURPOSE");
+        sb.AppendLine("-------");
+        sb.AppendLine(purpose.Trim());
+        sb.AppendLine();
+        sb.AppendLine("RUN CONTEXT");
+        sb.AppendLine("-----------");
+        sb.AppendLine($"Report Number                      : {definition.Number}");
+        sb.AppendLine($"Report Purpose Name                : {definition.PurposeName}");
+        sb.AppendLine($"Run Timestamp (PKT)                : {FormatPkt(context.RunPkt)}");
+        sb.AppendLine($"Run Timestamp (UTC)                : {FormatUtc(context.RunUtc)}");
+        sb.AppendLine($"Backtest Start (PKT)               : {FormatPkt(context.BacktestStartPkt)}");
+        sb.AppendLine($"Backtest Start (UTC)               : {FormatUtc(context.BacktestStartUtc)}");
+        sb.AppendLine($"Backtest End (PKT)                 : {FormatPkt(context.BacktestEndPkt)}");
+        sb.AppendLine($"Backtest End (UTC)                 : {FormatUtc(context.BacktestEndUtc)}");
+        sb.AppendLine($"Strategy Id                        : {ValueOrNA(context.StrategyId)}");
+        sb.AppendLine($"Strategy Name                      : {ValueOrNA(context.StrategyName)}");
+        sb.AppendLine($"Selected Strategies Count          : {context.SelectedStrategiesCount}");
+        sb.AppendLine($"Selected Markets Count             : {context.SelectedMarketsCount}");
+        sb.AppendLine($"Selected Symbols Count             : {context.SelectedSymbolsCount}");
+        sb.AppendLine($"Selected Timeframes Count          : {context.SelectedTimeframesCount}");
+        sb.AppendLine($"Run Mode                           : {ValueOrNA(context.RunMode)}");
+
+        List&lt;KeyValuePair&lt;string, string&gt;&gt; materialized = summaryLines?.ToList() ?? [];
+
+        if (materialized.Count &gt; 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("SUMMARY");
+            sb.AppendLine("-------");
+
+            foreach (KeyValuePair&lt;string, string&gt; line in materialized)
+                sb.AppendLine($"{line.Key,-35} : {line.Value}");
+        }
+
+        return sb.ToString();
+    }
+
+    private static string FormatPkt(DateTime? value)
+    {
+        if (!value.HasValue)
+            return "N/A";
+
+        return $"{value.Value:yyyy-MM-dd HH:mm:ss} PKT";
+    }
+
+    private static string FormatUtc(DateTime? value)
+    {
+        if (!value.HasValue)
+            return "N/A";
+
+        return $"{value.Value:yyyy-MM-dd HH:mm:ss} UTC";
+    }
+
+    private static string ValueOrNA(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "N/A" : value.Trim();
+    }
+}
+
+==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Reporting\ReportRunContext.cs
+TYPE: .cs
+SIZE: 2.87 KB
+LINES: 78
+==============================
+namespace TQGA.Application.Reporting;
+
+public sealed record ReportRunContext
+{
+    public required DateTime RunUtc { get; init; }
+    public required DateTime RunPkt { get; init; }
+
+    public DateTime? BacktestStartUtc { get; init; }
+    public DateTime? BacktestStartPkt { get; init; }
+
+    public DateTime? BacktestEndUtc { get; init; }
+    public DateTime? BacktestEndPkt { get; init; }
+
+    public string StrategyId { get; init; } = string.Empty;
+    public string StrategyName { get; init; } = string.Empty;
+
+    public int SelectedStrategiesCount { get; init; }
+    public int SelectedMarketsCount { get; init; }
+    public int SelectedSymbolsCount { get; init; }
+    public int SelectedTimeframesCount { get; init; }
+
+    public string RunMode { get; init; } = string.Empty;
+    public string SourceFileName { get; init; } = string.Empty;
+
+    public static ReportRunContext Create(
+        DateTime runUtc,
+        DateTime? backtestStartUtc = null,
+        DateTime? backtestEndUtc = null,
+        string strategyId = "",
+        string strategyName = "",
+        int selectedStrategiesCount = 0,
+        int selectedMarketsCount = 0,
+        int selectedSymbolsCount = 0,
+        int selectedTimeframesCount = 0,
+        string runMode = "",
+        string sourceFileName = "")
+    {
+        return new ReportRunContext
+        {
+            RunUtc = EnsureUtc(runUtc),
+            RunPkt = ToPakistan(runUtc),
+            BacktestStartUtc = backtestStartUtc.HasValue ? EnsureUtc(backtestStartUtc.Value) : null,
+            BacktestStartPkt = backtestStartUtc.HasValue ? ToPakistan(backtestStartUtc.Value) : null,
+            BacktestEndUtc = backtestEndUtc.HasValue ? EnsureUtc(backtestEndUtc.Value) : null,
+            BacktestEndPkt = backtestEndUtc.HasValue ? ToPakistan(backtestEndUtc.Value) : null,
+            StrategyId = strategyId ?? string.Empty,
+            StrategyName = strategyName ?? string.Empty,
+            SelectedStrategiesCount = selectedStrategiesCount,
+            SelectedMarketsCount = selectedMarketsCount,
+            SelectedSymbolsCount = selectedSymbolsCount,
+            SelectedTimeframesCount = selectedTimeframesCount,
+            RunMode = runMode ?? string.Empty,
+            SourceFileName = sourceFileName ?? string.Empty
+        };
+    }
+
+    private static DateTime EnsureUtc(DateTime value)
+    {
+        return value.Kind == DateTimeKind.Utc
+            ? value
+            : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    private static DateTime ToPakistan(DateTime utc)
+    {
+        DateTime safeUtc = EnsureUtc(utc);
+
+        try
+        {
+            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById("Pakistan Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(safeUtc, tz);
+        }
+        catch
+        {
+            return safeUtc.AddHours(5);
+        }
+    }
+}
+
+==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Reporting\StrategyExplainabilityWriter.cs
 TYPE: .cs
 SIZE: 2.41 KB
@@ -5307,8 +5656,8 @@ public sealed class A84ChatGptUploadReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\A84ExecutiveSummaryReportService.cs
 TYPE: .cs
-SIZE: 11.77 KB
-LINES: 347
+SIZE: 12.14 KB
+LINES: 357
 ==============================
 using System;
 using System.Collections.Generic;
@@ -5340,11 +5689,13 @@ public sealed class A84ExecutiveSummaryReportService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        string pktStamp = PakistanTime.Stamp(runUtc);
+        var reportDefinition = TQGA.Application.Reporting.ReportCatalog.ExecutiveSummary;
+        var naming = new TQGA.Application.Reporting.ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(reportDefinition, runUtc, ".txt");
 
         string outFile = Path.Combine(
             DataPaths.Reports,
-            $"A84_00_EXECUTIVE_SUMMARY_{pktStamp}.txt");
+            fileName);
 
         var eq = result.PortfolioEquityTimeline ?? new Dictionary&lt;DateTime, decimal&gt;();
 
@@ -5448,8 +5799,11 @@ public sealed class A84ExecutiveSummaryReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("A84_00 — EXECUTIVE SUMMARY");
-        sb.AppendLine("==========================");
+        sb.AppendLine($"FILE: {fileName}");
+        sb.AppendLine("----------------------------------------------------------------------");
+        sb.AppendLine();
+        sb.AppendLine("REPORT 001 — EXECUTIVE SUMMARY");
+        sb.AppendLine("==============================");
         sb.AppendLine();
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
@@ -5657,6 +6011,11 @@ public sealed class A84ExecutiveSummaryReportService
         return FormatUtc(value.Value);
     }
 }
+
+
+
+
+//current existing file
 
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\A84MarketRegimeDetectionReportService.cs
@@ -7628,8 +7987,8 @@ $@"&lt;!DOCTYPE html&gt;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\FullReportService.cs
 TYPE: .cs
-SIZE: 5.79 KB
-LINES: 143
+SIZE: 5.99 KB
+LINES: 144
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
@@ -7656,8 +8015,8 @@ public sealed class FullReportService
             .OrderBy(f =&gt; Path.GetFileName(f), StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        sb.AppendLine("TQGA FULL REPORT");
-        sb.AppendLine("===============");
+        sb.AppendLine("REPORT 999 — REPORT ALL");
+        sb.AppendLine("=======================");
         sb.AppendLine($"Folder: {DataPaths.Reports}");
         sb.AppendLine($"Files:  {files.Count}");
         sb.AppendLine($"UTC:    {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}");
@@ -7700,9 +8059,10 @@ public sealed class FullReportService
     public string SaveCombinedToFile()
     {
         string text = BuildCombinedReport();
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"FULL_REPORT_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+        var reportDefinition = TQGA.Application.Reporting.ReportCatalog.ReportAll;
+        var naming = new TQGA.Application.Reporting.ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(reportDefinition, DateTime.UtcNow, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, text);
         return path;
@@ -7954,9 +8314,10 @@ public sealed class GitHubCodeAuditPublishResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GitHubPagesPublishService.cs
 TYPE: .cs
-SIZE: 48.8 KB
-LINES: 1086
+SIZE: 49.84 KB
+LINES: 1140
 ==============================
+//GitHubPagesPublishService.cs
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
@@ -8215,6 +8576,9 @@ public sealed class GitHubPagesPublishService
         Directory.CreateDirectory(reportsPublishRoot);
         Directory.CreateDirectory(codesPublishRoot);
 
+        ClearPublishedFolderContents(reportsPublishRoot);
+        ClearPublishedFolderContents(codesPublishRoot);
+
         List&lt;GeneratedPageInfo&gt; reportPages = PublishReportFolderIncremental(localReportsPath, reportsPublishRoot);
         List&lt;GeneratedPageInfo&gt; codePages = PublishCodeFolderIncremental(localSolutionRoot, codesPublishRoot);
 
@@ -8277,6 +8641,8 @@ public sealed class GitHubPagesPublishService
         string reportsPublishRoot = Path.Combine(repoRootPath, ReportsFolderName);
         Directory.CreateDirectory(reportsPublishRoot);
 
+        ClearPublishedFolderContents(reportsPublishRoot);
+
         List&lt;GeneratedPageInfo&gt; reportPages = PublishReportFolderIncremental(localReportsPath, reportsPublishRoot);
         string reportsIndexPath = Path.Combine(reportsPublishRoot, "index.html");
 
@@ -8327,6 +8693,8 @@ public sealed class GitHubPagesPublishService
 
         string codesPublishRoot = Path.Combine(repoRootPath, CodesFolderName);
         Directory.CreateDirectory(codesPublishRoot);
+
+        ClearPublishedFolderContents(codesPublishRoot);
 
         List&lt;GeneratedPageInfo&gt; codePages = PublishCodeFolderIncremental(localSolutionRoot, codesPublishRoot);
         string codesIndexPath = Path.Combine(codesPublishRoot, "index.html");
@@ -8380,6 +8748,37 @@ public sealed class GitHubPagesPublishService
 
         string path = GetRepoPathConfigPath();
         File.WriteAllText(path, repoRootPath.Trim(), Encoding.UTF8);
+    }
+
+    private static void ClearPublishedFolderContents(string folderPath)
+    {
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+            return;
+        }
+
+        foreach (string file in Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                File.Delete(file);
+            }
+            catch
+            {
+            }
+        }
+
+        foreach (string dir in Directory.GetDirectories(folderPath, "*", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+            catch
+            {
+            }
+        }
     }
 
     private static List&lt;GeneratedPageInfo&gt; PublishReportFolderIncremental(string localReportsPath, string reportsPublishRoot)
@@ -9043,6 +9442,21 @@ public sealed record GeneratedPageInfo(
     string PublishedPath,
     string PublicUrl,
     string EditUrl);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\GoogleDriveCombinedPublishService.cs
@@ -16825,8 +17239,8 @@ public sealed class Report35TradeIntelligenceCompactService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report36SoloStrategyScoreSummaryService.cs
 TYPE: .cs
-SIZE: 17.29 KB
-LINES: 382
+SIZE: 17.45 KB
+LINES: 387
 ==============================
 using System.Globalization;
 using System.Text;
@@ -16851,8 +17265,9 @@ public sealed class Report36SoloStrategyScoreSummaryService
             return;
 
         Directory.CreateDirectory(DataPaths.Reports);
-        string stamp = PakistanTime.Stamp(runUtc);
-        string fileName = $"REPORT_36_SOLO_STRATEGY_SCORE_SUMMARY_{stamp}.txt";
+        var reportDefinition = TQGA.Application.Reporting.ReportCatalog.SoloStrategyScoreSummary;
+        var naming = new TQGA.Application.Reporting.ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(reportDefinition, runUtc, ".txt");
         string path = Path.Combine(DataPaths.Reports, fileName);
 
         StrategyBacktestNode node = nodes[0];
@@ -17002,7 +17417,7 @@ public sealed class Report36SoloStrategyScoreSummaryService
         sb.AppendLine($"FILE: {fileName}");
         sb.AppendLine("----------------------------------------------------------------------");
         sb.AppendLine();
-        sb.AppendLine("REPORT 36 — SOLO STRATEGY SCORE SUMMARY");
+        sb.AppendLine("REPORT 003 — SOLO STRATEGY SCORE SUMMARY");
         sb.AppendLine("=======================================");
         sb.AppendLine();
         sb.AppendLine("PURPOSE");
@@ -17209,7 +17624,79 @@ public sealed class Report36SoloStrategyScoreSummaryService
         return $"{value.Value:yyyy-MM-dd HH:mm:ss} UTC";
     }
 }
- 
+
+
+
+
+//current existing file
+
+==============================
+FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportArchiveService.cs
+TYPE: .cs
+SIZE: 1.89 KB
+LINES: 61
+==============================
+using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
+
+namespace TQGA.Application.Services;
+
+public sealed class ReportArchiveService
+{
+    private const string FixedOldReportsRoot = @"D:\D DATA BACKUP\Data\Old Reports";
+
+    public ReportArchiveResult ArchiveExistingReports()
+    {
+        Directory.CreateDirectory(DataPaths.Reports);
+        Directory.CreateDirectory(FixedOldReportsRoot);
+
+        var existingFiles = Directory
+            .EnumerateFiles(DataPaths.Reports, "*", SearchOption.TopDirectoryOnly)
+            .ToList();
+
+        if (existingFiles.Count == 0)
+        {
+            return new ReportArchiveResult
+            {
+                ArchiveRootPath = FixedOldReportsRoot,
+                ArchiveFolderPath = string.Empty,
+                MovedFileCount = 0
+            };
+        }
+
+        string folderStamp = PakistanTime.Stamp(DateTime.UtcNow);
+        string archiveFolderPath = Path.Combine(FixedOldReportsRoot, $"OLD_FOLDER_{folderStamp}");
+        Directory.CreateDirectory(archiveFolderPath);
+
+        int moved = 0;
+
+        foreach (string sourcePath in existingFiles)
+        {
+            string fileName = Path.GetFileName(sourcePath);
+            string destinationPath = Path.Combine(archiveFolderPath, fileName);
+
+            if (File.Exists(destinationPath))
+                File.Delete(destinationPath);
+
+            File.Move(sourcePath, destinationPath);
+            moved++;
+        }
+
+        return new ReportArchiveResult
+        {
+            ArchiveRootPath = FixedOldReportsRoot,
+            ArchiveFolderPath = archiveFolderPath,
+            MovedFileCount = moved
+        };
+    }
+}
+
+public sealed class ReportArchiveResult
+{
+    public string ArchiveRootPath { get; init; } = string.Empty;
+    public string ArchiveFolderPath { get; init; } = string.Empty;
+    public int MovedFileCount { get; init; }
+}
 
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReportPortalPublishService.cs
@@ -21654,8 +22141,8 @@ global using System.Windows.Forms;
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.WinForms\MainForm.cs
 TYPE: .cs
-SIZE: 42.38 KB
-LINES: 1158
+SIZE: 42.56 KB
+LINES: 1163
 ==============================
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -21683,6 +22170,7 @@ public sealed class MainForm : Form
     private readonly ReportPortalPublishService _portalPublish;
     private readonly GitHubPagesPublishService _gitHubPagesPublish;
     private readonly GitHubCodeAuditPublishService _gitHubCodeAuditPublish;
+    private readonly ReportArchiveService _reportArchive;
 
     private const string FixedGitHubPagesRepoPath = @"C:\Users\Muhammad Arif\arifpisonium.github.io";
 
@@ -21766,6 +22254,7 @@ public sealed class MainForm : Form
         _portalPublish = new ReportPortalPublishService();
         _gitHubPagesPublish = new GitHubPagesPublishService();
         _gitHubCodeAuditPublish = new GitHubCodeAuditPublishService();
+        _reportArchive = new ReportArchiveService();
 
         Text = "TQGA";
         Width = 1550;
@@ -21918,13 +22407,11 @@ public sealed class MainForm : Form
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        _structure.Generate();
         LoadStrategyList();
         LoadTimeframeList();
         LoadCoinCategories();
         RefreshCoinNames();
         ApplySoloResearchSelectionFromUi();
-        MessageBox.Show("TQGA READY", "BOOT");
     }
 
     private void LoadStrategyList()
@@ -22084,20 +22571,25 @@ public sealed class MainForm : Form
 
     private async Task RunResearch()
     {
-        using var scope = _sp.CreateScope();
-        var orchestrator = scope.ServiceProvider.GetRequiredService&lt;PortfolioBacktestOrchestrator&gt;();
+        await RunSafe(async () =&gt;
+        {
+            _reportArchive.ArchiveExistingReports();
 
-        IReadOnlyList&lt;Type&gt; selectedStrategies = GetSelectedStrategyTypes(orchestrator);
-        IReadOnlyList&lt;string&gt; selectedTimeframes = GetSelectedTimeframes();
-        IReadOnlyList&lt;string&gt; selectedSymbols = GetSelectedSymbols();
-        FrictionProfile friction = FrictionProfile.Default;
+            using var scope = _sp.CreateScope();
+            var orchestrator = scope.ServiceProvider.GetRequiredService&lt;PortfolioBacktestOrchestrator&gt;();
 
-        await RunSafe(() =&gt; orchestrator.RunSelectedAsync(
-            selectedStrategies,
-            selectedSymbols,
-            selectedTimeframes,
-            friction,
-            CancellationToken.None));
+            IReadOnlyList&lt;Type&gt; selectedStrategies = GetSelectedStrategyTypes(orchestrator);
+            IReadOnlyList&lt;string&gt; selectedTimeframes = GetSelectedTimeframes();
+            IReadOnlyList&lt;string&gt; selectedSymbols = GetSelectedSymbols();
+            FrictionProfile friction = FrictionProfile.Default;
+
+            await orchestrator.RunSelectedAsync(
+                selectedStrategies,
+                selectedSymbols,
+                selectedTimeframes,
+                friction,
+                CancellationToken.None);
+        });
     }
 
     private async Task PublishPortalAsync()
