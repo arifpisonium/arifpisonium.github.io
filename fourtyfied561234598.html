@@ -9,9 +9,9 @@
 <pre>
 
 ===== TQGA AUDIT MASTER =====
-FILE NAME: TQGA_AUDIT_MASTER__2026-04-18__20-27-10.txt
-FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-18__20-27-10.txt
-GENERATED: 2026-04-18 20:27:10
+FILE NAME: TQGA_AUDIT_MASTER__2026-04-19__19-54-21.txt
+FULL PATH: D:\D DATA BACKUP\Data\Reports\TQGA_AUDIT_MASTER__2026-04-19__19-54-21.txt
+GENERATED: 2026-04-19 19:54:21
 
 ===== PROJECT TREE =====
 D:\D DATA BACKUP\ARIF5\TQGA
@@ -20,7 +20,7 @@ D:\D DATA BACKUP\ARIF5\TQGA
 │       ├───DesignTimeBuild
 │       │   └───.dtbcache.v2
 │       ├───FileContentIndex
-│       │   └───de95b68f-642b-4493-a049-7800f1bb034f.vsidx
+│       │   └───9316ab5f-c4a3-477d-b618-c2ea2ca5af46.vsidx
 │       └───v18
 │           ├───.suo
 │           ├───DocumentLayout.backup.json
@@ -6023,8 +6023,8 @@ public sealed class A84ExecutiveSummaryReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\A84MarketRegimeDetectionReportService.cs
 TYPE: .cs
-SIZE: 8.58 KB
-LINES: 246
+SIZE: 9 KB
+LINES: 270
 ==============================
 using System;
 using System.Collections.Generic;
@@ -6039,11 +6039,9 @@ namespace TQGA.Application.Services;
 
 /// &lt;summary&gt;
 /// A84 special reports orchestrator:
-/// - A84_01 / A84_02 family coordination
-/// - PATCH 15 compile fix:
-///   A84_RegimeResearchService.Generate now expects
-///   (PortfolioBacktestResult result, Dictionary&lt;string, decimal&gt; canonicalCioPostGatingWeights)
-///   so this service must pass the full result, not SymbolTimeframePnL.
+/// - REPORT 002 / 007 / 008 family coordination
+/// - compile-safe bridge from runner result to regime writers
+/// - duplicate-write protection for same-run multi-path invocation
 /// &lt;/summary&gt;
 public sealed class A84MarketRegimeDetectionReportService
 {
@@ -6073,15 +6071,12 @@ public sealed class A84MarketRegimeDetectionReportService
             return;
         }
 
-        // PATCH 15 compile-safe bridge:
-        // Prefer the stored canonical post-gating CIO dictionary.
-        // If it is empty, fall back to aligned raw CIO weights only for regime-report compatibility.
         var canonicalCio = BuildCanonicalCioForRegime(result);
 
-        // A84_01 / A84_03 / A84_04 family
+        // REPORT 002 / 004 / 005 / 006
         _regime.Generate(result, canonicalCio);
 
-        // A84_02 / A84_02B family
+        // REPORT 007 / 008
         GeneratePortfolioRegimeTransitions(result.PortfolioEquityTimeline);
     }
 
@@ -6107,7 +6102,7 @@ public sealed class A84MarketRegimeDetectionReportService
                 continue;
 
             if (key.StartsWith("CIO::", StringComparison.OrdinalIgnoreCase))
-                key = key.Substring("CIO::".Length);
+                key = key["CIO::".Length..];
 
             if (string.IsNullOrWhiteSpace(key))
                 continue;
@@ -6165,14 +6160,13 @@ public sealed class A84MarketRegimeDetectionReportService
 
         var transitionsSb = new StringBuilder();
         transitionsSb.AppendLine("REPORT 007 — REGIME TRANSITIONS (PORTFOLIO)");
-        transitionsSb.AppendLine("=======================================");
+        transitionsSb.AppendLine("===========================================");
         transitionsSb.AppendLine();
 
         var stats = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase);
         string? prevState = null;
         int transitionCount = 0;
 
-        // Simple rolling regime detector using 20-point lookback.
         for (int i = 20; i &lt; ordered.Count; i++)
         {
             var window = ordered.Skip(i - 20).Take(20).ToList();
@@ -6195,23 +6189,26 @@ public sealed class A84MarketRegimeDetectionReportService
         if (transitionCount == 0)
             transitionsSb.AppendLine("NO TRANSITIONS DETECTED UNDER CURRENT RULES.");
 
-        WriteRaw(ReportCatalog.ResolveOrDefault("REGIME_TRANSITIONS", "007"), transitionsSb.ToString());
+        WriteRaw(
+            ReportCatalog.ResolveOrDefault("REGIME_TRANSITIONS", "007"),
+            transitionsSb.ToString());
 
         var statsSb = new StringBuilder();
         statsSb.AppendLine("REPORT 008 — REGIME STATS (PORTFOLIO)");
-        statsSb.AppendLine("==================================");
+        statsSb.AppendLine("=====================================");
         statsSb.AppendLine();
         statsSb.AppendLine($"Real Equity Points : {ordered.Count}");
         statsSb.AppendLine($"Transition Count   : {transitionCount}");
         statsSb.AppendLine();
-
         statsSb.AppendLine("STATE COUNTS");
         statsSb.AppendLine("------------");
 
         foreach (var kv in stats.OrderByDescending(x =&gt; x.Value))
             statsSb.AppendLine($"{kv.Key,-16} {kv.Value,8}");
 
-        WriteRaw(ReportCatalog.ResolveOrDefault("REGIME_STATS", "008"), statsSb.ToString());
+        WriteRaw(
+            ReportCatalog.ResolveOrDefault("REGIME_STATS", "008"),
+            statsSb.ToString());
     }
 
     private static string DetectPortfolioState(List&lt;KeyValuePair&lt;DateTime, decimal&gt;&gt; window)
@@ -6227,9 +6224,9 @@ public sealed class A84MarketRegimeDetectionReportService
 
         var ret = ((end / start) - 1m) * 100m;
 
-        // crude drawdown proxy inside the window
         decimal peak = decimal.MinValue;
         decimal maxDd = 0m;
+
         foreach (var p in window)
         {
             if (p.Value &gt; peak)
@@ -6263,13 +6260,40 @@ public sealed class A84MarketRegimeDetectionReportService
 
     private static void WriteRaw(ReportDefinition definition, string content)
     {
+        if (!A84ReportWriteGuard.ShouldWrite(definition.Number))
+            return;
+
         Directory.CreateDirectory(DataPaths.Reports);
 
         var naming = new ReportFileNamingService();
         string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
-        var path = Path.Combine(DataPaths.Reports, fileName);
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, content);
+    }
+}
+
+internal static class A84ReportWriteGuard
+{
+    private static readonly Dictionary&lt;string, DateTime&gt; LastWriteUtc = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly object Sync = new();
+    private static readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(10);
+
+    public static bool ShouldWrite(string reportNumber)
+    {
+        lock (Sync)
+        {
+            DateTime now = DateTime.UtcNow;
+
+            if (LastWriteUtc.TryGetValue(reportNumber, out DateTime previous))
+            {
+                if (now - previous &lt;= DuplicateWindow)
+                    return false;
+            }
+
+            LastWriteUtc[reportNumber] = now;
+            return true;
+        }
     }
 }
 
@@ -6866,8 +6890,8 @@ public sealed class A84StrategyFitnessReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\A84_RegimeResearchService.cs
 TYPE: .cs
-SIZE: 13.88 KB
-LINES: 361
+SIZE: 13.64 KB
+LINES: 360
 ==============================
 using System;
 using System.Collections.Generic;
@@ -6900,7 +6924,7 @@ public sealed class A84_RegimeResearchService
         var sb = new StringBuilder();
 
         sb.AppendLine("REPORT 002 — MARKET REGIME MAP");
-        sb.AppendLine("===========================");
+        sb.AppendLine("==============================");
         sb.AppendLine();
 
         if (pnl == null || pnl.Count == 0)
@@ -6924,7 +6948,7 @@ public sealed class A84_RegimeResearchService
         var sb = new StringBuilder();
 
         sb.AppendLine("REPORT 004 — MARKET EDGE RANKING");
-        sb.AppendLine("============================");
+        sb.AppendLine("================================");
         sb.AppendLine();
 
         if (pnl == null || pnl.Count == 0)
@@ -6952,7 +6976,7 @@ public sealed class A84_RegimeResearchService
         var sb = new StringBuilder();
 
         sb.AppendLine("REPORT 005 — CIO ALLOCATION SKILL");
-        sb.AppendLine("==============================");
+        sb.AppendLine("=================================");
         sb.AppendLine();
         sb.AppendLine("SOURCE: Exact stored post-gating CIO deployment with cash preservation intact.");
         sb.AppendLine();
@@ -7006,7 +7030,7 @@ public sealed class A84_RegimeResearchService
         var sb = new StringBuilder();
 
         sb.AppendLine("REPORT 006 — SYSTEM GROWTH SCENARIO MODE");
-        sb.AppendLine("====================================");
+        sb.AppendLine("========================================");
         sb.AppendLine();
         sb.AppendLine("PUBLISH PATH SIGNATURE");
         sb.AppendLine("----------------------");
@@ -7141,26 +7165,22 @@ public sealed class A84_RegimeResearchService
         bool concentrated,
         bool alphaDecayDetected)
     {
-        // PATCH 15 deterministic scenario rules:
-        // - Stress scenario stays defensive when live run is weak.
-        // - Base scenario is suppressed to flat when realism flags are active.
-        // - Recovery scenario remains modest under stress; no aggressive fixed-growth path.
         if (negativeReturn || concentrated || alphaDecayDetected)
         {
-            return new List&lt;GrowthScenario&gt;
-            {
+            return
+            [
                 new("Stress",  -0.02m, "Weak run persists / further degradation"),
                 new("Base",     0.00m, "Capital preservation, no growth assumption"),
                 new("Recovery", 0.01m, "Partial stabilization after execution improvements")
-            };
+            ];
         }
 
-        return new List&lt;GrowthScenario&gt;
-        {
+        return
+        [
             new("Stress",   -0.01m, "Temporary setback / mild degradation"),
             new("Base",      0.01m, "Measured continuation under controlled conditions"),
             new("Upside",    0.02m, "Improved breadth and stable non-decaying edge")
-        };
+        ];
     }
 
     private static decimal Project12Months(decimal capital, decimal monthlyRate)
@@ -7199,6 +7219,9 @@ public sealed class A84_RegimeResearchService
 
     private static void Write(ReportDefinition definition, StringBuilder sb)
     {
+        if (!A84ReportWriteGuard.ShouldWrite(definition.Number))
+            return;
+
         Directory.CreateDirectory(DataPaths.Reports);
 
         var naming = new ReportFileNamingService();
@@ -7234,8 +7257,8 @@ public sealed class A84_RegimeResearchService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\AlphaRankingReportService.cs
 TYPE: .cs
-SIZE: 4.03 KB
-LINES: 112
+SIZE: 4.21 KB
+LINES: 114
 ==============================
 using System;
 using System.Collections.Generic;
@@ -7244,6 +7267,7 @@ using System.Linq;
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -7258,7 +7282,7 @@ public sealed class AlphaRankingReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 05 — ALPHA DIAGNOSTICS (PER STRATEGY)");
+        sb.AppendLine("REPORT 014 — ALPHA DIAGNOSTICS (PER STRATEGY)");
         sb.AppendLine("===========================================");
         sb.AppendLine();
 
@@ -7342,9 +7366,10 @@ public sealed class AlphaRankingReportService
 
     private static void Write(StringBuilder sb)
     {
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_05_ALPHA_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("ALPHA", "014");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, sb.ToString());
     }
@@ -7353,8 +7378,8 @@ public sealed class AlphaRankingReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\CioCapitalReportService.cs
 TYPE: .cs
-SIZE: 12.09 KB
-LINES: 315
+SIZE: 12.26 KB
+LINES: 318
 ==============================
 using System;
 using System.Collections.Generic;
@@ -7362,6 +7387,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -7398,7 +7424,7 @@ public sealed class CioCapitalReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 06 — CAPITAL ALLOCATION");
+        sb.AppendLine("REPORT 015 — CAPITAL ALLOCATION");
         sb.AppendLine("================================");
         sb.AppendLine();
 
@@ -7420,10 +7446,12 @@ public sealed class CioCapitalReportService
             canonicalCioPostGatingWeights,
             cashWeight);
 
+        var definition = ReportCatalog.ResolveOrDefault("CAPITAL", "015");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+
         File.WriteAllText(
-            Path.Combine(
-                DataPaths.Reports,
-                $"REPORT_06_CAPITAL_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt"),
+            Path.Combine(DataPaths.Reports, fileName),
             sb.ToString());
     }
 
@@ -7675,11 +7703,12 @@ public sealed class CioCapitalReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\CioWeightsSymbolTimeframeReportService.cs
 TYPE: .cs
-SIZE: 1.55 KB
-LINES: 44
+SIZE: 1.73 KB
+LINES: 46
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -7691,7 +7720,7 @@ public sealed class CioWeightsSymbolTimeframeReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 12 — CIO WEIGHTS (CANONICAL)");
+        sb.AppendLine("REPORT 016 — CIO WEIGHTS (CANONICAL)");
         sb.AppendLine("====================================");
         sb.AppendLine();
         sb.AppendLine("Key format: CIO::SYMBOL::TF  (example: CIO::ATOMUSDT::1h)");
@@ -7715,9 +7744,10 @@ public sealed class CioWeightsSymbolTimeframeReportService
                 sb.AppendLine($"{kv.Key,-28} {kv.Value,10:F6}");
         }
 
-        var path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_12_CIO_WEIGHTS_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("CIO_WEIGHTS", "016");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+        var path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, sb.ToString());
     }
@@ -10684,12 +10714,13 @@ public sealed class MiniReportSamplingService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\PortfolioDrawdownReportService.cs
 TYPE: .cs
-SIZE: 4.03 KB
-LINES: 127
+SIZE: 4.35 KB
+LINES: 132
 ==============================
 using System.Globalization;
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -10708,13 +10739,17 @@ public sealed class PortfolioDrawdownReportService
 
         var ts = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
 
+        var fullDefinition = ReportCatalog.ResolveOrDefault("DRAWDOWN", "023");
+        var miniDefinition = ReportCatalog.ResolveOrDefault("MINI_DRAWDOWN", "024");
+        var naming = new ReportFileNamingService();
+
         var fullPath = Path.Combine(
             DataPaths.Reports,
-            $"REPORT_10_DRAWDOWN_{ts}.csv");
+            naming.BuildLocalFileName(fullDefinition, DateTime.UtcNow, ".csv"));
 
         var miniPath = Path.Combine(
             DataPaths.Reports,
-            $"REPORT_10_MINI_DRAWDOWN_{ts}.csv");
+            naming.BuildLocalFileName(miniDefinition, DateTime.UtcNow, ".csv"));
 
         var ordered = timeline?
             .OrderBy(x =&gt; x.Key)
@@ -10724,13 +10759,13 @@ public sealed class PortfolioDrawdownReportService
         {
             File.WriteAllText(
                 fullPath,
-                "REPORT 10 — PORTFOLIO DRAWDOWN ENGINE" + Environment.NewLine +
+                "REPORT 023 — PORTFOLIO DRAWDOWN ENGINE" + Environment.NewLine +
                 "=====================================" + Environment.NewLine +
                 "NO DATA: PortfolioEquityTimeline is empty." + Environment.NewLine);
 
             File.WriteAllText(
                 miniPath,
-                "REPORT 10 — MINI DRAWDOWN" + Environment.NewLine +
+                "REPORT 024 — MINI DRAWDOWN" + Environment.NewLine +
                 "===================================" + Environment.NewLine +
                 "NO DATA: PortfolioEquityTimeline is empty." + Environment.NewLine);
 
@@ -10783,7 +10818,7 @@ public sealed class PortfolioDrawdownReportService
 
         var full = new StringBuilder();
 
-        full.AppendLine("REPORT 10 — PORTFOLIO DRAWDOWN ENGINE");
+        full.AppendLine("REPORT 023 — PORTFOLIO DRAWDOWN ENGINE");
         full.AppendLine("=====================================");
         full.AppendLine();
         full.AppendLine($"Peak Equity        : {peak:F2}");
@@ -10804,7 +10839,7 @@ public sealed class PortfolioDrawdownReportService
 
         var miniSb = new StringBuilder();
 
-        miniSb.AppendLine("REPORT 10 — MINI DRAWDOWN");
+        miniSb.AppendLine("REPORT 024 — MINI DRAWDOWN");
         miniSb.AppendLine("===================================");
         miniSb.AppendLine("Time,Drawdown%");
 
@@ -10818,12 +10853,13 @@ public sealed class PortfolioDrawdownReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\PortfolioEquityReportService.cs
 TYPE: .cs
-SIZE: 2.55 KB
-LINES: 77
+SIZE: 2.87 KB
+LINES: 82
 ==============================
 using System.Globalization;
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -10842,13 +10878,17 @@ public sealed class PortfolioEquityReportService
 
         var ts = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
 
+        var fullDefinition = ReportCatalog.ResolveOrDefault("PORTFOLIO_EQUITY", "017");
+        var miniDefinition = ReportCatalog.ResolveOrDefault("MINI_EQUITY", "018");
+        var naming = new ReportFileNamingService();
+
         var fullPath = Path.Combine(
             DataPaths.Reports,
-            $"REPORT_07_PORTFOLIO_EQUITY_{ts}.csv");
+            naming.BuildLocalFileName(fullDefinition, DateTime.UtcNow, ".csv"));
 
         var miniPath = Path.Combine(
             DataPaths.Reports,
-            $"REPORT_07_MINI_EQUITY_{ts}.csv");
+            naming.BuildLocalFileName(miniDefinition, DateTime.UtcNow, ".csv"));
 
         var ordered = timeline?
             .OrderBy(x =&gt; x.Key)
@@ -10858,13 +10898,13 @@ public sealed class PortfolioEquityReportService
         {
             File.WriteAllText(
                 fullPath,
-                "REPORT 07 — PORTFOLIO EQUITY CURVE" + Environment.NewLine +
+                "REPORT 017 — PORTFOLIO EQUITY CURVE" + Environment.NewLine +
                 "===================================" + Environment.NewLine +
                 "NO DATA: PortfolioEquityTimeline is empty." + Environment.NewLine);
 
             File.WriteAllText(
                 miniPath,
-                "REPORT 07 — MINI EQUITY CURVE" + Environment.NewLine +
+                "REPORT 018 — MINI EQUITY CURVE" + Environment.NewLine +
                 "===================================" + Environment.NewLine +
                 "NO DATA: PortfolioEquityTimeline is empty." + Environment.NewLine);
 
@@ -10873,7 +10913,7 @@ public sealed class PortfolioEquityReportService
 
         var full = new StringBuilder();
 
-        full.AppendLine("REPORT 07 — PORTFOLIO EQUITY CURVE");
+        full.AppendLine("REPORT 017 — PORTFOLIO EQUITY CURVE");
         full.AppendLine("===================================");
         full.AppendLine("Time,Equity");
 
@@ -10888,7 +10928,7 @@ public sealed class PortfolioEquityReportService
 
         var miniSb = new StringBuilder();
 
-        miniSb.AppendLine("REPORT 07 — MINI EQUITY CURVE");
+        miniSb.AppendLine("REPORT 018 — MINI EQUITY CURVE");
         miniSb.AppendLine("===================================");
         miniSb.AppendLine("Time,Equity");
 
@@ -10999,8 +11039,8 @@ public sealed class QuickAuditReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\ReconciliationReportService.cs
 TYPE: .cs
-SIZE: 4.91 KB
-LINES: 119
+SIZE: 5.08 KB
+LINES: 122
 ==============================
 using System;
 using System.IO;
@@ -11008,6 +11048,7 @@ using System.Linq;
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -11041,7 +11082,7 @@ public sealed class ReconciliationReportService
         decimal cashWeight = result.CashAllocationWeight;
         decimal grossDeployablePlusCash = canonicalDeployableSum + cashWeight;
 
-        sb.AppendLine("REPORT 31 — RECONCILIATION");
+        sb.AppendLine("REPORT 025 — RECONCILIATION");
         sb.AppendLine("===========================");
         sb.AppendLine();
 
@@ -11114,10 +11155,12 @@ public sealed class ReconciliationReportService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
+        var definition = ReportCatalog.ResolveOrDefault("RECON", "025");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+
         File.WriteAllText(
-            Path.Combine(
-                DataPaths.Reports,
-                $"REPORT_31_RECON_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt"),
+            Path.Combine(DataPaths.Reports, fileName),
             sb.ToString());
     }
 }
@@ -11125,12 +11168,13 @@ public sealed class ReconciliationReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report19EdgeDeathMapReportService.cs
 TYPE: .cs
-SIZE: 16.93 KB
-LINES: 398
+SIZE: 17.06 KB
+LINES: 399
 ==============================
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -11148,10 +11192,10 @@ public sealed class Report19EdgeDeathMapReportService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_19_EDGE_DEATH_MAP_{stamp}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("EDGE_DEATH_MAP", "026");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, runUtc, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var sb = new StringBuilder();
 
@@ -11213,7 +11257,7 @@ public sealed class Report19EdgeDeathMapReportService
             deployableCount,
             preservedCash);
 
-        sb.AppendLine("REPORT 19 — EDGE DEATH MAP");
+        sb.AppendLine("REPORT 026 — EDGE DEATH MAP");
         sb.AppendLine("==========================");
         sb.AppendLine();
         sb.AppendLine("PURPOSE");
@@ -11530,12 +11574,13 @@ public sealed class Report19EdgeDeathMapReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report20AlphaDecayS05DependencyAuditService.cs
 TYPE: .cs
-SIZE: 15.46 KB
-LINES: 386
+SIZE: 15.59 KB
+LINES: 387
 ==============================
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -11551,10 +11596,10 @@ public sealed class Report20AlphaDecayS05DependencyAuditService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_20_ALPHA_DECAY_S05_DEPENDENCY_AUDIT_{stamp}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("ALPHA_DECAY_S05_DEPENDENCY_AUDIT", "027");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, runUtc, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var sb = new StringBuilder();
 
@@ -11617,7 +11662,7 @@ public sealed class Report20AlphaDecayS05DependencyAuditService
             symbolTfPnl,
             strategySymbolTfPnl);
 
-        sb.AppendLine("REPORT 20 — ALPHA DECAY / S05 DEPENDENCY AUDIT");
+        sb.AppendLine("REPORT 027 — ALPHA DECAY / S05 DEPENDENCY AUDIT");
         sb.AppendLine("==============================================");
         sb.AppendLine();
         sb.AppendLine("PURPOSE");
@@ -11923,12 +11968,13 @@ public sealed class Report20AlphaDecayS05DependencyAuditService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report21S05LateHalfFailureAuditService.cs
 TYPE: .cs
-SIZE: 11.98 KB
-LINES: 298
+SIZE: 12.12 KB
+LINES: 299
 ==============================
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -11947,10 +11993,10 @@ public sealed class Report21S05LateHalfFailureAuditService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_21_S05_LATE_HALF_FAILURE_AUDIT_{stamp}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("S05_LATE_HALF_FAILURE_AUDIT", "028");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, runUtc, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var sb = new StringBuilder();
 
@@ -12024,7 +12070,7 @@ public sealed class Report21S05LateHalfFailureAuditService
         decimal selectedTop2Share =
             totalSymbolTfPnl == 0m ? 0m : selectedTop2Pnl / totalSymbolTfPnl;
 
-        sb.AppendLine("REPORT 21 — S05 LATE-HALF FAILURE AUDIT");
+        sb.AppendLine("REPORT 028 — S05 LATE-HALF FAILURE AUDIT");
         sb.AppendLine("=======================================");
         sb.AppendLine();
         sb.AppendLine("PURPOSE");
@@ -12228,12 +12274,13 @@ public sealed class Report21S05LateHalfFailureAuditService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report22S05WinnerFatigueLateEntryAuditService.cs
 TYPE: .cs
-SIZE: 12.06 KB
-LINES: 307
+SIZE: 12.2 KB
+LINES: 308
 ==============================
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -12252,10 +12299,10 @@ public sealed class Report22S05WinnerFatigueLateEntryAuditService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_22_S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT_{stamp}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("S05_WINNER_FATIGUE_LATE_ENTRY_AUDIT", "029");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, runUtc, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var sb = new StringBuilder();
 
@@ -12305,7 +12352,7 @@ public sealed class Report22S05WinnerFatigueLateEntryAuditService
         decimal top1WinnerShare = totalWinnerPnl == 0m ? 0m : winnerRows.Take(1).Sum(x =&gt; x.TotalPnl) / totalWinnerPnl;
         decimal top2WinnerShare = totalWinnerPnl == 0m ? 0m : winnerRows.Take(2).Sum(x =&gt; x.TotalPnl) / totalWinnerPnl;
 
-        sb.AppendLine("REPORT 22 — S05 WINNER FATIGUE / LATE ENTRY AUDIT");
+        sb.AppendLine("REPORT 029 — S05 WINNER FATIGUE / LATE ENTRY AUDIT");
         sb.AppendLine("=================================================");
         sb.AppendLine();
         sb.AppendLine("PURPOSE");
@@ -12542,12 +12589,13 @@ public sealed class Report22S05WinnerFatigueLateEntryAuditService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\Report23S05ExitEfficiencyLateHoldBleedAuditService.cs
 TYPE: .cs
-SIZE: 11.64 KB
-LINES: 299
+SIZE: 11.78 KB
+LINES: 300
 ==============================
 using System.Text;
 using TQGA.Application.Backtesting;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -12566,10 +12614,10 @@ public sealed class Report23S05ExitEfficiencyLateHoldBleedAuditService
 
         Directory.CreateDirectory(DataPaths.Reports);
 
-        string stamp = runUtc.ToString("yyyyMMdd_HHmmss");
-        string path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_23_S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT_{stamp}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("S05_EXIT_EFFICIENCY_LATE_HOLD_BLEED_AUDIT", "030");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, runUtc, ".txt");
+        string path = Path.Combine(DataPaths.Reports, fileName);
 
         var sb = new StringBuilder();
 
@@ -12621,7 +12669,7 @@ public sealed class Report23S05ExitEfficiencyLateHoldBleedAuditService
         decimal top1WinnerShare = winnerClusterTotal == 0m ? 0m : winnerRows.Take(1).Sum(x =&gt; x.TotalPnl) / winnerClusterTotal;
         decimal top2WinnerShare = winnerClusterTotal == 0m ? 0m : winnerRows.Take(2).Sum(x =&gt; x.TotalPnl) / winnerClusterTotal;
 
-        sb.AppendLine("REPORT 23 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT");
+        sb.AppendLine("REPORT 030 — S05 EXIT EFFICIENCY / LATE-HOLD BLEED AUDIT");
         sb.AppendLine("=======================================================");
         sb.AppendLine();
         sb.AppendLine("PURPOSE");
@@ -18109,11 +18157,12 @@ public sealed class PublishPortalResult
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\StrategyContributionReportService.cs
 TYPE: .cs
-SIZE: 0.97 KB
-LINES: 34
+SIZE: 1.14 KB
+LINES: 37
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -18125,7 +18174,7 @@ public sealed class StrategyContributionReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 08 — STRATEGY CONTRIBUTION");
+        sb.AppendLine("REPORT 019 — STRATEGY CONTRIBUTION");
         sb.AppendLine("==================================");
         sb.AppendLine();
 
@@ -18139,10 +18188,12 @@ public sealed class StrategyContributionReportService
                 sb.AppendLine($"Strategy {p.Key:00} → PnL {p.Value:F2}");
         }
 
+        var definition = ReportCatalog.ResolveOrDefault("STRATEGY_PNL", "019");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+
         File.WriteAllText(
-            Path.Combine(
-                DataPaths.Reports,
-                $"REPORT_08_STRATEGY_PNL_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt"),
+            Path.Combine(DataPaths.Reports, fileName),
             sb.ToString());
     }
 }
@@ -18150,11 +18201,12 @@ public sealed class StrategyContributionReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\StrategySymbolTimeframePnlReportService.cs
 TYPE: .cs
-SIZE: 1.58 KB
-LINES: 44
+SIZE: 1.75 KB
+LINES: 46
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -18166,7 +18218,7 @@ public sealed class StrategySymbolTimeframePnlReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 13 — STRATEGY × SYMBOL × TIMEFRAME PnL");
+        sb.AppendLine("REPORT 022 — STRATEGY × SYMBOL × TIMEFRAME PnL");
         sb.AppendLine("=============================================");
         sb.AppendLine();
         sb.AppendLine("Key format: S##::SYMBOL::TF  (example: S02::ATOMUSDT::1h)");
@@ -18190,9 +18242,10 @@ public sealed class StrategySymbolTimeframePnlReportService
                 sb.AppendLine($"{kv.Key,-32} {kv.Value,14:F2}");
         }
 
-        var path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_13_STRATEGY_SYMBOL_TF_PNL_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("STRATEGY_SYMBOL_TF_PNL", "022");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+        var path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, sb.ToString());
     }
@@ -18312,8 +18365,8 @@ public sealed class StructureReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\SymbolHeatmapReportService.cs
 TYPE: .cs
-SIZE: 0.99 KB
-LINES: 38
+SIZE: 1.17 KB
+LINES: 40
 ==============================
 using System;
 using System.Collections.Generic;
@@ -18321,6 +18374,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -18332,7 +18386,7 @@ public sealed class SymbolHeatmapReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 09 — SYMBOL HEATMAP");
+        sb.AppendLine("REPORT 020 — SYMBOL HEATMAP");
         sb.AppendLine("===========================");
         sb.AppendLine();
 
@@ -18346,9 +18400,10 @@ public sealed class SymbolHeatmapReportService
                 sb.AppendLine($"{s.Key,-24} {s.Value,12:F2}");
         }
 
-        var path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_09_SYMBOL_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("SYMBOL_PNL", "020");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+        var path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, sb.ToString());
     }
@@ -18357,11 +18412,12 @@ public sealed class SymbolHeatmapReportService
 ==============================
 FILE: D:\D DATA BACKUP\ARIF5\TQGA\TQGA.Application\Services\SymbolTimeframePnlReportService.cs
 TYPE: .cs
-SIZE: 1.49 KB
-LINES: 44
+SIZE: 1.66 KB
+LINES: 46
 ==============================
 using System.Text;
 using TQGA.Application.Paths;
+using TQGA.Application.Reporting;
 
 namespace TQGA.Application.Services;
 
@@ -18373,7 +18429,7 @@ public sealed class SymbolTimeframePnlReportService
 
         var sb = new StringBuilder();
 
-        sb.AppendLine("REPORT 11 — SYMBOL × TIMEFRAME PnL");
+        sb.AppendLine("REPORT 021 — SYMBOL × TIMEFRAME PnL");
         sb.AppendLine("=================================");
         sb.AppendLine();
         sb.AppendLine("Key format: SYMBOL::TF  (example: ATOMUSDT::1h)");
@@ -18397,9 +18453,10 @@ public sealed class SymbolTimeframePnlReportService
                 sb.AppendLine($"{kv.Key,-24} {kv.Value,14:F2}");
         }
 
-        var path = Path.Combine(
-            DataPaths.Reports,
-            $"REPORT_11_SYMBOL_TF_PNL_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+        var definition = ReportCatalog.ResolveOrDefault("SYMBOL_TF_PNL", "021");
+        var naming = new ReportFileNamingService();
+        string fileName = naming.BuildLocalFileName(definition, DateTime.UtcNow, ".txt");
+        var path = Path.Combine(DataPaths.Reports, fileName);
 
         File.WriteAllText(path, sb.ToString());
     }
